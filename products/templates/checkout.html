@@ -102,15 +102,24 @@
           <div class="mb-3">
             <label class="form-label" for="shipping-address">Delivery Address</label>
             <select id="shipping-address" class="form-select rounded-pill" required>
-              <option value="">Choose a saved address</option>
-              {% for address in addresses %}
-                <option value="{{ address.id }}" {% if address.is_default %}selected{% endif %}>
-                  {{ address.full_name }} · {{ address.street_address }}, {{ address.city }}
-                </option>
-              {% endfor %}
+              {% if addresses %}
+                <option value="">Choose a saved address</option>
+                {% for address in addresses %}
+                  <option value="{{ address.id }}" {% if address.is_default %}selected{% endif %}>
+                    {{ address.full_name }} · {{ address.street_address }}, {{ address.city }}
+                  </option>
+                {% endfor %}
+              {% else %}
+                <option value="">No saved addresses yet</option>
+              {% endif %}
             </select>
             {% if not addresses %}
-              <div class="form-text">Add a delivery address from your account before paying.</div>
+              <div class="form-text">
+                Add a new address to continue with Card, Bank Transfer, or USSD.
+                <a href="{% url 'products:add-address' %}" class="link-primary fw-semibold">Add a new address</a>
+              </div>
+            {% else %}
+              <div class="form-text">Choose a saved delivery address before continuing.</div>
             {% endif %}
           </div>
           {% endif %}

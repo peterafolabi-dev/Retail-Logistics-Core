@@ -78,6 +78,20 @@ class CartViewTests(TestCase):
         self.assertIn('paystack_callback_url', response.context)
         self.assertTrue(str(response.context['paystack_callback_url']).endswith('/payments/callback/'))
 
+    def test_checkout_renders_add_address_link_when_user_has_no_saved_addresses(self):
+        user = User.objects.create_user(username='checkout-address-user', password='pass', email='address@example.com')
+        self.client.login(username='checkout-address-user', password='pass')
+
+        session = self.client.session
+        session['cart'] = {str(self.product.id): 1}
+        session.save()
+
+        response = self.client.get(reverse('products:checkout'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="shipping-address"')
+        self.assertContains(response, 'Add a new address')
+        self.assertContains(response, reverse('products:add-address'))
+
     def test_test_email_route_is_removed(self):
         response = self.client.get('/products/test-email/')
         self.assertEqual(response.status_code, 404)

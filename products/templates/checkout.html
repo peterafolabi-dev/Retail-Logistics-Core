@@ -336,7 +336,7 @@
   .payment-method-option {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     flex: 1 1 180px;
     min-width: 0;
     padding: 0.7rem 1rem;
@@ -353,13 +353,51 @@
   }
 
   .payment-method-option input {
+    position: relative;
     margin: 0;
+    width: 1rem;
+    height: 1rem;
+    appearance: none;
+    -webkit-appearance: none;
+    border-radius: 50%;
+    border: 2px solid #adb5bd;
+    background: #fff;
+    display: inline-block;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .payment-method-option input::after {
+    content: "";
+    position: absolute;
+    inset: 50% auto auto 50%;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: #0d6efd;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.15s ease;
+  }
+
+  .payment-method-option input:checked {
+    border-color: #0d6efd;
+    background: #fff;
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.12);
+  }
+
+  .payment-method-option input:checked::after {
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .payment-method-option input:not(:checked) {
+    border-color: #adb5bd;
+    background: #fff;
   }
 
   .payment-method-option.selected {
-    border-color: #ff4747;
-    background: rgba(255, 71, 71, 0.08);
-    box-shadow: 0 0 0 0.15rem rgba(255, 71, 71, 0.12);
+    border-color: #0d6efd;
+    background: rgba(13, 110, 253, 0.08);
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.12);
   }
 
   .payment-method-option-disabled {

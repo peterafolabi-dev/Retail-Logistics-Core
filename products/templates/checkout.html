@@ -232,6 +232,10 @@
 
 <style>
   .theme-card {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    box-sizing: border-box;
     background: var(--card-bg);
     border-radius: 20px;
     transition: all 0.4s ease;
@@ -325,10 +329,16 @@
     background-color: transparent;
   }
 
+  #payment-method-options {
+    flex-wrap: wrap;
+  }
+
   .payment-method-option {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    flex: 1 1 180px;
+    min-width: 0;
     padding: 0.7rem 1rem;
     border-radius: 999px;
     border: 1px solid #d0d7de;
@@ -336,6 +346,10 @@
     cursor: pointer;
     transition: all 0.2s ease;
     font-weight: 600;
+  }
+
+  .payment-method-option span {
+    white-space: nowrap;
   }
 
   .payment-method-option input {
@@ -513,6 +527,13 @@
       const payBtnAmountEl = document.getElementById('pay-btn-amount');
       const checkoutDataEl = document.getElementById('checkout-data');
 
+    console.log('Checkout init: paystack button bound and ready', {
+      paystackBtn: !!paystackBtn,
+      emailField: !!customerEmailField,
+      nameField: !!customerNameField,
+      checkoutData: !!checkoutDataEl
+    });
+
       const parseNumber = (v) => {
         if (v === undefined || v === null) return 0;
         try {
@@ -608,6 +629,14 @@
       const handleCheckout = (event) => {
         event.preventDefault();
         const { email, name, selectedChannel, amountWithInsurance, amountKobo } = getFormValues();
+        console.log('Checkout click triggered', {
+          email,
+          name,
+          selectedChannel,
+          amountWithInsurance,
+          amountKobo,
+          shippingAddress: document.getElementById('shipping-address')?.value || ''
+        });
 
         if (!email) {
           const errorText = 'Please enter your email address.';
@@ -736,6 +765,12 @@
           return;
         }
         const callbackUrl = '{{ paystack_callback_url|escapejs }}';
+        console.log('Checkout: initializing Paystack with selected channel', {
+          selectedChannel,
+          paystackChannels,
+          amountKobo,
+          paystackKey: paystackKey ? 'present' : 'missing'
+        });
         const handler = window.PaystackPop.setup({
           key: paystackKey,
           email: email,
@@ -764,6 +799,7 @@
           }
         });
 
+        console.log('Checkout: opening Paystack iframe');
         handler.openIframe();
       };
 

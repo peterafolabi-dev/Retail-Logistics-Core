@@ -240,7 +240,6 @@
     font-size: 0.72rem;
     font-weight: 700;
   }
-  .shop-filter-search { flex-basis: 240px; }
   .shop-filter-price { flex-basis: 120px; }
   .shop-filter-field input,
   .shop-filter-field select {
@@ -261,6 +260,7 @@
   .shop-filter-submit,
   .shop-filter-clear {
     display: inline-flex;
+    flex: 1 1 150px;
     min-height: 40px;
     align-items: center;
     justify-content: center;
@@ -283,7 +283,6 @@
 
   @media (max-width: 640px) {
     .shop-filter-field,
-    .shop-filter-search,
     .shop-filter-price { flex-basis: calc(50% - 6px); }
     .shop-filter-submit,
     .shop-filter-clear { flex: 1 1 calc(50% - 6px); }
@@ -722,10 +721,6 @@
   </div>
 
   <form method="get" action="{% url 'products:product-list' %}" class="shop-filter-form" aria-label="Filter and sort products">
-    <label class="shop-filter-field shop-filter-search">
-      <span>Search</span>
-      <input type="search" name="search" value="{{ query }}" placeholder="Search products...">
-    </label>
     <label class="shop-filter-field">
       <span>Category</span>
       <select name="category">

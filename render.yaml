@@ -20,6 +20,10 @@ services:
         value: "ssl.cert.expired:true"
       - key: SHODAN_RESULTS_LIMIT
         value: "10"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: "llama-3.3-70b-versatile"
     envVarDefaults:
       DEBUG: "False"
 databases:

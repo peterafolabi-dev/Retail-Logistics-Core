@@ -162,7 +162,9 @@ SHODAN_API_KEY = config('SHODAN_API_KEY', default='')
 SHODAN_QUERY = config('SHODAN_QUERY', default='ssl.cert.expired:true')
 SHODAN_RESULTS_LIMIT = config('SHODAN_RESULTS_LIMIT', cast=int, default=10)
 
-GROQ_API_KEY = config('GROQ_API_KEY', default='')
+GROK_API_KEY = config('GROK_API_KEY', default='')
+GROQ_API_KEY = config('GROQ_API_KEY', default=GROK_API_KEY)
+GROQ_MODEL = config('GROQ_MODEL', default='llama-3.3-70b-versatile')
 
 CHANNEL_LAYERS = {
     'default': {

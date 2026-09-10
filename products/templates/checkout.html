@@ -350,7 +350,7 @@
     border-radius: 999px;
     border: 1px solid #333333;
     background: #ffffff;
-    color: #333333;
+    color: #1f2937;
     cursor: pointer;
     transition: all 0.2s ease;
     font-weight: 600;
@@ -358,7 +358,7 @@
 
   .payment-method-option span {
     white-space: nowrap;
-    color: #333333;
+    color: #1f2937;
   }
 
   .payment-method-option input {
@@ -430,6 +430,10 @@
     cursor: not-allowed;
     background: #f3f4f6;
     border-color: #d1d5db;
+    color: #6b7280;
+  }
+
+  .payment-method-option-disabled span {
     color: #6b7280;
   }
 
@@ -571,23 +575,17 @@
 
   [data-theme="dark"] .payment-method-option {
     border-color: #333333;
-    color: #333333;
+    color: #1f2937;
     background-color: #ffffff;
   }
 
-  [data-theme="dark"] .payment-method-option span {
-    color: #333333;
-  }
-
+  /* These two rules must come AFTER the global dark-theme "span" rule below,
+     so payment-method text stays dark-on-white instead of light-on-white. */
   [data-theme="dark"] .payment-method-option-disabled {
     background-color: #374151;
     border-color: #4b5563;
     color: #9ca3af;
     opacity: 1;
-  }
-
-  [data-theme="dark"] .payment-method-option-disabled span {
-    color: #9ca3af;
   }
 
   [data-theme="dark"] .payment-method-option-note {
@@ -600,6 +598,17 @@
   [data-theme="dark"] label,
   [data-theme="dark"] span {
     color: #e8e8e8;
+  }
+
+  /* Force payment-option text back to dark-on-white; must be declared after
+     the global [data-theme="dark"] span rule above so it wins the cascade
+     even at equal specificity. This is what fixes the washed-out text. */
+  [data-theme="dark"] .payment-method-option span {
+    color: #1f2937 !important;
+  }
+
+  [data-theme="dark"] .payment-method-option-disabled span {
+    color: #9ca3af !important;
   }
 
   /* Responsive */
@@ -884,6 +893,15 @@
           }),
         })
           .then(async (response) => {
+            if (response.redirected && response.url.includes('/login')) {
+              const errorText = 'Please log in to complete Cash on Delivery or Wallet orders.';
+              if (window.showToast) {
+                window.showToast(errorText, 'error');
+              } else {
+                alert(errorText);
+              }
+              return;
+            }
             const data = await response.json();
             if (response.ok && data.success) {
               window.location.href = data.redirect || '/products/';

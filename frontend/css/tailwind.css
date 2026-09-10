@@ -249,7 +249,7 @@
   }
 
   .rc-nav-inner {
-    @apply mx-auto flex min-h-[72px] max-w-[1440px] items-center gap-4 px-5 md:px-8;
+    @apply mx-auto flex min-h-[72px] max-w-[1440px] items-center justify-between gap-4 px-5 md:px-8;
   }
 
   .rc-brand-mark { @apply relative z-10 flex shrink-0 items-center gap-3 no-underline; }
@@ -261,7 +261,7 @@
   .rc-brand-orbit::after { @apply h-9 w-5 -rotate-45; }
   .rc-brand-orbit i { @apply h-1.5 w-1.5 rounded-full bg-cyan-200; box-shadow: 0 0 12px #22d3ee; }
 
-  .rc-nav-capsule { @apply absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-white/[0.045] p-1 md:flex; }
+  .rc-nav-capsule { @apply relative hidden items-center gap-1 rounded-full border border-white/10 bg-white/[0.045] p-1 md:flex; }
   .rc-nav-link {
     @apply relative rounded-full px-4 py-2 font-mono text-xs font-medium tracking-wide no-underline transition-colors duration-200 hover:text-white;
     color: var(--text-color);
@@ -274,8 +274,9 @@
   .rc-nav-telemetry b { @apply font-medium text-emerald-500; }
   .rc-nav-telemetry strong { @apply text-emerald-200; }
   .rc-telemetry-dot { @apply inline-block h-1.5 w-1.5 rounded-full bg-emerald-400; box-shadow: 0 0 10px rgba(52, 211, 153, .95); animation: rc-telemetry-pulse 1.6s ease-in-out infinite; }
-  .rc-nav-actions { @apply ml-auto flex items-center gap-1 md:ml-0 md:gap-2; }
+  .rc-nav-actions { @apply ml-auto flex items-center gap-2 md:ml-0 md:gap-3; }
   .rc-nav-action, .rc-nav-login { @apply relative inline-flex items-center gap-1.5 rounded-md px-2 py-2 font-mono text-[11px] text-slate-400 no-underline transition-colors hover:bg-white/5 hover:text-white; }
+  .rc-nav-action.rc-cart-action { position: relative; }
   .rc-nav-action i { @apply text-sm text-cyan-300/80; }
   .rc-nav-action em, .rc-drawer-links em { @apply absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-cyan-300 px-1 font-mono text-[9px] not-italic text-black; }
   .rc-nav-register { @apply rounded-md border border-cyan-300/50 bg-cyan-300/10 px-3 py-2 font-mono text-[11px] text-cyan-200 no-underline transition hover:bg-cyan-300/20 hover:text-white; }

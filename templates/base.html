@@ -102,6 +102,34 @@
         transition: all 0.3s ease;
       }
 
+      .rc-nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .rc-nav-capsule {
+        position: relative;
+        left: auto;
+        transform: none;
+        margin-left: 0;
+      }
+
+      .rc-nav-actions {
+        gap: 0.75rem;
+      }
+
+      .rc-nav-action.rc-cart-action {
+        position: relative;
+      }
+
+      .rc-nav-action.rc-cart-action em {
+        position: absolute;
+        top: -0.15rem;
+        right: -0.25rem;
+      }
+
       /* ===== BOOTSTRAP COMPATIBILITY SHIM ===== */
       .btn,
       .btn-primary,
@@ -611,7 +639,7 @@
 
         <div class="rc-nav-actions" style="gap: 0.75rem;">
           <a class="rc-nav-action" href="{% url 'products:wishlist' %}" title="Wishlist"><i class="bi bi-heart"></i><span>Wishlist</span></a>
-          <a class="rc-nav-action rc-cart-action" href="{% url 'products:view-cart' %}" title="Cart"><i class="bi bi-cart3"></i><span>Cart</span><em id="nav-cart-badge">0</em></a>
+          <a class="rc-nav-action rc-cart-action" href="{% url 'products:view-cart' %}" title="Cart" style="position: relative;"><i class="bi bi-cart3"></i><span>Cart</span><em id="nav-cart-badge">0</em></a>
           {% if user.is_authenticated %}
             <a class="rc-nav-action" href="{% url 'products:profile' %}">Profile</a>
             <a class="rc-nav-action" href="{% url 'products:logout' %}">Logout</a>
@@ -619,7 +647,7 @@
             <a class="rc-nav-action rc-nav-login" href="{% url 'products:login' %}">Login</a>
             <a class="rc-nav-register" href="{% url 'products:register' %}">Register</a>
           {% endif %}
-          <button class="rc-nav-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme" style="margin-left: 0.15rem;"><i class="bi bi-brightness-high-fill" id="theme-icon"></i></button>
+          <button class="rc-nav-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme"><i class="bi bi-brightness-high-fill" id="theme-icon"></i></button>
           <button class="rc-nav-menu" id="nav-menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false"><i class="bi bi-list"></i></button>
         </div>
       </div>

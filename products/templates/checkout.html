@@ -6,6 +6,25 @@
 
 {% block content %}
 <div class="container py-5">
+
+  <!-- Checkout progress indicator -->
+  <div class="checkout-progress mb-4" aria-label="Checkout progress">
+    <div class="checkout-progress-step completed">
+      <span class="checkout-progress-dot">1</span>
+      <span class="checkout-progress-label">Cart</span>
+    </div>
+    <div class="checkout-progress-line completed"></div>
+    <div class="checkout-progress-step completed">
+      <span class="checkout-progress-dot">2</span>
+      <span class="checkout-progress-label">Address</span>
+    </div>
+    <div class="checkout-progress-line completed"></div>
+    <div class="checkout-progress-step active">
+      <span class="checkout-progress-dot">3</span>
+      <span class="checkout-progress-label">Payment</span>
+    </div>
+  </div>
+
   <div class="row g-4">
     <!-- LEFT: Checkout -->
     <div class="col-lg-8">
@@ -146,8 +165,16 @@
             </label>
           </div>
           <div class="form-text">Choose Card, Bank Transfer, USSD, or Cash on Delivery. COD orders are payable when the package arrives.</div>
+
+          <!-- Dynamic delivery/confirmation note based on selected payment method -->
+          <div id="payment-method-timing-note" class="payment-method-timing-note"></div>
+
           {% if not wallet_available %}
-            <div class="payment-method-option-note">Top up your RedCart wallet to enable this payment option.</div>
+            <div class="payment-method-option-note">
+              Top up your RedCart wallet to enable this payment option.
+              <!-- NOTE: update this href to your actual wallet top-up URL name -->
+              <a href="/products/wallet/" class="payment-method-option-note-link">Top up now</a>
+            </div>
           {% endif %}
         </div>
 
@@ -160,6 +187,7 @@
           <button id="paystack-btn" type="button" class="btn btn-success w-100 py-3 fw-semibold rounded-pill shadow-sm btn-glow text-dark">
             💳 Pay ₦<span id="pay-btn-amount">{{ total_after_coupon|default:total|floatformat:2|intcomma }}</span>
           </button>
+          <div id="pay-btn-hint" class="pay-btn-hint" style="display:none;">Choose a delivery address above to continue.</div>
 
       </div>
     </div>
@@ -202,6 +230,11 @@
             <span class="checkout-summary-value text-success">Free</span>
           </div>
 
+          <div class="checkout-summary-row">
+            <span class="checkout-summary-label">Tax / Fees:</span>
+            <span class="checkout-summary-value">₦{{ tax_amount|default:"0.00"|floatformat:2|intcomma }}</span>
+          </div>
+
           {% if insurance_available %}
           <div class="form-check mb-3 checkout-summary-insurance-option">
             <input class="form-check-input" type="checkbox" value="1" id="insurance-opt-in" data-insurance-cost="{{ insurance_cost|floatformat:2 }}">
@@ -242,6 +275,75 @@
     background: var(--card-bg);
     border-radius: 20px;
     transition: all 0.4s ease;
+  }
+
+  /* Checkout progress indicator */
+  .checkout-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .checkout-progress-step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #9ca3af;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .checkout-progress-step.completed {
+    color: #16a34a;
+  }
+
+  .checkout-progress-step.active {
+    color: #0d6efd;
+  }
+
+  .checkout-progress-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: #6b7280;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .checkout-progress-step.completed .checkout-progress-dot {
+    background: #16a34a;
+    color: #fff;
+  }
+
+  .checkout-progress-step.active .checkout-progress-dot {
+    background: #0d6efd;
+    color: #fff;
+  }
+
+  .checkout-progress-line {
+    width: 40px;
+    height: 2px;
+    background: #e5e7eb;
+  }
+
+  .checkout-progress-line.completed {
+    background: #16a34a;
+  }
+
+  [data-theme="dark"] .checkout-progress-step {
+    color: #6b7280;
+  }
+
+  [data-theme="dark"] .checkout-progress-dot {
+    background: #374151;
+    color: #9ca3af;
   }
 
   .payment-badge {
@@ -308,6 +410,22 @@
 
   .btn-glow {
     animation: glowPulse 2s infinite alternate;
+  }
+
+  #paystack-btn:disabled,
+  #paystack-btn.pay-btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    animation: none;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .pay-btn-hint {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #dc3545;
+    margin-top: 0.5rem;
   }
 
   .ssl-badge {
@@ -445,6 +563,20 @@
     margin-top: 0.5rem;
     font-size: 0.82rem;
     color: #6b7280;
+  }
+
+  .payment-method-option-note-link {
+    margin-left: 0.4rem;
+    font-weight: 600;
+    color: #0d6efd;
+    text-decoration: underline;
+  }
+
+  .payment-method-timing-note {
+    margin-top: 0.6rem;
+    font-size: 0.82rem;
+    color: #6b7280;
+    min-height: 1.1em;
   }
 
   .checkout-summary-list {
@@ -592,6 +724,10 @@
     color: #9ca3af;
   }
 
+  [data-theme="dark"] .payment-method-timing-note {
+    color: #9ca3af;
+  }
+
   [data-theme="dark"] h3,
   [data-theme="dark"] h5,
   [data-theme="dark"] p,
@@ -619,6 +755,12 @@
     .payment-badge svg {
       width: 38px;
       height: 25px;
+    }
+    .checkout-progress-line {
+      width: 20px;
+    }
+    .checkout-progress-label {
+      display: none;
     }
   }
 </style>
@@ -691,6 +833,9 @@
     const customerNameField = document.getElementById('customer-name');
     const payBtnAmountEl = document.getElementById('pay-btn-amount');
     const checkoutDataEl = document.getElementById('checkout-data');
+    const shippingAddressEl = document.getElementById('shipping-address');
+    const payBtnHintEl = document.getElementById('pay-btn-hint');
+    const timingNoteEl = document.getElementById('payment-method-timing-note');
 
     console.log('Checkout init: paystack button bound and ready', {
       paystackBtn: !!paystackBtn,
@@ -730,6 +875,33 @@
       }
     };
 
+    // ---- Addition: delivery/confirmation timing note per payment method ----
+    const updateTimingNote = () => {
+      if (!timingNoteEl) return;
+      const selectedMethod = document.querySelector('input[name="payment-channel"]:checked')?.value || 'card';
+      if (selectedMethod === 'cod') {
+        timingNoteEl.textContent = '🚚 Estimated delivery: 3–5 business days. You pay in cash when your order arrives.';
+      } else {
+        timingNoteEl.textContent = '⚡ Instant confirmation once payment is completed.';
+      }
+    };
+
+    // ---- Addition: disable Pay button until required fields are valid ----
+    const updatePayButtonAvailability = () => {
+      const needsAddress = !!shippingAddressEl;
+      const hasValidAddress = !needsAddress || !!shippingAddressEl.value;
+
+      if (hasValidAddress) {
+        paystackBtn.disabled = false;
+        paystackBtn.classList.remove('pay-btn-disabled');
+        if (payBtnHintEl) payBtnHintEl.style.display = 'none';
+      } else {
+        paystackBtn.disabled = true;
+        paystackBtn.classList.add('pay-btn-disabled');
+        if (payBtnHintEl) payBtnHintEl.style.display = 'block';
+      }
+    };
+
     const emailField = customerEmailField;
     const nameField = customerNameField;
     // Prefer raw data attribute (unformatted) for JS calculations
@@ -763,12 +935,17 @@
       insuranceCheckbox.addEventListener('change', updateCheckoutTotal);
     }
 
+    if (shippingAddressEl) {
+      shippingAddressEl.addEventListener('change', updatePayButtonAvailability);
+    }
+
     const updateSelectedPaymentMethodUI = () => {
       const selectedValue = document.querySelector('input[name="payment-channel"]:checked')?.value || 'card';
       paymentMethodOptions.forEach((option) => {
         const radio = option.querySelector('input[name="payment-channel"]');
         option.classList.toggle('selected', radio && radio.value === selectedValue);
       });
+      updateTimingNote();
     };
 
     paymentRadios.forEach((radio) => {
@@ -798,6 +975,7 @@
     });
 
     updateSelectedPaymentMethodUI();
+    updatePayButtonAvailability();
 
     const getFormValues = () => {
       const amount = updateCheckoutTotal();

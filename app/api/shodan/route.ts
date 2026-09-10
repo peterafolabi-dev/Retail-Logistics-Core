@@ -28,6 +28,11 @@ const CACHE_KEY = "global-shodan-feed";
 const RATE_LIMIT_MS = 15_000;
 const CACHE_TTL_MS = 30_000;
 
+function getConfiguredQuery() {
+  const query = (process.env.SHODAN_QUERY || "ssl.cert.expired:true").trim();
+  return query || "ssl.cert.expired:true";
+}
+
 function maskIp(ip?: string) {
   if (!ip) return "masked.host";
   if (ip.includes(".")) {
@@ -50,8 +55,11 @@ function sanitize(match: ShodanMatch): IntelItem {
 }
 
 export async function GET(request: Request) {
-  const apiKey = process.env.SHODAN_API_KEY;
+  const apiKey = process.env.SHODAN_API_KEY?.trim();
+  const query = getConfiguredQuery();
+
   if (!apiKey) {
+    console.error("[Shodan] API key missing in environment configuration.");
     return NextResponse.json({ success: false, error: "Shodan is not configured." }, { status: 503 });
   }
 
@@ -59,6 +67,7 @@ export async function GET(request: Request) {
   const now = Date.now();
   const lastRequest = rateLimits.get(clientId) || 0;
   if (now - lastRequest < RATE_LIMIT_MS) {
+    console.warn("[Shodan] Rate limit reached for client.", { clientId, query });
     return NextResponse.json({ success: false, error: "Rate limit reached. Try again shortly." }, { status: 429 });
   }
   rateLimits.set(clientId, now);
@@ -70,12 +79,21 @@ export async function GET(request: Request) {
 
   const url = new URL("https://api.shodan.io/shodan/host/search");
   url.searchParams.set("key", apiKey);
-  url.searchParams.set("query", process.env.SHODAN_QUERY || "ssl.cert.expired:true");
+  url.searchParams.set("query", query);
   url.searchParams.set("page", "1");
 
   try {
     const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(8_000) });
-    if (!response.ok) throw new Error(`Shodan returned ${response.status}`);
+
+    if (!response.ok) {
+      console.error("[Shodan] Request rejected by upstream service.", {
+        clientId,
+        query,
+        status: response.status,
+        statusText: response.statusText,
+      });
+      return NextResponse.json({ success: false, error: "Shodan rejected the intelligence request." }, { status: 502 });
+    }
 
     const payload = (await response.json()) as { matches?: ShodanMatch[] };
     const limit = Math.min(Math.max(Number(process.env.SHODAN_RESULTS_LIMIT || 10), 1), 10);
@@ -83,7 +101,13 @@ export async function GET(request: Request) {
     responseCache.set(CACHE_KEY, { expiresAt: now + CACHE_TTL_MS, items });
 
     return NextResponse.json({ success: true, source: "live", items });
-  } catch {
+  } catch (error) {
+    console.error("[Shodan] Failed to fetch intelligence feed.", {
+      clientId,
+      query,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
     return NextResponse.json({ success: false, error: "Network intelligence is temporarily unavailable." }, { status: 502 });
   }
 }

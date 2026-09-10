@@ -8,46 +8,44 @@
 <link rel="stylesheet" href="{% static 'css/flash-sale-timer.css' %}">
 <div class="mx-auto my-10 w-full max-w-7xl px-5 md:px-8">
 
-  <div class="flex flex-col gap-4 md:flex-row md:items-start md:gap-6">
-    
-    <!-- Thumbnails on the left -->
-    <div class="flex w-full flex-col items-center gap-3 md:w-auto mobile-thumbs-col">
-      <img src="{{ product.image_src }}" class="thumb-img h-16 w-16 rounded border border-white/10 object-cover transition duration-300 hover:border-cyan-500/50" alt="Main" onclick="changeImage(this)" loading="lazy">
-      {% if product.additional_images %}
-        {% for img in product.additional_images %}
-          <img src="{{ img }}" class="thumb-img h-16 w-16 rounded border border-white/10 object-cover transition duration-300 hover:border-cyan-500/50" alt="Additional" onclick="changeImage(this)" loading="lazy">
-        {% endfor %}
-      {% endif %}
-    </div>
+  <div class="grid grid-cols-1 gap-8 md:grid-cols-2 md:items-start">
 
-    <!-- Main image and details wrapper -->
-    <div class="min-w-0 flex-1">
-      <div class="grid min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-2">
+    <div class="flex flex-col gap-4 md:flex-row md:items-start">
+      <!-- Thumbnails -->
+      <div class="flex w-full flex-row justify-center gap-3 overflow-x-auto md:w-auto md:flex-col md:items-center md:justify-start mobile-thumbs-col">
+        <img src="{{ product.image_src }}" class="thumb-img h-16 w-16 rounded border border-white/10 object-cover transition duration-300 hover:border-cyan-500/50" alt="Main" onclick="changeImage(this)" loading="lazy">
+        {% if product.additional_images %}
+          {% for img in product.additional_images %}
+            <img src="{{ img }}" class="thumb-img h-16 w-16 rounded border border-white/10 object-cover transition duration-300 hover:border-cyan-500/50" alt="Additional" onclick="changeImage(this)" loading="lazy">
+          {% endfor %}
+        {% endif %}
+      </div>
 
-        <!-- Main image -->
-        <div class="min-w-0 w-full">
-          <div class="main-img-container relative overflow-hidden rounded-xl border shadow-sm animate-img">
-            <img id="main-image" src="{{ product.image_src }}" class="block h-auto w-full object-contain" alt="{{ product.name }}" onclick="openImageZoom(this)" loading="lazy">
-            {% if product.is_out_of_stock %}
-              <div class="stock-badge stock-out">🚫 Out of Stock</div>
-            {% elif product.is_low_stock %}
-              <div class="stock-badge stock-warning">⚠️ Only {{ product.available_stock }} left!</div>
-            {% else %}
-              <div class="stock-badge stock-in">✅ In Stock</div>
-            {% endif %}
-          </div>
-
-          <div id="image-zoom-modal" class="image-zoom-modal" onclick="closeImageZoom()" style="display:none;">
-            <div class="image-zoom-inner" onclick="event.stopPropagation()">
-              <button type="button" class="modal-close-button absolute right-0 top-0 m-3" onclick="closeImageZoom()">Close</button>
-              <img id="zoomed-image" src="{{ product.image_src }}" alt="{{ product.name }}" class="h-auto max-w-full rounded-xl">
-            </div>
-          </div>
+      <!-- Main image -->
+      <div class="min-w-0 flex-1 w-full">
+        <div class="main-img-container relative overflow-hidden rounded-xl border shadow-sm animate-img">
+          <img id="main-image" src="{{ product.image_src }}" class="block h-auto w-full object-contain" alt="{{ product.name }}" onclick="openImageZoom(this)" loading="lazy">
+          {% if product.is_out_of_stock %}
+            <div class="stock-badge stock-out">🚫 Out of Stock</div>
+          {% elif product.is_low_stock %}
+            <div class="stock-badge stock-warning">⚠️ Only {{ product.available_stock }} left!</div>
+          {% else %}
+            <div class="stock-badge stock-in">✅ In Stock</div>
+          {% endif %}
         </div>
 
-        <!-- Product details -->
-        <div class="min-w-0 w-full">
-          <div class="theme-card animate-card h-full rounded-xl border p-3 shadow-sm md:p-4">
+        <div id="image-zoom-modal" class="image-zoom-modal" onclick="closeImageZoom()" style="display:none;">
+          <div class="image-zoom-inner" onclick="event.stopPropagation()">
+            <button type="button" class="modal-close-button absolute right-0 top-0 m-3" onclick="closeImageZoom()">Close</button>
+            <img id="zoomed-image" src="{{ product.image_src }}" alt="{{ product.name }}" class="h-auto max-w-full rounded-xl">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product details -->
+    <div class="min-w-0 w-full">
+      <div class="theme-card animate-card h-full rounded-xl border p-3 shadow-sm md:p-4">
             <div class="mb-2 flex items-start justify-between gap-4">
               <div>
                 <h3 class="mb-1 text-lg font-bold">{{ product.name }}</h3>

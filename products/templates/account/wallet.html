@@ -25,10 +25,10 @@
 
         <div class="mb-4">
           <h5 class="fw-bold">How it works</h5>
-          <ul class="list-group list-group-flush">
-            <li class="list-group-item">Top up with Paystack and store funds securely in your RedCart wallet.</li>
-            <li class="list-group-item">At checkout, select "Wallet" to pay instantly using your balance.</li>
-            <li class="list-group-item">If balance is insufficient, choose another payment method.</li>
+          <ul class="list-group list-group-flush wallet-steps">
+            <li class="list-group-item wallet-step">Top up with Paystack and store funds securely in your RedCart wallet.</li>
+            <li class="list-group-item wallet-step">At checkout, select "Wallet" to pay instantly using your balance.</li>
+            <li class="list-group-item wallet-step">If balance is insufficient, choose another payment method.</li>
           </ul>
         </div>
 
@@ -37,6 +37,19 @@
     </div>
   </div>
 </div>
+
+<style>
+  .wallet-steps .wallet-step {
+    background-color: transparent;
+    color: var(--text-color, #1f2937);
+    border-color: rgba(148, 163, 184, 0.28);
+  }
+
+  [data-theme="dark"] .wallet-steps .wallet-step {
+    color: #e8e8e8;
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+</style>
 
 <script src="https://js.paystack.co/v1/inline.js" defer></script>
 <script>

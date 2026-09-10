@@ -50,7 +50,7 @@
               </svg>
             </div>
             <!-- Mastercard -->
-            <div class="payment-badge">
+            <div class="payment-badge payment-badge-mastercard">
               <svg width="45" height="30" viewBox="0 0 72 45" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect width="72" height="45" rx="6" fill="#EB001B"/>
                 <circle cx="30" cy="22.5" r="14" fill="#F79E1B"/>
@@ -250,6 +250,10 @@
     justify-content: center;
     transition: all 0.3s ease;
     cursor: pointer;
+  }
+  .payment-badge-mastercard {
+    background-color: #f3f4f6;
+    border: 1px solid rgba(0, 0, 0, 0.08);
   }
   .payment-badge:hover {
     transform: translateY(-3px);
@@ -490,6 +494,11 @@
 
   [data-theme="dark"] .payment-badge {
     background-color: #252530;
+  }
+
+  [data-theme="dark"] .payment-badge-mastercard {
+    background-color: #1f2430;
+    border-color: rgba(255, 255, 255, 0.08);
   }
 
   [data-theme="dark"] .form-control {

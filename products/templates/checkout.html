@@ -136,8 +136,8 @@
               <input type="radio" name="payment-channel" value="ussd" class="form-check-input">
               <span>USSD</span>
             </label>
-            <label class="payment-method-option {% if not wallet_available %}payment-method-option-disabled{% endif %}">
-              <input type="radio" name="payment-channel" value="wallet" class="form-check-input" {% if not wallet_available %}disabled{% endif %}>
+            <label class="payment-method-option {% if not wallet_available %}payment-method-option-disabled{% endif %}" data-wallet-available="{{ wallet_available|yesno:'true,false' }}" title="{% if not wallet_available %}Top up your RedCart wallet to enable this payment option.{% endif %}">
+              <input type="radio" name="payment-channel" value="wallet" class="form-check-input" data-wallet-available="{{ wallet_available|yesno:'true,false' }}" aria-disabled="{% if not wallet_available %}true{% else %}false{% endif %}">
               <span>RedCart Wallet (Balance: ₦{{ wallet_balance|floatformat:2|intcomma }})</span>
             </label>
             <label class="payment-method-option">
@@ -146,6 +146,9 @@
             </label>
           </div>
           <div class="form-text">Choose Card, Bank Transfer, USSD, or Cash on Delivery. COD orders are payable when the package arrives.</div>
+          {% if not wallet_available %}
+            <div class="payment-method-option-note">Top up your RedCart wallet to enable this payment option.</div>
+          {% endif %}
         </div>
 
              <!-- Raw checkout data for JS (unformatted) -->
@@ -405,12 +408,21 @@
   }
 
   .payment-method-option-disabled {
-    opacity: 0.55;
+    opacity: 0.85;
     cursor: not-allowed;
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    color: #6b7280;
   }
 
   .payment-method-option-disabled input {
     cursor: not-allowed;
+  }
+
+  .payment-method-option-note {
+    margin-top: 0.5rem;
+    font-size: 0.82rem;
+    color: #6b7280;
   }
 
   .checkout-summary-list {
@@ -531,6 +543,29 @@
     color: #aaa !important;
   }
 
+  [data-theme="dark"] .form-text {
+    color: #d1d5db;
+  }
+
+  [data-theme="dark"] .form-text a {
+    color: #bfdbfe;
+  }
+
+  [data-theme="dark"] .payment-method-option-disabled {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #9ca3af;
+    opacity: 1;
+  }
+
+  [data-theme="dark"] .payment-method-option-disabled span {
+    color: #9ca3af;
+  }
+
+  [data-theme="dark"] .payment-method-option-note {
+    color: #9ca3af;
+  }
+
   [data-theme="dark"] h3,
   [data-theme="dark"] h5,
   [data-theme="dark"] p,
@@ -613,6 +648,8 @@
 
     const paymentRadios = document.querySelectorAll('input[name="payment-channel"]');
     const paymentMethodOptions = document.querySelectorAll('.payment-method-option');
+    const walletRadio = document.querySelector('input[name="payment-channel"][value="wallet"]');
+    const walletAvailable = walletRadio?.dataset.walletAvailable === 'true';
     const customerEmailField = document.getElementById('customer-email');
     const customerNameField = document.getElementById('customer-name');
     const payBtnAmountEl = document.getElementById('pay-btn-amount');
@@ -699,6 +736,25 @@
 
     paymentRadios.forEach((radio) => {
       radio.addEventListener('change', () => {
+        if (radio.value === 'wallet' && !walletAvailable) {
+          radio.checked = false;
+          const fallbackCardRadio = document.querySelector('input[name="payment-channel"][value="card"]');
+          if (fallbackCardRadio) {
+            fallbackCardRadio.checked = true;
+          }
+
+          const walletMessage = 'RedCart Wallet is currently unavailable because your wallet balance is ₦0.00. Top up your wallet to use this payment method.';
+          if (window.showToast) {
+            window.showToast(walletMessage, 'info');
+          } else {
+            alert(walletMessage);
+          }
+
+          updateCheckoutTotal();
+          updateSelectedPaymentMethodUI();
+          return;
+        }
+
         updateCheckoutTotal();
         updateSelectedPaymentMethodUI();
       });

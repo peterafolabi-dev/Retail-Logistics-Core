@@ -923,6 +923,7 @@ def checkout(request):
         'coupon_code': coupon_code,
         'coupon_discount': coupon_discount,
         'total_after_coupon': total_after_coupon,
+        'tax_amount': 0,
         'insurance_available': insurance_available,
         'insurance_cost': insurance_cost,
         'insurance_threshold': insurance_threshold,

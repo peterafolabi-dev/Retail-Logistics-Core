@@ -157,7 +157,7 @@
                data-total-kobo="{{ total_kobo }}"></div>
 
         <!-- Paystack Pay Button -->
-          <button id="paystack-btn" type="button" class="btn btn-success w-100 py-3 fw-semibold rounded-pill shadow-sm btn-glow">
+          <button id="paystack-btn" type="button" class="btn btn-success w-100 py-3 fw-semibold rounded-pill shadow-sm btn-glow text-dark">
             💳 Pay ₦<span id="pay-btn-amount">{{ total_after_coupon|default:total|floatformat:2|intcomma }}</span>
           </button>
 
@@ -348,8 +348,9 @@
     min-width: 0;
     padding: 0.7rem 1rem;
     border-radius: 999px;
-    border: 1px solid #d0d7de;
+    border: 1px solid #333333;
     background: #ffffff;
+    color: #333333;
     cursor: pointer;
     transition: all 0.2s ease;
     font-weight: 600;
@@ -357,6 +358,7 @@
 
   .payment-method-option span {
     white-space: nowrap;
+    color: #333333;
   }
 
   .payment-method-option input {
@@ -405,6 +407,22 @@
     border-color: #0d6efd;
     background: rgba(13, 110, 253, 0.08);
     box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.12);
+  }
+
+  .payment-method-option.selected span {
+    color: #1f2937;
+  }
+
+  #paystack-btn {
+    color: #0b2e17;
+    border-color: #1e9e5a;
+  }
+
+  #paystack-btn:hover,
+  #paystack-btn:focus,
+  #paystack-btn:active {
+    color: #0b2e17;
+    background: linear-gradient(135deg, #32c76d, #22c55e);
   }
 
   .payment-method-option-disabled {
@@ -549,6 +567,16 @@
 
   [data-theme="dark"] .form-text a {
     color: #bfdbfe;
+  }
+
+  [data-theme="dark"] .payment-method-option {
+    border-color: #333333;
+    color: #333333;
+    background-color: #ffffff;
+  }
+
+  [data-theme="dark"] .payment-method-option span {
+    color: #333333;
   }
 
   [data-theme="dark"] .payment-method-option-disabled {

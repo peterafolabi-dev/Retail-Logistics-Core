@@ -614,6 +614,7 @@
   {% endif %}
 
   <!-- Welcome & Sign Up CTA Section -->
+  {% if not user.is_authenticated %}
   <div class="auth-section" id="register">
     <div class="welcome-box">
       <h2>Why Join RedCart?</h2>
@@ -640,6 +641,7 @@
       <p class="login-link" style="margin-top: 20px;">Already have an account? Use the sign-in page above.</p>
     </div>
   </div>
+  {% endif %}
 
   <!-- Contact Section -->
   <div style="text-align: center; margin-top: 80px; padding: 50px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px;">

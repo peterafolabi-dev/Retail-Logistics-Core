@@ -23,6 +23,7 @@ urlpatterns = [
     # 💳 Checkout & payments
     path('checkout/', views.checkout, name='checkout'),
     path('confirm-payment/', views.confirm_payment, name='confirm-payment'),
+    path('order-success/<int:order_id>/', views.order_success, name='order-success'),
     path('api/apply-coupon/', views.apply_coupon, name='api-apply-coupon'),
     path('api/remove-coupon/', views.remove_coupon, name='api-remove-coupon'),
     path('api/autocomplete/', views.product_autocomplete, name='api-autocomplete'),

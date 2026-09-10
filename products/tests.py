@@ -1,9 +1,11 @@
+import json
+
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
 
-from .models import Product, Comment, Order, OrderItem, Review, PriceHistory
+from .models import Product, Comment, Order, OrderItem, Review, PriceHistory, UserAddress
 
 
 class ProductModelTests(TestCase):
@@ -117,6 +119,41 @@ class CartViewTests(TestCase):
 
         response = self.client.post(reverse('products:confirm-payment'), follow=True)
         self.assertEqual(self.client.session['cart'], {})
+
+    def test_confirm_payment_returns_order_success_redirect_for_cod(self):
+        user = User.objects.create_user(username='cod-user', password='pass', email='cod@example.com')
+        self.client.login(username='cod-user', password='pass')
+
+        address = UserAddress.objects.create(
+            user=user,
+            full_name='Cod User',
+            phone='08000000000',
+            street_address='1 Test Street',
+            city='Lagos',
+            state='Lagos',
+            postal_code='100001'
+        )
+
+        session = self.client.session
+        session['cart'] = {str(self.product.id): 1}
+        session.save()
+
+        response = self.client.post(
+            reverse('products:confirm-payment'),
+            data=json.dumps({
+                'payment_channel': 'cod',
+                'shipping_address_id': address.id,
+                'insurance_opted': 'false',
+                'insurance_cost': '0',
+            }),
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertIn('/products/order-success/', data['redirect'])
+        self.assertIn('order_id', data)
 
 
 class ProductDetailTests(TestCase):

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5 theme-card text-center">
+        <div class="mb-4" style="font-size: 4rem;">✅</div>
+        <h1 class="fw-bold mb-3">Order placed successfully!</h1>
+        <p class="text-muted mb-4">
+          Your order <strong>#{{ order.id }}</strong> has been received and is now being processed.
+        </p>
+
+        <div class="row text-start g-3 mb-4">
+          <div class="col-md-6">
+            <div class="card border-0 bg-light rounded-4 p-3 h-100">
+              <div class="small text-muted mb-1">Payment</div>
+              <div class="fw-semibold">{{ payment_label }}</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card border-0 bg-light rounded-4 p-3 h-100">
+              <div class="small text-muted mb-1">Order Total</div>
+              <div class="fw-semibold">₦{{ order_total|floatformat:2|intcomma }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
+          <a href="{% url 'products:profile' %}" class="btn btn-danger rounded-pill fw-semibold">View My Profile</a>
+          <a href="{% url 'products:product-list' %}" class="btn btn-outline-danger rounded-pill fw-semibold">Continue Shopping</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

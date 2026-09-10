@@ -1167,7 +1167,11 @@ def confirm_payment(request):
 
                 request.session['cart'] = {}
                 _sync_abandoned_cart(request, {})
-                return JsonResponse({'success': True, 'redirect': reverse('products:product-list')})
+                return JsonResponse({
+                    'success': True,
+                    'redirect': reverse('products:order-success', args=[order.id]),
+                    'order_id': order.id,
+                })
 
             if payment_channel == 'cod':
                 insurance_opted = str(payload.get('insurance_opted', 'false')).lower() in {'true', '1', 'yes'}
@@ -1224,7 +1228,11 @@ def confirm_payment(request):
 
                 request.session['cart'] = {}
                 _sync_abandoned_cart(request, {})
-                return JsonResponse({'success': True, 'redirect': reverse('products:product-list')})
+                return JsonResponse({
+                    'success': True,
+                    'redirect': reverse('products:order-success', args=[order.id]),
+                    'order_id': order.id,
+                })
 
             return JsonResponse({'success': False, 'error': 'Invalid payment channel for Cash on Delivery.'}, status=400)
 
@@ -1234,6 +1242,16 @@ def confirm_payment(request):
         return redirect('products:product-list')
 
     return redirect('products:checkout')
+
+
+@login_required(login_url='products:login')
+def order_success(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    return render(request, 'order_success.html', {
+        'order': order,
+        'order_total': order.total,
+        'payment_label': 'Paid with Wallet' if order.is_paid else 'Cash on Delivery',
+    })
 
 
 def product_detail(request, product_id):

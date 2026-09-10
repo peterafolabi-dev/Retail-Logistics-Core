@@ -2,6 +2,7 @@
 Utility functions for RedCart e-commerce
 """
 import json
+import os
 import re
 import requests
 from urllib.parse import quote
@@ -311,22 +312,36 @@ def _get_cached_catalog():
     return catalog
 
 
+def _get_groq_api_key():
+    """Return the configured Groq API key from Django settings or environment."""
+    api_key = (
+        getattr(settings, 'GROQ_API_KEY', '')
+        or os.environ.get('GROQ_API_KEY', '')
+        or getattr(settings, 'GROK_API_KEY', '')
+        or os.environ.get('GROK_API_KEY', '')
+    )
+    return (api_key or '').strip()
+
+
 def _call_groq(prompt, max_tokens=250, retries=2):
-    """Send a prompt to Groq with retry logic and improved settings."""
-    api_key = getattr(settings, 'GROQ_API_KEY', '')
+    """Send a prompt to the Groq OpenAI-compatible endpoint."""
+    api_key = _get_groq_api_key()
 
     if not api_key:
-        raise RuntimeError('Groq API key is not configured.')
+        logger.error('GROQ_API_KEY is not configured. Checked Django settings and os.environ.')
+        raise RuntimeError('GROQ_API_KEY is not configured.')
+
+    selected_model = getattr(settings, 'GROQ_MODEL', None) or 'llama-3.3-70b-versatile'
 
     for attempt in range(retries):
         try:
             payload = {
-                'model': 'llama-3.1-8b-instant',
+                'model': selected_model,
                 'max_tokens': max_tokens,
                 'messages': [
                     {'role': 'user', 'content': prompt}
                 ],
-                'temperature': 0.65,  # Increased from 0.3 for varied responses
+                'temperature': 0.65,
             }
 
             headers = {
@@ -339,25 +354,31 @@ def _call_groq(prompt, max_tokens=250, retries=2):
                 'https://api.groq.com/openai/v1/chat/completions',
                 json=payload,
                 headers=headers,
-                timeout=30  # Increased from 20 for reliability
+                timeout=30,
             )
             response.raise_for_status()
-            return response.json()['choices'][0]['message']['content'].strip()
+            data = response.json()
+            content = data['choices'][0]['message']['content']
+            if isinstance(content, list):
+                content = ''.join(part.get('text', '') for part in content if isinstance(part, dict))
+            return str(content).strip()
         except requests.exceptions.Timeout:
             if attempt < retries - 1:
                 logger.warning('Groq API timeout (attempt %d/%d), retrying...', attempt + 1, retries)
-                time.sleep(1)  # Short delay before retry
-                continue
-            logger.error('Groq API timeout after %d attempts', retries)
-            return ''
-        except requests.exceptions.HTTPError as exc:
-            if attempt < retries - 1 and exc.response.status_code >= 500:
-                logger.warning('Groq API error (attempt %d/%d): %s, retrying...', attempt + 1, retries, exc.response.status_code)
                 time.sleep(1)
                 continue
-            logger.error('Groq API error (%s): %s', exc.response.status_code, exc.response.text)
+            logger.exception('Groq API timeout after %d attempts', retries)
             return ''
-        except (KeyError, IndexError) as exc:
+        except requests.exceptions.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else 'unknown'
+            body = exc.response.text if exc.response is not None else str(exc)
+            if attempt < retries - 1 and isinstance(status, int) and status >= 500:
+                logger.warning('Groq API HTTP error (attempt %d/%d): %s, retrying...', attempt + 1, retries, status)
+                time.sleep(1)
+                continue
+            logger.error('Groq API HTTP error (%s): %s', status, body)
+            return ''
+        except (KeyError, IndexError, TypeError, ValueError) as exc:
             logger.error('Unexpected Groq API response structure: %s', exc)
             return ''
         except Exception as exc:
@@ -365,9 +386,9 @@ def _call_groq(prompt, max_tokens=250, retries=2):
                 logger.warning('Groq API request failed (attempt %d/%d): %s, retrying...', attempt + 1, retries, exc)
                 time.sleep(1)
                 continue
-            logger.error('Groq API request failed: %s', exc)
+            logger.exception('Groq API request failed: %s', exc)
             return ''
-    
+
     return ''
 
 

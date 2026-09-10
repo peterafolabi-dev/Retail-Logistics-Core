@@ -1,3 +1,5 @@
+import logging
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q, F
 from django.contrib import messages, auth
@@ -1820,18 +1822,36 @@ def toggle_wishlist(request, product_id):
     return JsonResponse({'success': True, 'action': action, 'product_id': product_id})
 
 
+logger = logging.getLogger(__name__)
+
+
 def ai_chat(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid method.'}, status=405)
+
     try:
         payload = json.loads(request.body.decode('utf-8') or '{}')
     except ValueError:
         payload = {}
+
     message = payload.get('message') or request.POST.get('message')
     if not message:
         return JsonResponse({'success': False, 'error': 'Message is required.'}, status=400)
-    reply = get_ai_chat_response(message)
-    return JsonResponse({'success': True, 'reply': reply})
+
+    try:
+        reply = get_ai_chat_response(message)
+        if reply:
+            return JsonResponse({'success': True, 'reply': reply}, status=200)
+        return JsonResponse({
+            'success': False,
+            'error': 'The AI assistant is temporarily unavailable. Please try again later.'
+        }, status=200)
+    except Exception as exc:
+        logger.exception('AI chat request failed: %s', exc)
+        return JsonResponse({
+            'success': False,
+            'error': 'The AI assistant is temporarily unavailable. Please try again later.'
+        }, status=200)
 
 
 def recently_viewed(request):

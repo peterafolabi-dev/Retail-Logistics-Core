@@ -71,10 +71,9 @@
             <!-- Mastercard -->
             <div class="payment-badge payment-badge-mastercard">
               <svg width="45" height="30" viewBox="0 0 72 45" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="72" height="45" rx="6" fill="#EB001B"/>
-                <circle cx="30" cy="22.5" r="14" fill="#F79E1B"/>
-                <circle cx="42" cy="22.5" r="14" fill="#EB001B"/>
-                <text x="36" y="30" text-anchor="middle" fill="white" font-size="9" font-weight="bold">mastercard</text>
+                <rect width="72" height="45" rx="6" fill="#ffffff"/>
+                <circle cx="29" cy="22.5" r="13" fill="#EB001B"/>
+                <circle cx="43" cy="22.5" r="13" fill="#F79E1B" style="mix-blend-mode: multiply;"/>
               </svg>
             </div>
             <!-- American Express -->
@@ -105,7 +104,7 @@
           <label class="form-label fw-semibold">Promo Code</label>
           <div class="input-group">
             <input type="text" id="coupon-code" name="coupon_code" class="form-control rounded-pill px-4" placeholder="Enter coupon code" value="{{ coupon_code }}">
-            <button type="button" id="apply-coupon-btn" class="btn btn-outline-primary rounded-pill" onclick="applyCoupon()">Apply</button>
+            <button type="button" id="apply-coupon-btn" class="btn btn-primary rounded-pill apply-coupon-btn" onclick="applyCoupon()">Apply</button>
           </div>
           <div id="coupon-message" class="text-success mt-2"></div>
         </div>
@@ -155,9 +154,9 @@
               <input type="radio" name="payment-channel" value="ussd" class="form-check-input">
               <span>USSD</span>
             </label>
-            <label class="payment-method-option {% if not wallet_available %}payment-method-option-disabled{% endif %}" data-wallet-available="{{ wallet_available|yesno:'true,false' }}" title="{% if not wallet_available %}Top up your RedCart wallet to enable this payment option.{% endif %}">
+            <label class="payment-method-option payment-method-option-wallet {% if not wallet_available %}payment-method-option-disabled{% endif %}" data-wallet-available="{{ wallet_available|yesno:'true,false' }}" title="{% if not wallet_available %}Top up your RedCart wallet to enable this payment option.{% endif %}">
               <input type="radio" name="payment-channel" value="wallet" class="form-check-input" data-wallet-available="{{ wallet_available|yesno:'true,false' }}" aria-disabled="{% if not wallet_available %}true{% else %}false{% endif %}">
-              <span>RedCart Wallet (Balance: ₦{{ wallet_balance|floatformat:2|intcomma }})</span>
+              <span>RedCart Wallet <span class="payment-method-wallet-balance">(Balance: ₦{{ wallet_balance|floatformat:2|intcomma }})</span></span>
             </label>
             <label class="payment-method-option">
               <input type="radio" name="payment-channel" value="cod" class="form-check-input">
@@ -346,6 +345,25 @@
     color: #9ca3af;
   }
 
+  .apply-coupon-btn {
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: #ffffff;
+    font-weight: 700;
+    padding-left: 1.4rem;
+    padding-right: 1.4rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+
+  .apply-coupon-btn:hover,
+  .apply-coupon-btn:focus {
+    background: #0b5ed7;
+    border-color: #0b5ed7;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.35);
+  }
+
   .payment-badge {
     background: #f8f9fa;
     padding: 8px 12px;
@@ -464,7 +482,7 @@
     gap: 0.75rem;
     flex: 1 1 180px;
     min-width: 0;
-    padding: 0.7rem 1rem;
+    padding: 0.75rem 1.25rem;
     border-radius: 999px;
     border: 1px solid #333333;
     background: #ffffff;
@@ -477,6 +495,25 @@
   .payment-method-option span {
     white-space: nowrap;
     color: #1f2937;
+  }
+
+  /* Wallet option has longer text (name + balance), so it needs more
+     room and a slightly smaller/lighter balance portion so it doesn't
+     feel cramped against the pill's rounded edges. */
+  .payment-method-option-wallet {
+    flex: 1 1 280px;
+    padding: 0.75rem 1.4rem;
+  }
+
+  .payment-method-option-wallet span {
+    white-space: normal;
+    line-height: 1.3;
+  }
+
+  .payment-method-wallet-balance {
+    font-weight: 500;
+    font-size: 0.88em;
+    opacity: 0.85;
   }
 
   .payment-method-option input {

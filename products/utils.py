@@ -490,7 +490,7 @@ def get_ai_chat_response(message, limit=4):
             f"3. Format recommendations as a simple, uniform bullet list with one bullet style only\n"
             f"4. Each bullet should be: product name, then price, one line each\n"
             f"5. Never output Markdown tables or pipe-style tables; do not use table syntax\n"
-            f"6. Do not use Markdown headers (no #, ##, ###)\n"
+            f"6. You may use short bold section headers when helpful, but keep the tone concise\n"
             f"7. Use sparse emoji only for category headers if relevant, not throughout the message\n"
             f"8. End with one short, inviting follow-up question\n\n"
             f"Answer:"

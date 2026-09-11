@@ -570,6 +570,35 @@
       [data-theme="dark"] .ai-chat-message.assistant .message-bubble { background: #1a1a24; color: #e8e8e8; }
       [data-theme="dark"] .ai-chat-footer input { background: #2a2a2a; color: #e8e8e8; border-color: #444; }
 
+      .message-bubble h4, .message-bubble h5, .message-bubble h6 {
+        margin: 0.4em 0 0.2em;
+        font-weight: 700;
+        font-size: 0.95em;
+      }
+      .message-bubble p { margin: 0 0 0.5em; }
+      .message-bubble p:last-child { margin-bottom: 0; }
+      .message-bubble ul, .message-bubble ol {
+        margin: 0.2em 0 0.5em;
+        padding-left: 1.2em;
+      }
+      .message-bubble li { margin-bottom: 0.15em; }
+      .message-bubble code {
+        background: rgba(0,0,0,0.08);
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 0.85em;
+      }
+      [data-theme="dark"] .message-bubble code { background: rgba(255,255,255,0.12); }
+      .message-bubble pre.ai-chat-code {
+        background: #1a1a24;
+        color: #e8e8e8;
+        padding: 8px 10px;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-size: 0.8em;
+        margin: 0.4em 0;
+      }
+
       /* ============ PROFESSIONAL FOOTER ============ */
       .footer {
         background: #0a0a0a; color: #aaa;
@@ -1082,22 +1111,95 @@
       // ============ AI CHAT ============
       let chatHistory = [];
 
+      function formatAiMarkdown(rawText) {
+        if (!rawText) return '';
+
+        let text = rawText
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+
+        const codeBlocks = [];
+        text = text.replace(/```([\s\S]*?)```/g, (match, code) => {
+          codeBlocks.push(code.trim());
+          return `\u0000CODEBLOCK${codeBlocks.length - 1}\u0000`;
+        });
+        text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+        text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        text = text.replace(/(^|[^*])\*(?!\*)([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
+
+        const lines = text.split(/\r?\n/);
+        let html = '';
+        let listType = null;
+        let paragraphBuffer = [];
+
+        const flushParagraph = () => {
+          if (paragraphBuffer.length) {
+            html += `<p>${paragraphBuffer.join('<br>')}</p>`;
+            paragraphBuffer = [];
+          }
+        };
+        const closeList = () => {
+          if (listType) {
+            html += `</${listType}>`;
+            listType = null;
+          }
+        };
+
+        for (const rawLine of lines) {
+          const line = rawLine.trim();
+
+          if (!line) {
+            flushParagraph();
+            closeList();
+            continue;
+          }
+
+          const headerMatch = line.match(/^(#{1,6})\s+(.*)$/);
+          if (headerMatch) {
+            flushParagraph();
+            closeList();
+            const level = Math.min(headerMatch[1].length + 3, 6);
+            html += `<h${level} class="ai-chat-heading">${headerMatch[2]}</h${level}>`;
+            continue;
+          }
+
+          const bulletMatch = line.match(/^[-•]\s+(.*)$/);
+          if (bulletMatch) {
+            flushParagraph();
+            if (listType !== 'ul') { closeList(); html += '<ul>'; listType = 'ul'; }
+            html += `<li>${bulletMatch[1]}</li>`;
+            continue;
+          }
+
+          const numberedMatch = line.match(/^\d+\.\s+(.*)$/);
+          if (numberedMatch) {
+            flushParagraph();
+            if (listType !== 'ol') { closeList(); html += '<ol>'; listType = 'ol'; }
+            html += `<li>${numberedMatch[1]}</li>`;
+            continue;
+          }
+
+          closeList();
+          paragraphBuffer.push(line);
+        }
+        flushParagraph();
+        closeList();
+
+        html = html.replace(/\u0000CODEBLOCK(\d+)\u0000/g, (match, idx) => {
+          return `<pre class="ai-chat-code"><code>${codeBlocks[parseInt(idx, 10)]}</code></pre>`;
+        });
+
+        return html;
+      }
+
       function addChatMessage(message, role = 'assistant') {
         const msgs = document.getElementById('ai-chat-messages');
         const wrapper = document.createElement('div');
         wrapper.className = `ai-chat-message ${role}`;
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
-        const safeMessage = message
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/^#{1,6}\s+/gm, '')
-          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-          .replace(/\r?\n/g, '<br>')
-          .replace(/(^|<br>)-\s+/g, '$1• ')
-          .replace(/(^|<br>)(\d+)\.\s+/g, '$1$2. ');
-        bubble.innerHTML = safeMessage;
+        bubble.innerHTML = formatAiMarkdown(message);
         wrapper.appendChild(bubble);
         msgs.appendChild(wrapper);
         msgs.scrollTop = msgs.scrollHeight;
@@ -1186,12 +1288,7 @@
           const bubble = allMsgs[allMsgs.length - 1]?.querySelector('.message-bubble');
           if (bubble) {
             if (data.success && data.reply) {
-              bubble.innerHTML = data.reply
-             .replace(/&/g, '&amp;')
-             .replace(/</g, '&lt;')
-             .replace(/>/g, '&gt;')
-             .replace(/\n/g, '<br>')
-             .replace(/- (.+)/g, '• $1<br>');
+              bubble.innerHTML = formatAiMarkdown(data.reply);
               chatHistory[chatHistory.length - 1].content = data.reply;
             } else {
               bubble.textContent = 'Sorry, I could not process that. Please try again.';

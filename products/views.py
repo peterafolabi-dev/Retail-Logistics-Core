@@ -512,6 +512,65 @@ def shodan_intelligence_api(request):
     return JsonResponse({'success': True, 'source': 'live', 'items': feed})
 
 
+def recent_order_activity_api(request):
+    if request.method != 'GET':
+        return JsonResponse({'success': False, 'error': 'Invalid method.'}, status=405)
+
+    cutoff = timezone.now() - timedelta(hours=24)
+
+    recent_orders = (
+        Order.objects
+        .filter(created_at__gte=cutoff)
+        .filter(status__in=['confirmed', 'processing', 'shipped', 'delivered'])
+        .select_related('shipping_address')
+        .prefetch_related('items__product')
+        .order_by('-created_at')
+    )
+
+    total_recent_orders = recent_orders.count()
+    if total_recent_orders < 5:
+        return JsonResponse({
+            'success': True,
+            'items': [],
+            'message': 'Building up activity...'
+        })
+
+    def bucket_relative_time(created_at):
+        diff = timezone.now() - created_at
+        minutes = int(diff.total_seconds() // 60)
+
+        if minutes < 10:
+            return 'a few minutes ago'
+        if minutes < 60:
+            return 'under an hour ago'
+
+        hours = minutes // 60
+        if hours < 12:
+            return 'a few hours ago'
+
+        return 'today'
+
+    items = []
+
+    for order in recent_orders[:20]:
+        first_item = order.items.first()
+        product = first_item.product if first_item else None
+
+        country = (order.shipping_address.country or '').strip() if order.shipping_address else ''
+
+        items.append({
+            'product': product.name if product else 'an item',
+            'country': country or 'your market',
+            'timestamp': bucket_relative_time(order.created_at),
+        })
+
+    return JsonResponse({
+        'success': True,
+        'items': items,
+        'message': ''
+    })
+
+
 def landing_page(request):
     featured_products = Product.objects.all().order_by('-id')[:6]
 

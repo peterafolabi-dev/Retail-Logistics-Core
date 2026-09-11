@@ -22,37 +22,37 @@
   <section class="rc-bento-grid" aria-label="Security intelligence dashboard">
     <article class="rc-bento-card rc-bento-wide rc-spotlight">
       <div class="rc-card-heading">
-        <div><span class="rc-card-index">01</span><h2>Live Shodan Intelligence</h2></div>
+        <div><span class="rc-card-index">01</span><h2>Recent Order Activity</h2></div>
         <span class="rc-live-label"><span class="rc-live-dot"></span> LIVE</span>
       </div>
-      <p class="rc-card-caption">Sanitized observations from the configured defensive query.</p>
+      <p class="rc-card-caption">Recent completed purchases from your store, shown without personal customer details.</p>
       <div class="rc-terminal" aria-live="polite">
-        <div class="rc-terminal-bar"><span></span><span></span><span></span><b>shodan://telemetry</b></div>
-        <div id="shodan-feed" class="rc-terminal-feed"><div class="rc-terminal-line rc-muted">[boot] waiting for intelligence feed...</div></div>
+        <div class="rc-terminal-bar"><span></span><span></span><span></span><b>order://activity</b></div>
+        <div id="order-feed" class="rc-terminal-feed"><div class="rc-terminal-line rc-muted">[boot] waiting for order activity...</div></div>
       </div>
-      <div class="rc-card-footer"><span id="shodan-updated">Awaiting update</span><button type="button" id="shodan-refresh" class="rc-terminal-button">Refresh feed</button></div>
+      <div class="rc-card-footer"><span id="order-updated">Awaiting update</span><button type="button" id="order-refresh" class="rc-terminal-button">Refresh feed</button></div>
     </article>
 
     <article class="rc-bento-card rc-bento-tall rc-spotlight">
       <span class="rc-card-index">02</span>
       <h2>Signal posture</h2>
       <div class="rc-signal-ring"><span>LIVE</span></div>
-      <p class="rc-card-caption">The dashboard masks host identifiers and limits response volume before data reaches the browser.</p>
-      <div class="rc-mini-metric"><span>API boundary</span><strong>server-side</strong></div>
-      <div class="rc-mini-metric"><span>Payload policy</span><strong>sanitized</strong></div>
+      <p class="rc-card-caption">The dashboard now reflects recent store activity while keeping customer details private.</p>
+      <div class="rc-mini-metric"><span>Data source</span><strong>orders</strong></div>
+      <div class="rc-mini-metric"><span>Payload policy</span><strong>privacy-safe</strong></div>
     </article>
 
     <article class="rc-bento-card rc-spotlight">
       <span class="rc-card-index">03</span>
       <h2>Telemetry lens</h2>
-      <p class="rc-card-caption">Watch for concentration by geography, organization, and exposed service without storing raw banners.</p>
+      <p class="rc-card-caption">Watch recent demand by country and product category without exposing customer identities.</p>
       <div class="rc-bars"><i style="height: 42%"></i><i style="height: 68%"></i><i style="height: 55%"></i><i style="height: 82%"></i><i style="height: 64%"></i><i style="height: 91%"></i><i style="height: 74%"></i></div>
     </article>
 
     <article class="rc-bento-card rc-spotlight">
       <span class="rc-card-index">04</span>
       <h2>Operator notes</h2>
-      <ul class="rc-check-list"><li>Use an environment-scoped Shodan query.</li><li>Keep keys on the server only.</li><li>Review rate limits before production launch.</li></ul>
+      <ul class="rc-check-list"><li>Only show activity after at least 5 orders appear in 24 hours.</li><li>Country is used as the only location signal.</li><li>Relative timestamps are coarse and privacy-safe.</li></ul>
     </article>
   </section>
 </main>
@@ -67,29 +67,38 @@
       });
     });
 
-    const feed = document.getElementById('shodan-feed');
-    const updated = document.getElementById('shodan-updated');
-    const refresh = document.getElementById('shodan-refresh');
+    const feed = document.getElementById('order-feed');
+    const updated = document.getElementById('order-updated');
+    const refresh = document.getElementById('order-refresh');
     if (!feed || !updated || !refresh) return;
 
-    const render = (items) => {
-      feed.innerHTML = items.length ? items.map((item, index) => `
-        <div class="rc-terminal-line" style="--line-delay:${index * 55}ms">
-          <span class="rc-terminal-time">${item.timestamp || '--:--'}</span>
-          <span class="rc-terminal-cyan">${item.ip || 'masked.host'}</span>
-          <span>:${item.port || '—'}/${item.transport || 'tcp'}</span>
-          <span class="rc-terminal-muted">${item.country || 'Unknown'} · ${item.org || 'Unknown org'}</span>
-        </div>`).join('') : '<div class="rc-terminal-line rc-muted">[feed] no sanitized observations returned.</div>';
+    const render = (items, message = '') => {
+      if (!items.length) {
+        feed.innerHTML = message
+          ? `<div class="rc-terminal-line rc-muted">[feed] ${message}</div>`
+          : '<div class="rc-terminal-line rc-muted">[feed] no recent orders available.</div>';
+      } else {
+        feed.innerHTML = items.map((item, index) => `
+          <div class="rc-terminal-line" style="--line-delay:${index * 55}ms">
+            <span class="rc-terminal-time">${item.timestamp || 'today'}</span>
+            <span class="rc-terminal-dot"></span>
+            <span class="rc-terminal-muted">someone in ${item.country || 'your market'}</span>
+            <span>just ordered</span>
+            <span class="rc-terminal-cyan">${item.product || 'an item'}</span>
+          </div>
+        `).join('');
+      }
+
       updated.textContent = `Updated ${new Date().toLocaleTimeString()}`;
     };
 
     const load = async () => {
       refresh.disabled = true;
       try {
-        const response = await fetch('{% url "products:api-shodan-intelligence" %}', { headers: { Accept: 'application/json' } });
+        const response = await fetch('{% url "products:recent-order-activity" %}', { headers: { Accept: 'application/json' } });
         const payload = await response.json();
         if (!response.ok || !payload.success) throw new Error(payload.error || 'Feed unavailable');
-        render(payload.items || []);
+        render(payload.items || [], payload.message || '');
       } catch (error) {
         feed.innerHTML = `<div class="rc-terminal-line rc-terminal-error">[error] ${error.message}</div>`;
         updated.textContent = 'Feed unavailable';

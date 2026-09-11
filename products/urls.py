@@ -71,6 +71,7 @@ urlpatterns = [
     path('blog/', views.blog_page, name='blog'),
     path('reviews/', views.reviews_page, name='reviews'),
     path('api/chat/', views.ai_chat, name='api-chat'),
+    path('api/orders/activity/', views.recent_order_activity_api, name='recent-order-activity'),
     path('ai-chat/', views.ai_chat, name='ai-chat'),
     path('wishlist/toggle/<int:product_id>/', views.toggle_wishlist, name='toggle-wishlist'),
     path('wishlist/', views.wishlist_page, name='wishlist'),

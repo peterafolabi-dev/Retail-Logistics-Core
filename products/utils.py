@@ -432,6 +432,25 @@ def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2):
     return ''
 
 
+def _looks_incomplete(text, min_length=15):
+    """
+    Heuristic check for a response that got cut off or came back malformed
+    (e.g. Groq returning a fragment like "I'm" instead of a full reply).
+    Not perfect, but catches the obvious cases so we never cache — or
+    silently serve — a broken response twice.
+    """
+    if not text:
+        return True
+    stripped = text.strip()
+    if len(stripped) < min_length:
+        return True
+    # Ends mid-word/mid-thought: no terminal punctuation and doesn't end
+    # with a normal closing character.
+    if stripped[-1] not in '.!?"\'):':
+        return True
+    return False
+
+
 def _parse_ai_items(text, limit=4):
     """Parse a plain-text AI response into a list of product names."""
     if not text:
@@ -812,7 +831,8 @@ def get_ai_chat_response(message, session=None, limit=4):
             messages = [{'role': 'system', 'content': system_msg}] + history + [
                 {'role': 'user', 'content': message}
             ]
-            response_text = _call_groq(messages=messages, max_tokens=80)
+            max_tokens = 80
+            response_text = _call_groq(messages=messages, max_tokens=max_tokens)
 
         elif intent == 'knowledge':
             knowledge = _get_relevant_knowledge(message)
@@ -829,7 +849,8 @@ def get_ai_chat_response(message, session=None, limit=4):
             messages = [{'role': 'system', 'content': system_msg}] + history + [
                 {'role': 'user', 'content': message}
             ]
-            response_text = _call_groq(messages=messages, max_tokens=150)
+            max_tokens = 150
+            response_text = _call_groq(messages=messages, max_tokens=max_tokens)
 
         elif intent == 'product':
             comparison_items = _retrieve_for_comparison(message)
@@ -859,7 +880,8 @@ def get_ai_chat_response(message, session=None, limit=4):
                 {'role': 'user', 'content': message}
             ]
             # Raised from 320 -> 450: lists of 6+ items were being cut off mid-line.
-            response_text = _call_groq(messages=messages, max_tokens=450)
+            max_tokens = 450
+            response_text = _call_groq(messages=messages, max_tokens=max_tokens)
 
         else:  # intent == 'other'
             system_msg = (
@@ -872,7 +894,22 @@ def get_ai_chat_response(message, session=None, limit=4):
             messages = [{'role': 'system', 'content': system_msg}] + history + [
                 {'role': 'user', 'content': message}
             ]
-            response_text = _call_groq(messages=messages, max_tokens=100)
+            max_tokens = 100
+            response_text = _call_groq(messages=messages, max_tokens=max_tokens)
+
+        # If the response looks cut off/broken, retry once with the same
+        # messages and token budget before giving up — this stops a one-off
+        # Groq hiccup from ever being cached or shown to the customer.
+        if _looks_incomplete(response_text):
+            logger.warning('Groq returned a suspiciously short/incomplete response (%r); retrying once.', response_text)
+            response_text = _call_groq(messages=messages, max_tokens=max_tokens)
+
+        if _looks_incomplete(response_text):
+            logger.error('Groq response still incomplete after retry (%r); falling back.', response_text)
+            return (
+                'Sorry, the AI assistant is unavailable right now. '
+                'Try browsing our categories or use the search bar to find items.'
+            )
 
         if response_text and session is not None:
             append_chat_history(session, 'user', message)

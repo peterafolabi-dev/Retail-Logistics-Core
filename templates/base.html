@@ -430,13 +430,16 @@
       }
       .ai-chat-widget {
         position: fixed;
-        right: 16px;
-        bottom: 16px;
-        z-index: 1300;
+        right: 8px;
+        bottom: 8px;
+        z-index: 9999;
         width: 280px;
         max-width: 280px;
         font-family: inherit;
         transition: width 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
       }
       .ai-chat-widget.expanded {
         width: min(420px, calc(100vw - 24px));
@@ -645,7 +648,7 @@
       @media (max-width: 768px) {
         .footer { text-align: center; }
         .footer .social-links { justify-content: center; }
-        .ai-chat-widget { max-width: 260px; right: 16px; bottom: 16px; }
+        .ai-chat-widget { max-width: 260px; right: 8px; bottom: 8px; }
         .ai-chat-messages { max-height: 260px; }
       }
 

@@ -94,14 +94,14 @@ def send_newsletter_confirmation_email(email):
     try:
         from django.core.mail import send_mail
         from django.conf import settings
-        
+
         # Try to use template first, if it doesn't exist, use simple HTML
         template = None
         try:
             template = EmailTemplate.objects.filter(email_type='newsletter', is_active=True).first()
         except:
             pass
-        
+
         unsubscribe_url = f"{settings.SITE_URL.rstrip('/')}/products/newsletter/unsubscribe/?email={quote(email)}"
 
         if template:
@@ -296,17 +296,17 @@ def _get_cached_catalog():
     """Get all products with caching to reduce database queries."""
     global _CATALOG_CACHE, _CATALOG_CACHE_TIME
     current_time = time.time()
-    
+
     if _CATALOG_CACHE is not None and (current_time - _CATALOG_CACHE_TIME) < CATALOG_CACHE_TTL:
         return _CATALOG_CACHE
-    
+
     # Build lightweight product inventory (name, price, category)
     products = Product.objects.all().values('id', 'name', 'price', 'category', 'description').order_by('category', 'name')
     catalog = [
         f"{p['name']} (Category: {p['category']}) — ₦{p['price']:,.0f}"
         for p in products
     ]
-    
+
     _CATALOG_CACHE = catalog
     _CATALOG_CACHE_TIME = current_time
     return catalog
@@ -323,13 +323,24 @@ def _get_groq_api_key():
     return (api_key or '').strip()
 
 
-def _call_groq(prompt, max_tokens=250, retries=2):
-    """Send a prompt to the Groq OpenAI-compatible endpoint."""
+def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2):
+    """
+    Send a prompt to the Groq OpenAI-compatible endpoint.
+
+    Accepts either:
+      - prompt: a single string (wrapped as one user message), or
+      - messages: a full messages list (e.g. [{'role': 'system', ...}, {'role': 'user', ...}, ...])
+    """
     api_key = _get_groq_api_key()
 
     if not api_key:
         logger.error('GROQ_API_KEY is not configured. Checked Django settings and os.environ.')
         raise RuntimeError('GROQ_API_KEY is not configured.')
+
+    if messages is None:
+        if prompt is None:
+            raise ValueError('_call_groq requires either "prompt" or "messages".')
+        messages = [{'role': 'user', 'content': prompt}]
 
     selected_model = getattr(settings, 'GROQ_MODEL', None) or 'llama-3.3-70b-versatile'
 
@@ -338,9 +349,7 @@ def _call_groq(prompt, max_tokens=250, retries=2):
             payload = {
                 'model': selected_model,
                 'max_tokens': max_tokens,
-                'messages': [
-                    {'role': 'user', 'content': prompt}
-                ],
+                'messages': messages,
                 'temperature': 0.65,
             }
 
@@ -433,7 +442,7 @@ def get_product_recommendations_ai(product, limit=4):
             f"Catalog:\n" + '\n'.join(candidate_lines)
         )
 
-        response_text = _call_groq(prompt, max_tokens=220)
+        response_text = _call_groq(prompt=prompt, max_tokens=220)
         selected_names = _parse_ai_items(response_text, limit=limit)
 
         recommendations = []
@@ -455,60 +464,223 @@ def get_product_recommendations_ai(product, limit=4):
     return get_product_recommendations(product, limit)
 
 
-def get_ai_chat_response(message, limit=4):
-    """Build an AI chat response using full product catalog with caching."""
-    # Check cache first
-    cache_key = message.lower().strip()
-    if cache_key in _AI_RESPONSE_CACHE:
-        cached = _AI_RESPONSE_CACHE[cache_key]
-        if time.time() - cached['time'] < 600:  # 10 minute cache TTL
-            return cached['response']
-    
+# ---------- Intent detection ----------
+
+_GREETING_PATTERNS = re.compile(
+    r'^\s*(hi|hii+|hello|hey|yo|sup|good\s*(morning|afternoon|evening|day))\s*[!.?]*\s*$',
+    re.IGNORECASE
+)
+
+_SMALLTALK_PATTERNS = re.compile(
+    r'^\s*(thanks?|thank\s*you|thx|ty|ok(ay)?|cool|nice|great|lol|haha|bye|goodbye|see\s*ya|'
+    r'how\s*are\s*you|what\'?s\s*up|good\s*(bot|job))\s*[!.?]*\s*$',
+    re.IGNORECASE
+)
+
+_KNOWLEDGE_KEYWORDS = re.compile(
+    r'\b(shipping|delivery|deliver|return|refund|exchange|policy|track|tracking|order\s*status|'
+    r'payment|pay|checkout|warranty|faq|contact|support|how\s*long|when\s*will)\b',
+    re.IGNORECASE
+)
+
+_PRODUCT_KEYWORDS = re.compile(
+    r'\b(product|item|price|cost|buy|purchase|cheap|expensive|discount|deal|'
+    r'have|show|find|search|looking\s*for|recommend|gift|compare|stock|available|'
+    r'category|categories)\b',
+    re.IGNORECASE
+)
+
+
+def _classify_message_intent(message):
+    """Returns one of: 'greeting', 'smalltalk', 'knowledge', 'product', 'other'"""
+    text = message.strip()
+    if _GREETING_PATTERNS.match(text):
+        return 'greeting'
+    if _SMALLTALK_PATTERNS.match(text):
+        return 'smalltalk'
+    if _KNOWLEDGE_KEYWORDS.search(text):
+        return 'knowledge'
+    if _PRODUCT_KEYWORDS.search(text):
+        return 'product'
+    return 'other'
+
+
+# ---------- Site knowledge base (shipping/returns/FAQ/etc.) ----------
+# Move this to a DB model later if it grows past a handful of entries.
+
+SITE_KNOWLEDGE = {
+    'shipping': "Standard delivery within Nigeria takes 2-5 business days. Lagos same-city orders may arrive within 24-48 hours.",
+    'returns': "Items can be returned within 7 days of delivery if unused and in original packaging. Refunds are processed within 5-10 business days.",
+    'payment': "We accept card payments, bank transfer, and pay-on-delivery in select areas.",
+    'tracking': "Once shipped, you'll receive a tracking number by email. You can also check order status in your account under 'My Orders'.",
+    'warranty': "Electronics carry the manufacturer's standard warranty; check the product page for specific terms.",
+    'support': "For anything not covered here, reach our support team via the Contact page.",
+}
+
+_KNOWLEDGE_KEYWORD_MAP = {
+    'shipping': ['shipping', 'delivery', 'deliver', 'how long', 'when will'],
+    'returns': ['return', 'refund', 'exchange'],
+    'payment': ['payment', 'pay', 'checkout'],
+    'tracking': ['track', 'tracking', 'order status'],
+    'warranty': ['warranty'],
+    'support': ['contact', 'support', 'faq'],
+}
+
+
+def _get_relevant_knowledge(message):
+    """Keyword-match the message against the site knowledge base."""
+    text = message.lower()
+    matches = []
+    for key, kws in _KNOWLEDGE_KEYWORD_MAP.items():
+        if any(kw in text for kw in kws):
+            matches.append(SITE_KNOWLEDGE[key])
+    return matches
+
+
+# ---------- Product retrieval (keyword-scored, no vector DB needed at this scale) ----------
+
+_STOPWORDS = {
+    'the', 'a', 'an', 'is', 'are', 'do', 'does', 'you', 'your', 'i', 'me', 'my',
+    'have', 'has', 'want', 'need', 'for', 'of', 'to', 'in', 'on', 'with', 'and',
+    'or', 'what', 'which', 'show', 'find', 'looking', 'please', 'can', 'could',
+}
+
+
+def _tokenize(text):
+    return {w for w in re.findall(r'[a-z0-9]+', text.lower()) if w not in _STOPWORDS and len(w) > 1}
+
+
+def _retrieve_relevant_products(message, limit=15):
+    """Score cached catalog entries by keyword overlap; return top matches."""
+    query_tokens = _tokenize(message)
+    if not query_tokens:
+        return []
+
+    catalog_items = _get_cached_catalog()
+    scored = []
+    for item in catalog_items:
+        item_tokens = _tokenize(item)
+        overlap = len(query_tokens & item_tokens)
+        if overlap > 0:
+            scored.append((overlap, item))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [item for _, item in scored[:limit]]
+
+
+# ---------- Conversation history (session-based, no new DB table needed) ----------
+
+CHAT_HISTORY_SESSION_KEY = 'redcart_chat_history'
+MAX_HISTORY_TURNS = 4  # keep last 4 exchanges (8 messages)
+
+
+def get_chat_history(session):
+    return session.get(CHAT_HISTORY_SESSION_KEY, [])
+
+
+def append_chat_history(session, role, content):
+    history = session.get(CHAT_HISTORY_SESSION_KEY, [])
+    history.append({'role': role, 'content': content})
+    history = history[-(MAX_HISTORY_TURNS * 2):]
+    session[CHAT_HISTORY_SESSION_KEY] = history
+    session.modified = True
+
+
+def clear_chat_history(session):
+    if CHAT_HISTORY_SESSION_KEY in session:
+        del session[CHAT_HISTORY_SESSION_KEY]
+        session.modified = True
+
+
+# ---------- Main chat entry point ----------
+
+def get_ai_chat_response(message, session=None, limit=4):
+    """
+    Build an AI chat response with intent-aware retrieval and conversation memory.
+
+    Args:
+        message: the customer's chat message
+        session: Django request.session — pass this to enable multi-turn memory.
+                 If omitted, the bot behaves statelessly (no memory).
+        limit: max products to recommend in product-intent replies
+    """
+    intent = _classify_message_intent(message)
+    history = get_chat_history(session) if session is not None else []
+    response_text = ''
+
     try:
-        # Get all products (lightweight: name, price, category)
-        catalog_items = _get_cached_catalog()
-        
-        if not catalog_items:
-            return (
-                'Sorry, our product catalog is empty. '
-                'Please check back later.'
+        if intent in ('greeting', 'smalltalk'):
+            system_msg = (
+                "You are RedCart's warm, polished in-store shopping concierge. "
+                "Reply naturally in 1-2 short sentences. Do NOT recommend or list "
+                "products unless the customer explicitly asks about items or shopping."
             )
+            messages = [{'role': 'system', 'content': system_msg}] + history + [
+                {'role': 'user', 'content': message}
+            ]
+            response_text = _call_groq(messages=messages, max_tokens=80)
 
-        # Format catalog for prompt (all products, concise)
-        catalog_text = '\n'.join(catalog_items)
-        
-        prompt = (
-            f"You are RedCart's warm, polished in-store shopping concierge. "
-            f"Answer in a concise, high-end assistant tone: helpful, calm, and professional.\n\n"
-            f"Use our COMPLETE product catalog below as the source of truth.\n\n"
-            f"COMPLETE CATALOG ({len(catalog_items)} products):\n"
-            f"{catalog_text}\n\n"
-            f"Customer question: {message}\n\n"
-            f"Instructions:\n"
-            f"1. Recommend actual products from the catalog above only\n"
-            f"2. Keep replies concise and conversational, like a premium store assistant\n"
-            f"3. Format recommendations as a simple, uniform bullet list with one bullet style only\n"
-            f"4. Each bullet should be: product name, then price, one line each\n"
-            f"5. Never output Markdown tables or pipe-style tables; do not use table syntax\n"
-            f"6. You may use short bold section headers when helpful, but keep the tone concise\n"
-            f"7. Use sparse emoji only for category headers if relevant, not throughout the message\n"
-            f"8. End with one short, inviting follow-up question\n\n"
-            f"Answer:"
-        )
+        elif intent == 'knowledge':
+            knowledge = _get_relevant_knowledge(message)
+            knowledge_text = '\n'.join(knowledge) if knowledge else (
+                "No specific policy on file for this — direct them to Contact support."
+            )
+            system_msg = (
+                "You are RedCart's shopping concierge. Answer using only the policy info given below. "
+                "Be concise, warm, and professional. If the info doesn't cover their question, "
+                "say so and suggest contacting support.\n\n"
+                f"Relevant policy info:\n{knowledge_text}"
+            )
+            messages = [{'role': 'system', 'content': system_msg}] + history + [
+                {'role': 'user', 'content': message}
+            ]
+            response_text = _call_groq(messages=messages, max_tokens=150)
 
-        response_text = _call_groq(prompt, max_tokens=320, retries=2)
+        elif intent == 'product':
+            relevant_items = _retrieve_relevant_products(message, limit=15)
+            if not relevant_items:
+                # No keyword match — fall back to a small sample, not a fixed "featured" list
+                all_items = _get_cached_catalog()
+                if not all_items:
+                    return 'Sorry, our product catalog is empty. Please check back later.'
+                relevant_items = all_items[:15]
+
+            catalog_text = '\n'.join(relevant_items)
+            system_msg = (
+                "You are RedCart's warm, polished in-store shopping concierge. "
+                "Use only the products listed below as the source of truth.\n\n"
+                f"RELEVANT PRODUCTS:\n{catalog_text}\n\n"
+                "Instructions:\n"
+                "1. Recommend only products relevant to what the customer actually asked.\n"
+                "2. If nothing here truly matches, say so honestly instead of forcing a list.\n"
+                "3. Format as a simple bullet list: product name, then price, one per line.\n"
+                "4. No Markdown tables. Keep tone concise and premium.\n"
+                "5. End with one short follow-up question."
+            )
+            messages = [{'role': 'system', 'content': system_msg}] + history + [
+                {'role': 'user', 'content': message}
+            ]
+            response_text = _call_groq(messages=messages, max_tokens=320)
+
+        else:  # intent == 'other'
+            system_msg = (
+                "You are RedCart's shopping concierge. If the message is about products, shopping, "
+                "or orders, offer to help and ask what they need. If it's unrelated, politely say "
+                "you're the RedCart assistant and redirect. Do not list products unless asked. "
+                "Keep it to 1-2 sentences."
+            )
+            messages = [{'role': 'system', 'content': system_msg}] + history + [
+                {'role': 'user', 'content': message}
+            ]
+            response_text = _call_groq(messages=messages, max_tokens=100)
+
+        if response_text and session is not None:
+            append_chat_history(session, 'user', message)
+            append_chat_history(session, 'assistant', response_text)
+
         if response_text:
-            # Cache the response
-            _AI_RESPONSE_CACHE[cache_key] = {
-                'response': response_text,
-                'time': time.time()
-            }
-            # Limit cache size to 100 entries
-            if len(_AI_RESPONSE_CACHE) > 100:
-                oldest_key = min(_AI_RESPONSE_CACHE.keys(), key=lambda k: _AI_RESPONSE_CACHE[k]['time'])
-                del _AI_RESPONSE_CACHE[oldest_key]
-            
             return response_text
+
     except RuntimeError:
         pass
     except Exception as exc:

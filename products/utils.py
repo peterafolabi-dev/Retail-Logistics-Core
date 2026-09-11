@@ -367,7 +367,14 @@ def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2):
             )
             response.raise_for_status()
             data = response.json()
-            content = data['choices'][0]['message']['content']
+            choice = data['choices'][0]
+            content = choice['message']['content']
+            finish_reason = choice.get('finish_reason')
+            if finish_reason == 'length':
+                logger.warning(
+                    'Groq response was truncated by max_tokens (finish_reason=length). '
+                    'Consider raising max_tokens for this call.'
+                )
             if isinstance(content, list):
                 content = ''.join(part.get('text', '') for part in content if isinstance(part, dict))
             return str(content).strip()
@@ -381,9 +388,13 @@ def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2):
         except requests.exceptions.HTTPError as exc:
             status = exc.response.status_code if exc.response is not None else 'unknown'
             body = exc.response.text if exc.response is not None else str(exc)
-            if attempt < retries - 1 and isinstance(status, int) and status >= 500:
-                logger.warning('Groq API HTTP error (attempt %d/%d): %s, retrying...', attempt + 1, retries, status)
-                time.sleep(1)
+            if attempt < retries - 1 and isinstance(status, int) and (status >= 500 or status == 429):
+                wait_time = 3 if status == 429 else (2 ** attempt)
+                logger.warning(
+                    'Groq API HTTP error (attempt %d/%d): %s, retrying in %ss...',
+                    attempt + 1, retries, status, wait_time
+                )
+                time.sleep(wait_time)
                 continue
             logger.error('Groq API HTTP error (%s): %s', status, body)
             return ''
@@ -464,6 +475,39 @@ def get_product_recommendations_ai(product, limit=4):
     return get_product_recommendations(product, limit)
 
 
+# ---------- Product retrieval (keyword-scored, no vector DB needed at this scale) ----------
+# Defined BEFORE _classify_message_intent because the classifier calls it
+# as a fallback signal.
+
+_STOPWORDS = {
+    'the', 'a', 'an', 'is', 'are', 'do', 'does', 'you', 'your', 'i', 'me', 'my',
+    'have', 'has', 'want', 'need', 'for', 'of', 'to', 'in', 'on', 'with', 'and',
+    'or', 'what', 'which', 'show', 'find', 'looking', 'please', 'can', 'could',
+}
+
+
+def _tokenize(text):
+    return {w for w in re.findall(r'[a-z0-9]+', text.lower()) if w not in _STOPWORDS and len(w) > 1}
+
+
+def _retrieve_relevant_products(message, limit=15):
+    """Score cached catalog entries by keyword overlap; return top matches."""
+    query_tokens = _tokenize(message)
+    if not query_tokens:
+        return []
+
+    catalog_items = _get_cached_catalog()
+    scored = []
+    for item in catalog_items:
+        item_tokens = _tokenize(item)
+        overlap = len(query_tokens & item_tokens)
+        if overlap > 0:
+            scored.append((overlap, item))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [item for _, item in scored[:limit]]
+
+
 # ---------- Intent detection ----------
 
 _GREETING_PATTERNS = re.compile(
@@ -502,6 +546,13 @@ def _classify_message_intent(message):
         return 'knowledge'
     if _PRODUCT_KEYWORDS.search(text):
         return 'product'
+    # Fallback: does this message actually match something in the catalog?
+    # Covers bare product names/categories/brands ("headphones", "samsung",
+    # "a14") that a static keyword list can never fully anticipate — this
+    # check grows automatically with the catalog instead of needing manual
+    # keyword maintenance every time a new product type is added.
+    if _retrieve_relevant_products(text, limit=1):
+        return 'product'
     return 'other'
 
 
@@ -535,37 +586,6 @@ def _get_relevant_knowledge(message):
         if any(kw in text for kw in kws):
             matches.append(SITE_KNOWLEDGE[key])
     return matches
-
-
-# ---------- Product retrieval (keyword-scored, no vector DB needed at this scale) ----------
-
-_STOPWORDS = {
-    'the', 'a', 'an', 'is', 'are', 'do', 'does', 'you', 'your', 'i', 'me', 'my',
-    'have', 'has', 'want', 'need', 'for', 'of', 'to', 'in', 'on', 'with', 'and',
-    'or', 'what', 'which', 'show', 'find', 'looking', 'please', 'can', 'could',
-}
-
-
-def _tokenize(text):
-    return {w for w in re.findall(r'[a-z0-9]+', text.lower()) if w not in _STOPWORDS and len(w) > 1}
-
-
-def _retrieve_relevant_products(message, limit=15):
-    """Score cached catalog entries by keyword overlap; return top matches."""
-    query_tokens = _tokenize(message)
-    if not query_tokens:
-        return []
-
-    catalog_items = _get_cached_catalog()
-    scored = []
-    for item in catalog_items:
-        item_tokens = _tokenize(item)
-        overlap = len(query_tokens & item_tokens)
-        if overlap > 0:
-            scored.append((overlap, item))
-
-    scored.sort(key=lambda x: x[0], reverse=True)
-    return [item for _, item in scored[:limit]]
 
 
 # ---------- Conversation history (session-based, no new DB table needed) ----------

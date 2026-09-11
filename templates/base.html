@@ -1058,6 +1058,8 @@
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;')
+          .replace(/^#{1,6}\s+/gm, '')
+          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
           .replace(/\r?\n/g, '<br>')
           .replace(/(^|<br>)-\s+/g, '$1• ')
           .replace(/(^|<br>)(\d+)\.\s+/g, '$1$2. ');

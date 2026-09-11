@@ -436,6 +436,20 @@
       .rc-page-shell {
         padding-bottom: 100px;
       }
+      .ai-chat-widget {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 1300;
+        width: 280px;
+        max-width: 280px;
+        font-family: inherit;
+        transition: width 0.2s ease;
+      }
+      .ai-chat-widget.expanded {
+        width: min(420px, calc(100vw - 24px));
+        max-width: min(420px, calc(100vw - 24px));
+      }
       .ai-chat-panel {
         display: none;
         width: 100%;
@@ -446,8 +460,22 @@
         flex-direction: column;
         max-height: 400px;
         overflow: hidden;
+        transition: max-height 0.2s ease, width 0.2s ease;
       }
       .ai-chat-panel.active { display: flex; }
+      .ai-chat-panel.minimized {
+        max-height: 52px;
+      }
+      .ai-chat-panel.minimized .ai-chat-messages,
+      .ai-chat-panel.minimized .ai-chat-footer {
+        display: none;
+      }
+      .ai-chat-panel.minimized .ai-chat-header {
+        border-radius: 16px;
+      }
+      .ai-chat-panel.expanded {
+        max-height: 72vh;
+      }
       .ai-chat-header {
         padding: 10px 14px;
         display: flex;
@@ -460,9 +488,15 @@
         top: 0;
         z-index: 10;
         border-radius: 16px 16px 0 0;
+        cursor: pointer;
       }
       .ai-chat-header span { font-weight: 600; font-size: 0.85rem; }
-      #ai-chat-close {
+      .ai-chat-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .ai-chat-header button {
         background: rgba(255,255,255,0.2) !important;
         border: none !important;
         color: #fff !important;
@@ -478,7 +512,7 @@
         align-items: center;
         justify-content: center;
       }
-      #ai-chat-close:hover { background: rgba(255,255,255,0.35) !important; }
+      .ai-chat-header button:hover { background: rgba(255,255,255,0.35) !important; }
       .ai-chat-messages {
         flex: 1;
         overflow-y: auto;
@@ -685,11 +719,19 @@
     <!-- AI Chat Widget -->
     <div class="ai-chat-widget">
       <div id="ai-chat-panel" class="ai-chat-panel">
-        <div class="ai-chat-header">
-          <span>🤖 AI Assistant</span>
-          <button id="ai-chat-close">
-            <i class="bi bi-x-lg"></i>
-          </button>
+        <div class="ai-chat-header" id="ai-chat-header">
+          <span id="ai-chat-header-label">🤖 AI Assistant</span>
+          <div class="ai-chat-header-actions">
+            <button id="ai-chat-minimize" type="button" aria-label="Minimize chat" title="Minimize chat">
+              <i class="bi bi-dash-lg"></i>
+            </button>
+            <button id="ai-chat-expand" type="button" aria-label="Expand chat" title="Expand chat">
+              <i class="bi bi-arrows-fullscreen"></i>
+            </button>
+            <button id="ai-chat-close" type="button" aria-label="Close chat" title="Close chat">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
         </div>
         <div id="ai-chat-messages" class="ai-chat-messages">
           <div class="ai-chat-message assistant">
@@ -1070,10 +1112,68 @@
         chatHistory.push({ role: role, content: message });
       }
 
+      function updateChatButtons() {
+        const panel = document.getElementById('ai-chat-panel');
+        const minimizeButton = document.getElementById('ai-chat-minimize');
+        const expandButton = document.getElementById('ai-chat-expand');
+        if (!panel || !minimizeButton || !expandButton) return;
+
+        const isMinimized = panel.classList.contains('minimized');
+        const isExpanded = panel.classList.contains('expanded');
+
+        minimizeButton.innerHTML = isMinimized ? '<i class="bi bi-plus-lg"></i>' : '<i class="bi bi-dash-lg"></i>';
+        minimizeButton.setAttribute('aria-label', isMinimized ? 'Restore chat' : 'Minimize chat');
+        minimizeButton.setAttribute('title', isMinimized ? 'Restore chat' : 'Minimize chat');
+
+        expandButton.innerHTML = isExpanded ? '<i class="bi bi-fullscreen-exit"></i>' : '<i class="bi bi-arrows-fullscreen"></i>';
+        expandButton.setAttribute('aria-label', isExpanded ? 'Return to default size' : 'Expand chat');
+        expandButton.setAttribute('title', isExpanded ? 'Return to default size' : 'Expand chat');
+      }
+
       function setChatOpen(open) {
         const panel = document.getElementById('ai-chat-panel');
-        if (open) { panel.classList.add('active'); }
-        else { panel.classList.remove('active'); }
+        const widget = document.querySelector('.ai-chat-widget');
+        if (!panel || !widget) return;
+
+        panel.classList.toggle('active', open);
+        if (!open) {
+          panel.classList.remove('minimized');
+          panel.classList.remove('expanded');
+          widget.classList.remove('expanded');
+        } else {
+          panel.classList.remove('minimized');
+          panel.classList.remove('expanded');
+          widget.classList.remove('expanded');
+        }
+        updateChatButtons();
+      }
+
+      function toggleChatMinimized() {
+        const panel = document.getElementById('ai-chat-panel');
+        const widget = document.querySelector('.ai-chat-widget');
+        if (!panel || !widget) return;
+
+        const shouldMinimize = !panel.classList.contains('minimized');
+        panel.classList.toggle('minimized', shouldMinimize);
+        if (shouldMinimize) {
+          panel.classList.remove('expanded');
+          widget.classList.remove('expanded');
+        }
+        updateChatButtons();
+      }
+
+      function toggleChatExpanded() {
+        const panel = document.getElementById('ai-chat-panel');
+        const widget = document.querySelector('.ai-chat-widget');
+        if (!panel || !widget) return;
+
+        const shouldExpand = !panel.classList.contains('expanded');
+        panel.classList.toggle('expanded', shouldExpand);
+        widget.classList.toggle('expanded', shouldExpand);
+        if (shouldExpand) {
+          panel.classList.remove('minimized');
+        }
+        updateChatButtons();
       }
 
       async function sendAiChatMessage() {
@@ -1115,6 +1215,15 @@
 
       document.getElementById('ai-chat-toggle')?.addEventListener('click', () => setChatOpen(true));
       document.getElementById('ai-chat-close')?.addEventListener('click', () => setChatOpen(false));
+      document.getElementById('ai-chat-minimize')?.addEventListener('click', toggleChatMinimized);
+      document.getElementById('ai-chat-expand')?.addEventListener('click', toggleChatExpanded);
+      document.getElementById('ai-chat-header-label')?.addEventListener('click', () => {
+        const panel = document.getElementById('ai-chat-panel');
+        if (panel?.classList.contains('minimized')) {
+          panel.classList.remove('minimized');
+          updateChatButtons();
+        }
+      });
       document.getElementById('ai-chat-send')?.addEventListener('click', sendAiChatMessage);
       document.getElementById('ai-chat-input')?.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); sendAiChatMessage(); }

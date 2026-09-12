@@ -25,7 +25,7 @@ import time
 # It's whatever comes after "DJANGO_SETTINGS_MODULE" in your manage.py file
 # (open manage.py and copy the value you see there).
 # ---------------------------------------------------------------------------
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'redcart.settings')  # <-- EDIT THIS
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mywork.settings')
 
 import django
 django.setup()

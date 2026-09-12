@@ -17,7 +17,7 @@ import urllib.error
 
 from django.urls import reverse
 from django.http import JsonResponse, HttpResponse
-from .models import Product, Comment, Order, OrderItem, Wishlist, AbandonedCart, Coupon, Review, Wallet, WalletTransaction, UserAddress
+from .models import Product, Comment, Order, OrderItem, Wishlist, AbandonedCart, Coupon, Review, Wallet, WalletTransaction, UserAddress, ChatConversation, ChatMessage
 from .utils import get_product_recommendations_ai, get_ai_chat_response, update_stock
 from django.conf import settings
 from decouple import config
@@ -1920,6 +1920,92 @@ def toggle_wishlist(request, product_id):
 logger = logging.getLogger(__name__)
 
 
+def _get_session_key(request):
+    """Ensure the guest session has a stable key so their chat history persists."""
+    if not request.session.session_key:
+        request.session.save()
+    return request.session.session_key
+
+
+def _get_owned_conversation(request, conversation_id):
+    """
+    Fetch a ChatConversation only if the current request actually owns it —
+    either the logged-in user matches, or (for guests) the session key
+    matches and the conversation has no user attached. Returns None
+    otherwise, so callers never leak one person's chat history to another.
+    """
+    try:
+        conversation = ChatConversation.objects.get(id=conversation_id)
+    except ChatConversation.DoesNotExist:
+        return None
+
+    if request.user.is_authenticated:
+        if conversation.user_id == request.user.id:
+            return conversation
+        return None
+
+    session_key = _get_session_key(request)
+    if conversation.session_key == session_key and conversation.user_id is None:
+        return conversation
+    return None
+
+
+def _derive_conversation_title(first_message):
+    """Turn the first user message into a short sidebar label."""
+    title = first_message.strip().replace('\n', ' ')
+    return (title[:47] + '...') if len(title) > 50 else title or 'New chat'
+
+
+@require_http_methods(["GET"])
+def chat_conversations_list(request):
+    """List the current user's (or guest session's) most recent conversations."""
+    if request.user.is_authenticated:
+        conversations = ChatConversation.objects.filter(user=request.user)
+    else:
+        session_key = _get_session_key(request)
+        conversations = ChatConversation.objects.filter(session_key=session_key, user__isnull=True)
+
+    conversations = conversations.order_by('-updated_at')[:20]
+
+    return JsonResponse({
+        'success': True,
+        'conversations': [
+            {'id': c.id, 'title': c.title, 'updated_at': c.updated_at.isoformat()}
+            for c in conversations
+        ],
+    })
+
+
+@require_http_methods(["GET"])
+def chat_conversation_messages(request, conversation_id):
+    """Fetch all messages for one conversation, if the requester owns it."""
+    conversation = _get_owned_conversation(request, conversation_id)
+    if conversation is None:
+        return JsonResponse({'success': False, 'error': 'Conversation not found.'}, status=404)
+
+    messages_qs = conversation.messages.order_by('created_at')
+    return JsonResponse({
+        'success': True,
+        'conversation_id': conversation.id,
+        'messages': [
+            {'role': m.role, 'content': m.content}
+            for m in messages_qs
+        ],
+    })
+
+
+@require_http_methods(["POST"])
+def chat_new_conversation(request):
+    """Create a fresh, empty conversation — the 'New Chat' button target."""
+    if request.user.is_authenticated:
+        conversation = ChatConversation.objects.create(user=request.user)
+    else:
+        session_key = _get_session_key(request)
+        conversation = ChatConversation.objects.create(session_key=session_key)
+
+    return JsonResponse({'success': True, 'conversation_id': conversation.id})
+
+
 def ai_chat(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid method.'}, status=405)
@@ -1933,19 +2019,45 @@ def ai_chat(request):
     if not message:
         return JsonResponse({'success': False, 'error': 'Message is required.'}, status=400)
 
+    conversation_id = payload.get('conversation_id')
+    conversation = None
+    if conversation_id:
+        conversation = _get_owned_conversation(request, conversation_id)
+
+    if conversation is None:
+        if request.user.is_authenticated:
+            conversation = ChatConversation.objects.create(user=request.user)
+        else:
+            session_key = _get_session_key(request)
+            conversation = ChatConversation.objects.create(session_key=session_key)
+
+    ChatMessage.objects.create(conversation=conversation, role='user', content=message)
+
+    if conversation.title == 'New chat':
+        conversation.title = _derive_conversation_title(message)
+        conversation.save(update_fields=['title'])
+
     try:
         reply = get_ai_chat_response(message, session=request.session)
         if reply:
-            return JsonResponse({'success': True, 'reply': reply}, status=200)
+            ChatMessage.objects.create(conversation=conversation, role='assistant', content=reply)
+            conversation.save(update_fields=['updated_at'])
+            return JsonResponse({
+                'success': True,
+                'reply': reply,
+                'conversation_id': conversation.id,
+            }, status=200)
         return JsonResponse({
             'success': False,
-            'error': 'The AI assistant is temporarily unavailable. Please try again later.'
+            'error': 'The AI assistant is temporarily unavailable. Please try again later.',
+            'conversation_id': conversation.id,
         }, status=200)
     except Exception as exc:
         logger.exception('AI chat request failed: %s', exc)
         return JsonResponse({
             'success': False,
-            'error': 'The AI assistant is temporarily unavailable. Please try again later.'
+            'error': 'The AI assistant is temporarily unavailable. Please try again later.',
+            'conversation_id': conversation.id,
         }, status=200)
 
 

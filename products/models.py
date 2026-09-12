@@ -791,3 +791,53 @@ class SystemAlert(models.Model):
     
     def __str__(self):
         return f"{self.get_alert_type_display()}: {self.title}"
+
+
+# ============ CHAT HISTORY (persistent, for the "New Chat" / sidebar feature) ============
+
+class ChatConversation(models.Model):
+    """
+    One saved chat thread. Belongs to a logged-in user OR a guest session
+    (never both) — guests are identified by their Django session key so
+    their history persists across page loads without needing an account.
+    """
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, null=True, blank=True,
+        related_name='chat_conversations'
+    )
+    session_key = models.CharField(max_length=40, null=True, blank=True, db_index=True)
+    title = models.CharField(max_length=120, blank=True, default='New chat')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+        indexes = [
+            models.Index(fields=['user', '-updated_at']),
+            models.Index(fields=['session_key', '-updated_at']),
+        ]
+
+    def __str__(self):
+        owner = self.user.username if self.user_id else f"guest:{self.session_key}"
+        return f"{self.title} ({owner})"
+
+
+class ChatMessage(models.Model):
+    """A single message within a ChatConversation."""
+    ROLE_CHOICES = [
+        ('user', 'User'),
+        ('assistant', 'Assistant'),
+    ]
+
+    conversation = models.ForeignKey(
+        ChatConversation, on_delete=models.CASCADE, related_name='messages'
+    )
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"[{self.role}] {self.content[:50]}"

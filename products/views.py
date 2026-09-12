@@ -1934,7 +1934,7 @@ def ai_chat(request):
         return JsonResponse({'success': False, 'error': 'Message is required.'}, status=400)
 
     try:
-        reply = get_ai_chat_response(message)
+        reply = get_ai_chat_response(message, session=request.session)
         if reply:
             return JsonResponse({'success': True, 'reply': reply}, status=200)
         return JsonResponse({

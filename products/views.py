@@ -2038,7 +2038,11 @@ def ai_chat(request):
         conversation.save(update_fields=['title'])
 
     try:
-        reply = get_ai_chat_response(message, session=request.session)
+        reply = get_ai_chat_response(
+            message,
+            session=request.session,
+            user=request.user if request.user.is_authenticated else None,
+        )
         if reply:
             ChatMessage.objects.create(conversation=conversation, role='assistant', content=reply)
             conversation.save(update_fields=['updated_at'])

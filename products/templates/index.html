@@ -693,7 +693,7 @@
       <h1 class="!mb-4 !max-w-2xl !font-sans !text-4xl !font-bold !leading-tight !tracking-tight !text-foreground sm:!text-5xl">Shop smarter with curated categories and instant search.</h1>
       <p class="!mb-7 !max-w-xl !text-base !leading-7 !text-muted-foreground">Explore top products and flash savings across all categories.</p>
       <div class="hero-actions">
-        <a href="{% url 'products:wishlist' %}" class="hero-btn hero-btn-primary !rounded-md !bg-primary !px-4 !py-2.5 !text-sm !font-semibold !text-primary-foreground !shadow-none">View Wishlist</a>
+        <a href="#category-{{ latest_products.0.category|default:'Uncategorized'|slugify }}" class="hero-btn hero-btn-primary !rounded-md !bg-primary !px-4 !py-2.5 !text-sm !font-semibold !text-primary-foreground !shadow-none">Shop Now</a>
       </div>
     </div>
     <div class="hero-highlights rc-hero-highlights">

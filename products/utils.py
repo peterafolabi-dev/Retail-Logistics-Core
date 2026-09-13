@@ -624,10 +624,66 @@ _PRICE_MANIPULATION_PATTERNS = re.compile(
     re.IGNORECASE
 )
 
+# Order lookup — routed to a direct database query, never to the AI model,
+# since order status/tracking must never be guessed or hallucinated.
+_ORDER_LOOKUP_PATTERNS = re.compile(
+    r'\b(where\s*is\s*my\s*order|track\s*my\s*order|my\s*order\s*status|'
+    r'status\s*of\s*my\s*order|check\s*my\s*order|my\s*orders?|order\s*#?\s*\d+)\b',
+    re.IGNORECASE
+)
+
+
+def _extract_order_id(message):
+    """Pull a numeric order ID out of a message like 'order #1234' or 'order 1234'."""
+    match = re.search(r'#?\s*(\d{1,10})', message)
+    return int(match.group(1)) if match else None
+
+
+def _get_order_lookup_response(message, user):
+    """
+    Answer order-status questions directly from the database — never via
+    the AI model — so figures like status, tracking number, and totals are
+    always exactly what's actually in the Order table, never guessed.
+    Scoped strictly to `user` so one customer can never see another's order
+    by guessing an ID.
+    """
+    if user is None or not getattr(user, 'is_authenticated', False):
+        return "You'll need to be logged in for me to check your order details — please log in and try again."
+
+    from .models import Order
+
+    order_id = _extract_order_id(message)
+
+    if order_id:
+        order = Order.objects.filter(user=user, id=order_id).first()
+        if not order:
+            return f"I couldn't find order #{order_id} on your account. Please double-check the order number."
+
+        lines = [f"Order #{order.id} — Status: {order.get_status_display()}"]
+        if order.tracking_number:
+            lines.append(f"Tracking number: {order.tracking_number}")
+        if order.shipped_date:
+            lines.append(f"Shipped: {order.shipped_date.strftime('%b %d, %Y')}")
+        if order.delivered_date:
+            lines.append(f"Delivered: {order.delivered_date.strftime('%b %d, %Y')}")
+        lines.append(f"Payment status: {order.get_payment_status_display()}")
+        lines.append(f"Total: ₦{order.total:,.2f}")
+        return '\n'.join(lines)
+
+    orders = Order.objects.filter(user=user).order_by('-created_at')[:5]
+    if not orders:
+        return "You don't have any orders yet."
+
+    lines = ["Here are your recent orders:"]
+    for o in orders:
+        lines.append(f"- Order #{o.id}: {o.get_status_display()} (₦{o.total:,.2f})")
+    lines.append("Tell me an order number for more details.")
+    return '\n'.join(lines)
+
 
 def _classify_message_intent(message):
     """Returns one of: 'greeting', 'smalltalk', 'escalation', 'price_manipulation',
-    'knowledge', 'product', 'other'"""
+    'order_lookup', 'knowledge', 'product', 'other'"""
     text = message.strip()
     if _GREETING_PATTERNS.match(text):
         return 'greeting'
@@ -637,6 +693,8 @@ def _classify_message_intent(message):
         return 'escalation'
     if _PRICE_MANIPULATION_PATTERNS.search(text):
         return 'price_manipulation'
+    if _ORDER_LOOKUP_PATTERNS.search(text):
+        return 'order_lookup'
     if _KNOWLEDGE_KEYWORDS.search(text):
         return 'knowledge'
     if _PRODUCT_KEYWORDS.search(text):
@@ -760,7 +818,7 @@ def _check_rate_limit(session):
 
 # ---------- Main chat entry point ----------
 
-def get_ai_chat_response(message, session=None, limit=4):
+def get_ai_chat_response(message, session=None, limit=4, user=None):
     """
     Build an AI chat response with intent-aware retrieval and conversation memory.
 
@@ -770,6 +828,9 @@ def get_ai_chat_response(message, session=None, limit=4):
                  per-session rate limiting, and cache scoping.
                  If omitted, the bot behaves statelessly (no memory, no rate limit).
         limit: max products to recommend in product-intent replies
+        user: request.user — pass this (only when authenticated) to enable
+              real order lookups. If omitted or not authenticated, order
+              lookup questions get a "please log in" response instead.
     """
     if not _check_rate_limit(session):
         return prompts.RATE_LIMIT_RESPONSE
@@ -795,6 +856,14 @@ def get_ai_chat_response(message, session=None, limit=4):
             append_chat_history(session, 'user', message)
             append_chat_history(session, 'assistant', response_text)
         logger.info('Chat intent=price_manipulation message=%r', message[:200])
+        return response_text
+
+    if intent == 'order_lookup':
+        response_text = _get_order_lookup_response(message, user)
+        if session is not None:
+            append_chat_history(session, 'user', message)
+            append_chat_history(session, 'assistant', response_text)
+        logger.info('Chat intent=order_lookup message=%r', message[:200])
         return response_text
 
     logger.info('Chat intent=%s message=%r', intent, message[:200])

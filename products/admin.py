@@ -3,7 +3,7 @@ from import_export.admin import ImportExportModelAdmin
 from import_export import resources
 from django.utils.html import format_html
 from .models import (
-    Product, Comment, Wishlist, Compare, Order, OrderItem,
+    Product, Comment, Review, Wishlist, Compare, Order, OrderItem,
     InventoryLog, ProductVariant, UserAddress, PaymentMethod,
     ShippingMethod, EmailTemplate, EmailLog, SupportTicket, TicketReply,
     FAQ, ProductView, ProductRecommendation, ContactFormSubmission,
@@ -87,10 +87,30 @@ class ProductVariantAdmin(admin.ModelAdmin):
 
 
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('product', 'name', 'rating', 'created_at')
-    list_filter = ('rating', 'created_at')
-    readonly_fields = ('created_at',)
+    list_display = ('product', 'name', 'rating', 'moderation_badge', 'fraud_score', 'created_at')
+    list_filter = ('rating', 'moderation_status', 'created_at')
+    readonly_fields = ('created_at', 'fraud_score', 'fraud_flags')
     search_fields = ('name', 'text', 'product__name')
+    actions = ['approve_selected', 'hide_selected']
+
+    def moderation_badge(self, obj):
+        colors = {'published': 'green', 'pending_review': 'orange', 'hidden': 'red'}
+        color = colors.get(obj.moderation_status, 'gray')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px;">{}</span>',
+            color, obj.get_moderation_status_display()
+        )
+    moderation_badge.short_description = 'Moderation'
+
+    def approve_selected(self, request, queryset):
+        updated = queryset.update(moderation_status='published')
+        self.message_user(request, f'{updated} item(s) approved and published.')
+    approve_selected.short_description = 'Approve and publish selected'
+
+    def hide_selected(self, request, queryset):
+        updated = queryset.update(moderation_status='hidden')
+        self.message_user(request, f'{updated} item(s) hidden.')
+    hide_selected.short_description = 'Hide selected'
 
 
 # ============ ORDER MANAGEMENT ============
@@ -274,6 +294,33 @@ class ProductViewAdmin(admin.ModelAdmin):
     search_fields = ('product__name', 'user__username')
 
 
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ('product', 'user', 'rating', 'verified_purchase', 'moderation_badge', 'fraud_score', 'created_at')
+    list_filter = ('rating', 'verified_purchase', 'moderation_status', 'created_at')
+    readonly_fields = ('created_at', 'fraud_score', 'fraud_flags')
+    search_fields = ('user__username', 'review_text', 'product__name')
+    actions = ['approve_selected', 'hide_selected']
+
+    def moderation_badge(self, obj):
+        colors = {'published': 'green', 'pending_review': 'orange', 'hidden': 'red'}
+        color = colors.get(obj.moderation_status, 'gray')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px;">{}</span>',
+            color, obj.get_moderation_status_display()
+        )
+    moderation_badge.short_description = 'Moderation'
+
+    def approve_selected(self, request, queryset):
+        updated = queryset.update(moderation_status='published')
+        self.message_user(request, f'{updated} review(s) approved and published.')
+    approve_selected.short_description = 'Approve and publish selected'
+
+    def hide_selected(self, request, queryset):
+        updated = queryset.update(moderation_status='hidden')
+        self.message_user(request, f'{updated} review(s) hidden.')
+    hide_selected.short_description = 'Hide selected'
+
+
 class WishlistAdmin(admin.ModelAdmin):
     list_display = ('user', 'product')
     list_filter = ('user',)
@@ -318,5 +365,6 @@ admin.site.register(ProductView, ProductViewAdmin)
 admin.site.register(ProductRecommendation, ProductRecommendationAdmin)
 
 # Wishlist & Compare
+admin.site.register(Review, ReviewAdmin)
 admin.site.register(Wishlist, WishlistAdmin)
 admin.site.register(Compare, CompareAdmin)

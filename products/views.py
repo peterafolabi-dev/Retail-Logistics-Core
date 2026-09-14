@@ -19,6 +19,7 @@ from django.urls import reverse
 from django.http import JsonResponse, HttpResponse
 from .models import Product, Comment, Order, OrderItem, Wishlist, AbandonedCart, Coupon, Review, Wallet, WalletTransaction, UserAddress, ChatConversation, ChatMessage
 from .utils import get_product_recommendations_ai, get_ai_chat_response, update_stock
+from . import fraud_detection
 from django.conf import settings
 from decouple import config
 
@@ -1331,11 +1332,55 @@ def order_success(request, order_id):
     })
 
 
+def _score_review_for_fraud(review):
+    other_texts = list(
+        Review.objects.exclude(pk=review.pk).values_list('review_text', flat=True)[:200]
+    )
+    recent_count = Review.objects.filter(
+        product=review.product,
+        created_at__gte=timezone.now() - timedelta(minutes=fraud_detection.BURST_WINDOW_MINUTES)
+    ).count()
+    score, flags, status = fraud_detection.analyze_review(
+        review_text=review.review_text,
+        rating=review.rating,
+        is_verified_purchase=review.verified_purchase,
+        user_date_joined=review.user.date_joined if review.user_id else None,
+        existing_texts_to_compare=other_texts,
+        recent_review_count_for_product=recent_count,
+    )
+    review.fraud_score = score
+    review.fraud_flags = flags
+    review.moderation_status = status
+    review.save(update_fields=['fraud_score', 'fraud_flags', 'moderation_status'])
+
+
+def _score_comment_for_fraud(comment):
+    other_texts = list(
+        Comment.objects.exclude(pk=comment.pk).values_list('text', flat=True)[:200]
+    )
+    recent_count = Comment.objects.filter(
+        product=comment.product,
+        created_at__gte=timezone.now() - timedelta(minutes=fraud_detection.BURST_WINDOW_MINUTES)
+    ).count()
+    score, flags, status = fraud_detection.analyze_review(
+        review_text=comment.text,
+        rating=comment.rating,
+        is_verified_purchase=False,
+        user_date_joined=None,
+        existing_texts_to_compare=other_texts,
+        recent_review_count_for_product=recent_count,
+    )
+    comment.fraud_score = score
+    comment.fraud_flags = flags
+    comment.moderation_status = status
+    comment.save(update_fields=['fraud_score', 'fraud_flags', 'moderation_status'])
+
+
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     additional_images = getattr(product, 'additional_images', [])
-    reviews = product.reviews.all().order_by('-created_at') if hasattr(product, 'reviews') else []
-    comments = product.comments.all().order_by('-created_at') if hasattr(product, 'comments') else []
+    reviews = product.reviews.exclude(moderation_status='hidden').order_by('-created_at') if hasattr(product, 'reviews') else []
+    comments = product.comments.exclude(moderation_status='hidden').order_by('-created_at') if hasattr(product, 'comments') else []
 
     if request.method == 'POST':
         if request.user.is_authenticated:
@@ -1346,7 +1391,7 @@ def product_detail(request, product_id):
                 completed_orders = Order.objects.filter(user=request.user, status='delivered', payment_status='paid', is_paid=True)
                 if OrderItem.objects.filter(order__in=completed_orders, product=product).exists():
                     verified_purchase = True
-                Review.objects.update_or_create(
+                review_obj, _ = Review.objects.update_or_create(
                     user=request.user,
                     product=product,
                     defaults={
@@ -1355,16 +1400,19 @@ def product_detail(request, product_id):
                         'verified_purchase': verified_purchase,
                     }
                 )
+                _score_review_for_fraud(review_obj)
                 messages.success(request, "💬 Thank you for your review!")
                 return redirect('products:product-detail', product_id=product.id)
             elif request.POST.get('name') and request.POST.get('text') and request.POST.get('rating'):
-                Comment.objects.create(product=product, name=request.POST.get('name'), text=request.POST.get('text'), rating=request.POST.get('rating'))
+                comment_obj = Comment.objects.create(product=product, name=request.POST.get('name'), text=request.POST.get('text'), rating=request.POST.get('rating'))
+                _score_comment_for_fraud(comment_obj)
                 messages.success(request, "💬 Thank you for your review!")
                 return redirect('products:product-detail', product_id=product.id)
             else:
                 messages.error(request, "⚠️ Please provide both a rating and your review.")
         elif request.POST.get('name') and request.POST.get('text') and request.POST.get('rating'):
-            Comment.objects.create(product=product, name=request.POST.get('name'), text=request.POST.get('text'), rating=request.POST.get('rating'))
+            comment_obj = Comment.objects.create(product=product, name=request.POST.get('name'), text=request.POST.get('text'), rating=request.POST.get('rating'))
+            _score_comment_for_fraud(comment_obj)
             messages.success(request, "💬 Thank you for your review!")
             return redirect('products:product-detail', product_id=product.id)
 
@@ -1406,7 +1454,7 @@ def submit_review(request, product_id):
         completed_orders = Order.objects.filter(user=request.user, status='delivered', payment_status='paid', is_paid=True)
         verified_purchase = OrderItem.objects.filter(order__in=completed_orders, product=product).exists()
 
-        Review.objects.update_or_create(
+        review_obj, _ = Review.objects.update_or_create(
             user=request.user,
             product=product,
             defaults={
@@ -1415,6 +1463,7 @@ def submit_review(request, product_id):
                 'verified_purchase': verified_purchase,
             }
         )
+        _score_review_for_fraud(review_obj)
         messages.success(request, "💬 Your review has been saved.")
 
     return redirect('products:product-detail', product_id=product.id)

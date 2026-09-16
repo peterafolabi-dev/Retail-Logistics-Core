@@ -2,656 +2,502 @@
 {% load static %}
 {% load humanize %}
 
-{% block title %}Welcome to RedCart - Shop Smart, Live Better{% endblock %}
+{% block title %}RedCart — Nigeria's Marketplace{% endblock %}
 
 {% block content %}
 <style>
-  .landing-container {
-    max-width: 1400px;
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap');
+
+  .rc {
+    --void: #0B0D12;
+    --panel: #12151C;
+    --panel-2: #171B24;
+    --line: rgba(255,255,255,0.09);
+    --line-soft: rgba(255,255,255,0.05);
+    --red: #FF5252;
+    --red-dim: #C23B3B;
+    --amber: #F2B84B;
+    --green: #3ECF8E;
+    --ink: #ECE9E4;
+    --ink-dim: #9A9CA5;
+    --radius: 12px;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--ink);
+    max-width: 1320px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 24px 20px 80px;
   }
 
-  /* Hero Section */
-  .hero-section {
+  .rc h1, .rc h2, .rc h3 { font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif; }
+
+  [data-theme="light"] .rc {
+    --void: #F7F5F1;
+    --panel: #FFFFFF;
+    --panel-2: #F1EFEA;
+    --line: rgba(20,20,20,0.10);
+    --line-soft: rgba(20,20,20,0.06);
+    --ink: #16171B;
+    --ink-dim: #6B6D75;
+  }
+
+  .rc a { text-decoration: none; }
+  .rc *:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rc *, .rc *::before, .rc *::after { animation: none !important; transition: none !important; }
+  }
+
+  /* ---------- Hero ---------- */
+  .rc-hero {
     position: relative;
-    text-align: center;
-    color: var(--text-color);
-    margin-bottom: 60px;
-    animation: fadeInDown 0.8s ease;
-    background:
-      radial-gradient(circle at top center, rgba(255, 79, 79, 0.18), transparent 42%),
-      var(--bg-color);
-    padding: 80px 40px;
+    background: var(--void);
+    border: 1px solid var(--line);
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+    padding: 64px 44px;
     overflow: hidden;
+    animation: rcRise 0.6s ease both;
   }
 
-  .hero-section::before {
+  .rc-hero::before {
     content: "";
     position: absolute;
-    inset: 1px;
-    border-radius: 19px;
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
+    top: -30%; right: -10%;
+    width: 520px; height: 520px;
+    background: radial-gradient(circle, rgba(255,82,82,0.16), transparent 65%);
     pointer-events: none;
   }
 
-  .hero-section h1,
-  .hero-section p {
+  .rc-hero-top {
     position: relative;
-    z-index: 1;
-    color: var(--text-color);
-  }
-
-  .hero-section h1 {
-    font-size: clamp(2.4rem, 4vw, 4rem);
-    font-weight: 900;
-    margin-bottom: 20px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    text-shadow: 0 0 18px rgba(255, 100, 100, 0.22);
-  }
-
-  .hero-section p {
-    font-size: 1.05rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    margin-bottom: 30px;
-    opacity: 0.9;
-  }
-
-  .hero-cta {
-    position: relative;
-    z-index: 1;
-    display: inline-flex;
-    gap: 15px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .hero-btn {
-    padding: 15px 30px;
-    border-radius: 14px;
-    border: 1px solid transparent;
-    font-size: 1rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    text-decoration: none;
-    display: inline-block;
-  }
-
-  .hero-btn-primary {
-    background: #0b0d12;
-    color: var(--main-color);
-    border-color: rgba(255, 112, 112, 0.9);
-    box-shadow: 0 0 0 1px rgba(255, 112, 112, 0.3), 0 0 14px rgba(255, 112, 112, 0.28);
-  }
-
-  .hero-btn-primary:hover {
-    transform: translateY(-2px);
-    background: #11161d;
-    box-shadow: 0 0 0 1px rgba(255, 112, 112, 0.5), 0 0 18px rgba(255, 112, 112, 0.38);
-  }
-
-  .hero-btn-secondary {
-    color: var(--main-color);
-    background: transparent;
-    border-color: var(--main-color);
-    box-shadow: inset 0 0 0 1px rgba(255, 85, 85, 0.3);
-  }
-
-  .hero-btn-secondary:hover {
-    background: rgba(255, 85, 85, 0.06);
-    transform: translateY(-2px);
-    box-shadow: inset 0 0 0 1px rgba(255, 85, 85, 0.5), 0 12px 24px rgba(255, 85, 85, 0.12);
-  }
-
-  /* Featured Products Section */
-  .featured-section {
-    margin-bottom: 80px;
-  }
-
-  .section-title {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: #333;
-    margin-bottom: 40px;
-    text-align: center;
-    background: linear-gradient(45deg, #667eea, #764ba2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .products-scroll {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 25px;
-    margin-bottom: 50px;
-  }
-
-  .product-card {
-    background: white;
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-    text-decoration: none;
-    color: inherit;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .product-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
-  }
-
-  .product-image {
-    width: 100%;
-    height: 200px;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+
+  .rc-mark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: -0.01em;
+  }
+
+  .rc-mark-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 0 4px rgba(255,82,82,0.18);
+  }
+
+  .rc-live {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--ink-dim);
+  }
+
+  .rc-live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: rcPulse 2s ease-in-out infinite;
+  }
+
+  .rc-hero-body { position: relative; max-width: 640px; }
+
+  .rc-hero h1 {
+    font-size: clamp(2.1rem, 4.2vw, 3.4rem);
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 0 0 18px;
+  }
+
+  .rc-hero h1 span { color: var(--red); }
+
+  .rc-hero p {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--ink-dim);
+    margin: 0 0 32px;
+    max-width: 52ch;
+  }
+
+  .rc-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 36px; }
+
+  .rc-btn {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-    font-size: 3rem;
+    padding: 14px 26px;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.96rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+
+  .rc-btn-primary {
+    background: var(--red);
+    color: #14090A;
+    box-shadow: 0 8px 22px rgba(255,82,82,0.28);
+  }
+  .rc-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(255,82,82,0.38); }
+
+  .rc-btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--line);
+  }
+  .rc-btn-ghost:hover { border-color: var(--red); color: var(--red); transform: translateY(-2px); }
+
+  .rc-cats {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .rc-cat-pill {
+    font-size: 0.82rem;
+    color: var(--ink-dim);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 14px;
+  }
+
+  /* ---------- Section shell ---------- */
+  .rc-section { margin-top: 64px; }
+
+  .rc-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .rc-section-head h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .rc-section-link {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--red);
+  }
+  .rc-section-link:hover { text-decoration: underline; }
+
+  /* ---------- Product grid ---------- */
+  .rc-products {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+  }
+
+  .rc-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    color: var(--ink);
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+
+  .rc-card:hover {
+    border-color: var(--red-dim);
+    transform: translateY(-4px);
+  }
+
+  .rc-card-img {
+    aspect-ratio: 4 / 3;
+    background: var(--panel-2);
     overflow: hidden;
   }
 
-  .product-card img {
-    width: 100%;
-    height: 100%;
+  .rc-card-img img {
+    width: 100%; height: 100%;
     object-fit: cover;
+    transition: transform 0.35s ease;
+  }
+  .rc-card:hover .rc-card-img img { transform: scale(1.06); }
+
+  .rc-card-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+
+  .rc-card-cat {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-dim);
   }
 
-  .product-info {
-    padding: 20px;
-    flex: 1;
+  .rc-card-name {
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+
+  .rc-card-price {
+    margin-top: auto;
+    padding-top: 10px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--amber);
+  }
+
+  .rc-empty {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--ink-dim);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+  }
+
+  /* ---------- Offers ---------- */
+  .rc-offers {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 18px;
+  }
+
+  .rc-offer {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px;
     display: flex;
     flex-direction: column;
+    gap: 10px;
   }
 
-  .product-name {
+  .rc-offer-pct {
+    font-family: 'Space Grotesk', sans-serif;
     font-weight: 700;
-    font-size: 1.1rem;
-    color: #333;
-    margin-bottom: 8px;
-    line-height: 1.3;
+    font-size: 2.1rem;
+    color: var(--red);
+    line-height: 1;
   }
+  .rc-offer-pct sup { font-size: 1rem; margin-left: 2px; }
 
-  .product-category {
-    font-size: 0.85rem;
-    color: var(--text-color);
-    margin-bottom: 10px;
+  .rc-offer-name { font-weight: 600; font-size: 1.05rem; }
+  .rc-offer-desc { color: var(--ink-dim); font-size: 0.9rem; line-height: 1.55; }
+
+  .rc-offer-link {
+    margin-top: 6px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--ink);
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
   }
+  .rc-offer-link:hover { color: var(--red); }
 
-  .product-price {
-    font-size: 1.3rem;
-    font-weight: 800;
-    color: #667eea;
-    margin-top: auto;
-  }
-
-  /* Offers Section */
-  .offers-section {
-    margin-bottom: 80px;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    padding: 60px 40px;
-    border-radius: 20px;
-  }
-
-  .offers-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 25px;
-  }
-
-  .offer-card {
-    background: white;
-    padding: 30px;
-    border-radius: 15px;
-    text-align: center;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-    border: 2px solid #667eea;
-    transition: all 0.3s ease;
-  }
-
-  .offer-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
-  }
-
-  .offer-badge {
-    display: inline-block;
-    background: linear-gradient(45deg, #667eea, #764ba2);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 25px;
-    font-weight: 700;
-    font-size: 1.2rem;
-    margin-bottom: 15px;
-  }
-
-  .offer-title {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: #333;
-    margin-bottom: 10px;
-  }
-
-  .offer-desc {
-    color: #666;
-    font-size: 0.95rem;
-    margin-bottom: 15px;
-    line-height: 1.5;
-  }
-
-  /* Registration Section */
-  .auth-section {
+  /* ---------- Auth ---------- */
+  .rc-auth {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 40px;
-    align-items: stretch;
-    margin-top: 80px;
+    gap: 20px;
   }
 
-  .welcome-box {
-    background: white;
-    padding: 50px;
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-    animation: slideInLeft 0.8s ease;
-  }
-
-  .welcome-box h2 {
-    color: var(--text-color);
-    font-size: 2.2rem;
-    font-weight: 800;
-    margin-bottom: 20px;
-    background: linear-gradient(45deg, #667eea, #764ba2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .welcome-box p {
-    color: var(--text-color);
-    font-size: 1.1rem;
-    line-height: 1.8;
-    margin-bottom: 20px;
-  }
-
-  .benefits-list {
-    list-style: none;
-    padding: 0;
-  }
-
-  .benefits-list li {
-    padding: 12px 0;
-    color: var(--text-color);
-    font-size: 1rem;
-    border-bottom: 1px solid #eee;
-  }
-
-  .benefits-list li:last-child {
-    border-bottom: none;
-  }
-
-  .benefits-list li:before {
-    content: "✓ ";
-    color: #667eea;
-    font-weight: bold;
-    margin-right: 10px;
-  }
-
-  .register-box {
-    background: white;
-    padding: 50px;
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-    animation: slideInRight 0.8s ease;
-  }
-
-  .register-box h2 {
-    color: var(--text-color);
-    font-size: 2rem;
-    font-weight: 800;
-    margin-bottom: 10px;
-    text-align: center;
-  }
-
-  .register-box p {
-    color: var(--text-color);
-    text-align: center;
-    margin-bottom: 30px;
-    font-size: 0.95rem;
-  }
-
-  .form-group {
-    margin-bottom: 20px;
-  }
-
-  .form-group label {
-    display: block;
-    color: #333;
-    font-weight: 600;
-    margin-bottom: 8px;
-    font-size: 0.95rem;
-  }
-
-  .form-group input {
-    width: 100%;
-    padding: 14px 16px;
-    border: 2px solid #eee;
-    border-radius: 10px;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    font-family: inherit;
-  }
-
-  .form-group input:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-
-  .form-group input::placeholder {
-    color: #bbb;
-  }
-
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-  }
-
-  .submit-btn {
-    width: 100%;
-    padding: 16px;
-    background: linear-gradient(45deg, #667eea, #764ba2);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-top: 10px;
-  }
-
-  .submit-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-  }
-
-  .login-link {
-    text-align: center;
-    color: #666;
-    margin-top: 20px;
-    font-size: 0.95rem;
-  }
-
-  .login-link a {
-    color: #667eea;
-    text-decoration: none;
-    font-weight: 600;
-    transition: color 0.3s ease;
-  }
-
-  .login-link a:hover {
-    color: #764ba2;
-  }
-
-  .divider {
-    text-align: center;
-    margin: 20px 0;
-    color: #999;
-    font-size: 0.9rem;
-  }
-
-  .terms {
-    font-size: 0.85rem;
-    color: #999;
-    text-align: center;
-    margin-top: 15px;
-    line-height: 1.5;
-  }
-
-  .terms a {
-    color: #667eea;
-    text-decoration: none;
-  }
-
-  .contact-section {
-    text-align: center;
-    color: white;
-    margin-top: 60px;
+  .rc-panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
     padding: 40px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
-    backdrop-filter: blur(10px);
   }
 
-  .contact-section h3 {
-    font-size: 1.5rem;
-    margin-bottom: 15px;
+  .rc-panel h2 { font-size: 1.5rem; margin: 0 0 12px; }
+  .rc-panel > p.rc-lead { color: var(--ink-dim); margin: 0 0 24px; line-height: 1.6; }
+
+  .rc-benefits { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
+
+  .rc-benefits li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 0.95rem;
+  }
+  .rc-benefits li:last-child { border-bottom: none; }
+
+  .rc-check { color: var(--green); font-weight: 700; flex-shrink: 0; }
+
+  .rc-stack { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+
+  .rc-btn-block { width: 100%; }
+
+  .rc-btn-outline {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line);
+  }
+  .rc-btn-outline:hover { border-color: var(--red); color: var(--red); }
+
+  .rc-fineprint { color: var(--ink-dim); font-size: 0.85rem; margin-top: 18px; text-align: center; }
+
+  /* ---------- Support ---------- */
+  .rc-support {
+    margin-top: 64px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    background: var(--panel);
   }
 
-  .contact-section p {
-    font-size: 1.1rem;
-    margin-bottom: 20px;
+  .rc-support h3 { font-size: 1.3rem; margin: 0 0 6px; }
+  .rc-support p { color: var(--ink-dim); margin: 0; font-size: 0.95rem; }
+  .rc-support-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  @keyframes rcRise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes rcPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
   }
 
-  .contact-section a {
-    color: white;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1.2rem;
-    display: inline-block;
-    padding: 10px 25px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 25px;
-    transition: all 0.3s ease;
+  @media (max-width: 900px) {
+    .rc-hero { padding: 40px 24px; }
+    .rc-auth { grid-template-columns: 1fr; }
+    .rc-panel { padding: 28px; }
   }
 
-  .contact-section a:hover {
-    background: white;
-    color: #667eea;
-  }
-
-  @keyframes fadeInDown {
-    from {
-      opacity: 0;
-      transform: translateY(-30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes slideInUp {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes slideInLeft {
-    from {
-      opacity: 0;
-      transform: translateX(-50px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes slideInRight {
-    from {
-      opacity: 0;
-      transform: translateX(50px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  .welcome-box,
-  .register-box {
-    padding: 30px;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .products-scroll {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  }
-
-  .offers-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .auth-section {
-    grid-template-columns: 1fr;
-  }
-}
-
-[data-theme="dark"] .featured-section,
-[data-theme="dark"] .offers-section {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-[data-theme="dark"] .product-card,
-[data-theme="dark"] .offer-card {
-  background-color: #1e1e1e;
-  color: #e0e0e0;
-}
-
-[data-theme="dark"] .product-name,
-[data-theme="dark"] .offer-title {
-  color: #e0e0e0;
-}
-
-[data-theme="dark"] .welcome-box,
-[data-theme="dark"] .register-box {
-  background-color: #1e1e1e;
-  color: #e0e0e0;
-}
-
-[data-theme="dark"] .form-control {
-  background-color: #2a2a2a;
-  color: #e0e0e0;
-  border-color: #444;
-}
+  .rc-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .rc-form-row { grid-template-columns: 1fr; } }
 </style>
 
-<div class="landing-container">
-  <!-- Hero Section -->
-  <div class="hero-section">
-    <h1>RED/CART_OS // SHOPPING COMMAND CENTER</h1>
-    <p>Curated essentials. Faster checkout. Smarter everyday buys.</p>
-    <div class="hero-cta">
-      <a href="#featured-products" class="hero-btn hero-btn-primary">Shop Now</a>
-      <a href="{% url 'products:register' %}" class="hero-btn hero-btn-secondary">Sign Up Free</a>
-    </div>
-  </div>
+<div class="rc">
 
-  <!-- Featured Products Section -->
-  <div class="featured-section" id="featured-products">
-    <h2 class="section-title">⭐ Featured Products</h2>
-    
+  <!-- Hero -->
+  <section class="rc-hero">
+    <div class="rc-hero-top">
+      <div class="rc-mark"><span class="rc-mark-dot"></span> RedCart</div>
+      <div class="rc-live"><span class="rc-live-dot"></span> New deals dropping today</div>
+    </div>
+    <div class="rc-hero-body">
+      <h1>Everyday essentials, priced for <span>Nigeria</span>.</h1>
+      <p>Browse thousands of items from trusted sellers, pay in naira, and track every order until it lands on your doorstep.</p>
+      <div class="rc-cta">
+        <a href="#featured-products" class="rc-btn rc-btn-primary">Shop now</a>
+        <a href="{% url 'products:register' %}" class="rc-btn rc-btn-ghost">Create free account</a>
+      </div>
+      <div class="rc-cats">
+        <span class="rc-cat-pill">Electronics</span>
+        <span class="rc-cat-pill">Fashion</span>
+        <span class="rc-cat-pill">Home &amp; Living</span>
+        <span class="rc-cat-pill">Phones &amp; Tablets</span>
+        <span class="rc-cat-pill">Health &amp; Beauty</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Products -->
+  <section class="rc-section" id="featured-products">
+    <div class="rc-section-head">
+      <h2>Featured products</h2>
+      <a href="{% url 'products:product-list' %}" class="rc-section-link">Browse all →</a>
+    </div>
+
     {% if featured_products %}
-      <div class="products-scroll">
+      <div class="rc-products">
         {% for product in featured_products %}
-          <a href="{% url 'products:product-detail' product.id %}" class="product-card">
-            <div class="product-image">
-              <img src="{{ product.image_src }}" alt="{{ product.name }}">
+          <a href="{% url 'products:product-detail' product.id %}" class="rc-card">
+            <div class="rc-card-img">
+              <img src="{{ product.image_src }}" alt="{{ product.name }}" loading="lazy">
             </div>
-            <div class="product-info">
-              <div class="product-category">{{ product.get_category_display }}</div>
-              <div class="product-name">{{ product.name|truncatewords:5 }}</div>
-              <div class="product-price">₦{{ product.price|floatformat:0|intcomma }}</div>
+            <div class="rc-card-body">
+              <div class="rc-card-cat">{{ product.get_category_display }}</div>
+              <div class="rc-card-name">{{ product.name|truncatewords:5 }}</div>
+              <div class="rc-card-price">₦{{ product.price|floatformat:0|intcomma }}</div>
             </div>
           </a>
         {% endfor %}
       </div>
     {% else %}
-      <p style="text-align: center; color: #999; padding: 40px;">No products available yet. Check back soon!</p>
+      <div class="rc-empty">No products available yet. Check back soon.</div>
     {% endif %}
-    
-    <div style="text-align: center; margin-top: 40px;">
-      <a href="{% url 'products:product-list' %}" class="hero-btn hero-btn-primary">Browse All Products →</a>
-    </div>
-  </div>
+  </section>
 
-  <!-- Offers Section -->
+  <!-- Offers -->
   {% if offers %}
-  <div class="offers-section">
-    <h2 class="section-title">🎉 Limited Time Offers</h2>
-    <div class="offers-grid">
+  <section class="rc-section">
+    <div class="rc-section-head">
+      <h2>Flash deals</h2>
+      <a href="{% url 'products:offers' %}" class="rc-section-link">All deals →</a>
+    </div>
+    <div class="rc-offers">
       {% for offer in offers %}
-        <div class="offer-card">
-          <div class="offer-badge">{{ offer.discount }}% OFF</div>
-          <div class="offer-title">{{ offer.name }}</div>
-          <div class="offer-desc">{{ offer.description|truncatewords:12 }}</div>
-          <a href="{% url 'products:offers' %}" class="hero-btn hero-btn-primary" style="font-size: 0.95rem; padding: 10px 20px;">View Deal →</a>
+        <div class="rc-offer">
+          <div class="rc-offer-pct">{{ offer.discount }}<sup>% off</sup></div>
+          <div class="rc-offer-name">{{ offer.name }}</div>
+          <div class="rc-offer-desc">{{ offer.description|truncatewords:12 }}</div>
+          <a href="{% url 'products:offers' %}" class="rc-offer-link">View deal →</a>
         </div>
       {% endfor %}
     </div>
-  </div>
+  </section>
   {% endif %}
 
-  <!-- Welcome & Sign Up CTA Section -->
+  <!-- Registration -->
   {% if not user.is_authenticated %}
-  <div class="auth-section" id="register">
-    <div class="welcome-box">
-      <h2>Why Join RedCart?</h2>
-      <p>Become part of our community and enjoy exclusive benefits:</p>
-      <ul class="benefits-list">
-        <li>Track your orders in real-time</li>
-        <li>Save your favorite items</li>
-        <li>Get exclusive member-only deals</li>
-        <li>Earn rewards on every purchase</li>
-        <li>One-click checkout</li>
-        <li>Manage multiple addresses</li>
-        <li>View order history anytime</li>
-        <li>Personalized recommendations</li>
+  <section class="rc-section rc-auth" id="register">
+    <div class="rc-panel">
+      <h2>Why join RedCart</h2>
+      <p class="rc-lead">Create a free account and unlock the full shopping experience.</p>
+      <ul class="rc-benefits">
+        <li><span class="rc-check">✓</span> Track your orders in real-time</li>
+        <li><span class="rc-check">✓</span> Save your favorite items</li>
+        <li><span class="rc-check">✓</span> Get exclusive member-only deals</li>
+        <li><span class="rc-check">✓</span> Earn rewards on every purchase</li>
+        <li><span class="rc-check">✓</span> One-click checkout</li>
+        <li><span class="rc-check">✓</span> Manage multiple addresses</li>
+        <li><span class="rc-check">✓</span> Personalized recommendations</li>
       </ul>
     </div>
 
-    <div class="register-box">
-      <h2>Start Your RedCart Journey</h2>
-      <p>Sign up on the dedicated register page and then log in with one account.</p>
-      <div style="display: flex; flex-direction: column; gap: 15px;">
-        <a href="{% url 'products:register' %}" class="submit-btn" style="text-align:center;">Create Account</a>
-        <a href="{% url 'products:login' %}" class="submit-btn" style="background: #fff; color: #667eea; border: 2px solid #667eea;">Sign In</a>
+    <div class="rc-panel">
+      <h2>Start your RedCart journey</h2>
+      <p class="rc-lead">Sign up on the dedicated register page, then log in with one account.</p>
+      <div class="rc-stack">
+        <a href="{% url 'products:register' %}" class="rc-btn rc-btn-primary rc-btn-block">Create account</a>
+        <a href="{% url 'products:login' %}" class="rc-btn rc-btn-outline rc-btn-block">Sign in</a>
       </div>
-      <p class="login-link" style="margin-top: 20px;">Already have an account? Use the sign-in page above.</p>
+      <p class="rc-fineprint">Already have an account? Use sign in above.</p>
     </div>
-  </div>
+  </section>
   {% endif %}
 
-  <!-- Contact Section -->
-  <div style="text-align: center; margin-top: 80px; padding: 50px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px;">
-    <h3 style="color: white; font-size: 2rem; margin-bottom: 15px;">❓ Questions? We're Here to Help</h3>
-    <p style="color: white; font-size: 1.1rem; margin-bottom: 25px;">📧 Email: <strong>afolabiprosper329@gmail.com</strong> | 📞 24/7 Chat Support</p>
-    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-      <a href="{% url 'products:contact' %}" style="background: white; color: #667eea; padding: 14px 35px; text-decoration: none; border-radius: 25px; display: inline-block; font-weight: 600; transition: all 0.3s ease; cursor: pointer;">Contact Us</a>
-      <a href="{% url 'products:faq' %}" style="background: rgba(255,255,255,0.2); color: white; padding: 14px 35px; text-decoration: none; border-radius: 25px; display: inline-block; font-weight: 600; transition: all 0.3s ease; cursor: pointer; border: 2px solid white;">FAQ</a>
+  <!-- Support -->
+  <section class="rc-support">
+    <div>
+      <h3>Questions? We're here to help.</h3>
+      <p>afolabiprosper329@gmail.com · 24/7 chat support</p>
     </div>
-  </div>
-</div>
+    <div class="rc-support-actions">
+      <a href="{% url 'products:contact' %}" class="rc-btn rc-btn-primary">Contact us</a>
+      <a href="{% url 'products:faq' %}" class="rc-btn rc-btn-ghost">FAQ</a>
+    </div>
+  </section>
 
+</div>
 {% endblock %}

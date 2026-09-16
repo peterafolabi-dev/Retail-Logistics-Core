@@ -7,72 +7,226 @@
 <div class="container my-5">
   <div class="row justify-content-center">
     <div class="col-lg-8">
-      <div class="card border-0 shadow-lg rounded-4 p-4 theme-card">
-        <h2 class="fw-bold mb-3">💰 RedCart Wallet</h2>
-        <p class="text-muted mb-4">Top up your wallet with Paystack and pay directly at checkout.</p>
 
-        <div class="row align-items-center mb-4">
-          <div class="col-md-6">
-            <p class="mb-1 text-muted">Current balance</p>
-            <h1 class="display-6">₦{{ wallet.balance|floatformat:2|intcomma }}</h1>
-          </div>
-          <div class="col-md-6 text-md-end">
-            <button id="wallet-topup-btn" class="btn btn-primary btn-lg rounded-pill">Top up wallet</button>
-          </div>
-        </div>
-
-        <hr>
-
-        <div class="mb-4">
-          <h5 class="fw-bold">How it works</h5>
-          <ul class="list-group list-group-flush wallet-steps">
-            <li class="list-group-item wallet-step">Top up with Paystack and store funds securely in your RedCart wallet.</li>
-            <li class="list-group-item wallet-step">At checkout, select "Wallet" to pay instantly using your balance.</li>
-            <li class="list-group-item wallet-step">If balance is insufficient, choose another payment method.</li>
-          </ul>
-        </div>
-
-        <hr>
-
-        <div class="mb-4">
-          <h5 class="fw-bold">🎁 Daily Login Reward</h5>
-          <div id="daily-reward-widget" class="daily-reward-widget">
-            <p class="text-muted mb-0">Loading...</p>
+      <div class="rc-wallet-card mb-4">
+        <div class="rc-wallet-card-glow"></div>
+        <div class="rc-wallet-top">
+          <div class="rc-wallet-brand">
+            <span class="rc-wallet-icon">💰</span>
+            <div>
+              <h2 class="rc-wallet-title">RedCart Wallet</h2>
+              <p class="rc-wallet-sub">Top up with Paystack, pay instantly at checkout</p>
+            </div>
           </div>
         </div>
 
-        <div id="wallet-message" class="alert alert-info d-none" role="alert"></div>
+        <div class="rc-wallet-balance-row">
+          <div>
+            <p class="rc-wallet-balance-label">Current balance</p>
+            <h1 class="rc-wallet-balance">₦{{ wallet.balance|floatformat:2|intcomma }}</h1>
+          </div>
+          <button id="wallet-topup-btn" class="rc-topup-btn">
+            <span>Top up wallet</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+        </div>
       </div>
+
+      <div class="rc-panel mb-4">
+        <h5 class="rc-panel-title">How it works</h5>
+        <div class="rc-steps">
+          <div class="rc-step">
+            <span class="rc-step-num">1</span>
+            <p>Top up with Paystack and store funds securely in your RedCart wallet.</p>
+          </div>
+          <div class="rc-step">
+            <span class="rc-step-num">2</span>
+            <p>At checkout, select "Wallet" to pay instantly using your balance.</p>
+          </div>
+          <div class="rc-step">
+            <span class="rc-step-num">3</span>
+            <p>If balance is insufficient, choose another payment method.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rc-panel rc-reward-panel">
+        <h5 class="rc-panel-title"><span class="rc-reward-icon">🎁</span> Daily login reward</h5>
+        <div id="daily-reward-widget" class="rc-reward-body">
+          <div class="rc-reward-loading">
+            <span class="rc-spinner"></span>
+            <p class="mb-0">Loading reward status…</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="wallet-message" class="alert alert-info d-none mt-4" role="alert"></div>
     </div>
   </div>
 </div>
 
 <style>
-  .wallet-steps .wallet-step {
-    background-color: transparent;
-    color: var(--text-color, #1f2937);
-    border-color: rgba(148, 163, 184, 0.28);
+  .rc-wallet-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+    padding: 32px;
+    background: linear-gradient(135deg, #1a1035 0%, #2b1a4a 45%, #3d1f3d 100%);
+    color: #f5f3ff;
+    box-shadow: 0 20px 50px -12px rgba(76, 29, 149, 0.45);
   }
-
-  [data-theme="dark"] .wallet-steps .wallet-step {
-    color: #e8e8e8;
-    border-color: rgba(255, 255, 255, 0.12);
+  .rc-wallet-card-glow {
+    position: absolute;
+    top: -60px;
+    right: -60px;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(246, 139, 30, 0.35) 0%, rgba(246, 139, 30, 0) 70%);
+    pointer-events: none;
   }
-
-  .daily-reward-widget {
-    padding: 16px;
+  .rc-wallet-top { position: relative; z-index: 1; }
+  .rc-wallet-brand { display: flex; align-items: center; gap: 14px; }
+  .rc-wallet-icon {
+    font-size: 26px;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 14px;
-    background: rgba(102, 126, 234, 0.08);
-    border: 1px solid rgba(102, 126, 234, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.12);
   }
-  [data-theme="dark"] .daily-reward-widget {
-    background: rgba(102, 126, 234, 0.12);
-    border-color: rgba(102, 126, 234, 0.3);
+  .rc-wallet-title { font-weight: 700; font-size: 1.4rem; margin: 0; color: #fff; }
+  .rc-wallet-sub { margin: 2px 0 0; color: rgba(245, 243, 255, 0.65); font-size: 0.9rem; }
+
+  .rc-wallet-balance-row {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 32px;
   }
-  .daily-reward-streak {
+  .rc-wallet-balance-label { color: rgba(245, 243, 255, 0.6); font-size: 0.85rem; margin: 0 0 4px; letter-spacing: 0.02em; }
+  .rc-wallet-balance { font-size: 2.6rem; font-weight: 700; margin: 0; color: #fff; letter-spacing: -0.01em; }
+
+  .rc-topup-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 24px;
+    border-radius: 999px;
+    border: none;
+    background: linear-gradient(135deg, #f68b1e, #f6521e);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 8px 20px -6px rgba(246, 82, 30, 0.6);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .rc-topup-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -6px rgba(246, 82, 30, 0.7); color: #fff; }
+  .rc-topup-btn:active { transform: translateY(0); }
+
+  .rc-panel {
+    border-radius: 18px;
+    padding: 24px;
+    background: var(--card-bg, #fff);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+  }
+  [data-theme="dark"] .rc-panel {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .rc-panel-title {
     font-weight: 700;
-    color: #f68b1e;
+    font-size: 1.05rem;
+    margin: 0 0 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
+
+  .rc-steps { display: flex; flex-direction: column; gap: 14px; }
+  .rc-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(148, 163, 184, 0.06);
+  }
+  [data-theme="dark"] .rc-step { background: rgba(255, 255, 255, 0.04); }
+  .rc-step p { margin: 0; font-size: 0.92rem; color: var(--text-color, #374151); }
+  [data-theme="dark"] .rc-step p { color: #d1d5db; }
+  .rc-step-num {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #4c1d95);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .rc-reward-panel {
+    background: linear-gradient(135deg, rgba(246, 139, 30, 0.08), rgba(124, 58, 237, 0.08));
+    border-color: rgba(246, 139, 30, 0.25);
+  }
+  [data-theme="dark"] .rc-reward-panel {
+    background: linear-gradient(135deg, rgba(246, 139, 30, 0.12), rgba(124, 58, 237, 0.12));
+  }
+  .rc-reward-icon { font-size: 1.1rem; }
+
+  .rc-reward-loading { display: flex; align-items: center; gap: 10px; color: var(--text-color, #6b7280); }
+  [data-theme="dark"] .rc-reward-loading { color: #9ca3af; }
+  .rc-spinner {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 2px solid rgba(148, 163, 184, 0.35);
+    border-top-color: #f68b1e;
+    animation: rc-spin 0.7s linear infinite;
+  }
+  @keyframes rc-spin { to { transform: rotate(360deg); } }
+
+  .rc-reward-streak {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    color: #f6521e;
+    background: rgba(246, 82, 30, 0.1);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 0.92rem;
+  }
+  .rc-reward-text { margin: 12px 0 0; font-size: 0.92rem; color: var(--text-color, #4b5563); }
+  [data-theme="dark"] .rc-reward-text { color: #cbd5e1; }
+
+  .rc-claim-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 11px 22px;
+    border-radius: 999px;
+    border: none;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.92rem;
+    box-shadow: 0 6px 16px -6px rgba(22, 163, 74, 0.55);
+    transition: transform 0.15s ease;
+  }
+  .rc-claim-btn:hover { transform: translateY(-1px); color: #fff; }
+  .rc-claim-btn:disabled { opacity: 0.7; transform: none; cursor: default; }
 </style>
 
 <script src="https://js.paystack.co/v1/inline.js" defer></script>
@@ -131,23 +285,23 @@
       const response = await fetch('{% url "products:daily-reward-status" %}');
       const data = await response.json();
       if (!data.success) {
-        widget.innerHTML = '<p class="text-muted mb-0">Could not load reward status.</p>';
+        widget.innerHTML = '<p class="rc-reward-text mb-0">Could not load reward status.</p>';
         return;
       }
       if (data.already_claimed_today) {
         widget.innerHTML = `
-          <span class="daily-reward-streak">🔥 Day ${data.current_streak} streak</span>
-          <p class="text-muted mb-0 mt-2">You've already claimed today's reward. Come back tomorrow for ₦${data.next_reward_amount}!</p>
+          <span class="rc-reward-streak">🔥 Day ${data.current_streak} streak</span>
+          <p class="rc-reward-text mb-0">You've already claimed today's reward. Come back tomorrow for ₦${data.next_reward_amount}!</p>
         `;
       } else {
         widget.innerHTML = `
-          <p class="mb-2">Day ${data.current_streak} of your streak — claim your reward:</p>
-          <button id="claim-reward-btn" class="btn btn-success rounded-pill">🎁 Claim ₦${data.next_reward_amount}</button>
+          <p class="rc-reward-text mb-0">Day ${data.current_streak} of your streak — claim your reward:</p>
+          <button id="claim-reward-btn" class="rc-claim-btn">🎁 Claim ₦${data.next_reward_amount}</button>
         `;
         document.getElementById('claim-reward-btn')?.addEventListener('click', claimDailyReward);
       }
     } catch (error) {
-      widget.innerHTML = '<p class="text-muted mb-0">Could not load reward status.</p>';
+      widget.innerHTML = '<p class="rc-reward-text mb-0">Could not load reward status.</p>';
     }
   }
 

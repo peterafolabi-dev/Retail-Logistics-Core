@@ -5,188 +5,300 @@
 
 {% block content %}
 <style>
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
   .blog-container {
-    max-width: 1200px;
+    max-width: 1180px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 56px 20px 80px;
   }
 
-  .blog-header {
-    text-align: center;
-    margin-bottom: 60px;
-    padding: 60px 40px;
-    background: var(--bg-color);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02), 0 20px 60px rgba(0, 0, 0, 0.18);
-    color: var(--text-color);
+  /* ---------- Masthead ---------- */
+
+  .blog-masthead {
+    padding-bottom: 36px;
+    margin-bottom: 44px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .blog-header h1 {
-    font-size: 3rem;
+  .blog-masthead h1 {
+    font-size: clamp(2.6rem, 5.5vw, 4.2rem);
     font-weight: 800;
-    margin-bottom: 15px;
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+    color: var(--text-color);
+    margin-bottom: 14px;
+    max-width: 14ch;
   }
 
-  .blog-header p {
-    font-size: 1.2rem;
+  .blog-masthead p {
+    font-size: 1.15rem;
+    color: var(--text-color);
+    opacity: 0.72;
+    max-width: 46ch;
+    line-height: 1.55;
+    margin-bottom: 28px;
+  }
+
+  .masthead-stats {
+    display: flex;
+    align-items: baseline;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .masthead-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding-right: 32px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .masthead-stat:last-child { border-right: none; padding-right: 0; }
+
+  .masthead-stat strong {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: var(--main-color);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .masthead-stat span {
+    font-size: 0.92rem;
+    color: var(--text-color);
+    opacity: 0.65;
+  }
+
+  /* ---------- Featured article (front page treatment) ---------- */
+
+  .featured-article {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 0;
+    background: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px 28px 4px 28px;
+    overflow: hidden;
+    margin-bottom: 48px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.16);
+    text-decoration: none;
+    color: inherit;
+    opacity: 0;
+    animation: rc-rise 0.6s ease forwards;
+  }
+
+  .featured-visual {
+    position: relative;
+    min-height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(255, 71, 71, 0.22), transparent 60%),
+      var(--bg-color);
+    font-size: 7rem;
+  }
+
+  .featured-body {
+    padding: 40px 44px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .price-tag {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 6px 14px 6px 20px;
+    margin-bottom: 16px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--main-color);
+    background: rgba(255, 71, 71, 0.12);
+    clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
+  }
+
+  .price-tag::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    transform: translateY(-50%);
+  }
+
+  .featured-body h2 {
+    font-size: 1.9rem;
+    font-weight: 800;
+    line-height: 1.18;
+    letter-spacing: -0.01em;
+    color: var(--text-color);
+    margin-bottom: 14px;
+  }
+
+  .featured-body p {
+    color: var(--text-color);
+    opacity: 0.78;
+    line-height: 1.6;
+    margin-bottom: 22px;
+  }
+
+  .article-byline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 18px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.16);
+    font-size: 0.88rem;
+    color: var(--text-color);
     opacity: 0.8;
   }
 
+  .article-byline strong { color: var(--main-color); opacity: 1; }
+  .article-byline .dot { opacity: 0.4; }
+
+  /* ---------- Article grid ---------- */
+
   .articles-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 30px;
-    margin-bottom: 60px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 26px;
+    margin-bottom: 64px;
   }
 
   .article-card {
     background: var(--card-bg);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 15px;
+    border-radius: 4px 20px 4px 20px;
     overflow: hidden;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
     text-decoration: none;
     color: inherit;
+    opacity: 0;
+    animation: rc-rise 0.5s ease forwards;
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
   }
 
   .article-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 15px 40px rgba(255, 71, 71, 0.14);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 34px rgba(255, 71, 71, 0.14);
   }
 
   .article-image {
     width: 100%;
-    height: 200px;
+    height: 168px;
     background: var(--bg-color);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 4rem;
+    font-size: 3.4rem;
   }
 
   .article-content {
-    padding: 25px;
+    padding: 22px 24px 24px;
     flex: 1;
     display: flex;
     flex-direction: column;
   }
 
-  .article-category {
-    display: inline-block;
-    background: rgba(255, 71, 71, 0.12);
-    color: var(--main-color);
-    border: 1px solid rgba(255, 71, 71, 0.2);
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-bottom: 10px;
-    width: fit-content;
-  }
-
   .article-title {
-    font-size: 1.3rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: var(--text-color);
-    margin-bottom: 10px;
-    line-height: 1.4;
+    margin-bottom: 8px;
+    line-height: 1.35;
   }
 
   .article-excerpt {
     color: var(--text-color);
-    opacity: 0.8;
-    font-size: 0.95rem;
-    margin-bottom: 15px;
+    opacity: 0.75;
+    font-size: 0.92rem;
+    margin-bottom: 16px;
     flex: 1;
-    line-height: 1.5;
+    line-height: 1.55;
   }
 
   .article-meta {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 15px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    font-size: 0.85rem;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.14);
+    font-size: 0.84rem;
     color: var(--text-color);
-    opacity: 0.75;
+    opacity: 0.7;
   }
 
-  .article-author {
-    font-weight: 600;
-    color: var(--main-color);
+  .article-meta .author { font-weight: 600; color: var(--main-color); opacity: 1; }
+
+  /* Stagger the entrance of the first dozen cards */
+  .featured-article { animation-delay: 0s; }
+  .articles-grid .article-card:nth-child(1) { animation-delay: 0.05s; }
+  .articles-grid .article-card:nth-child(2) { animation-delay: 0.1s; }
+  .articles-grid .article-card:nth-child(3) { animation-delay: 0.15s; }
+  .articles-grid .article-card:nth-child(4) { animation-delay: 0.2s; }
+  .articles-grid .article-card:nth-child(5) { animation-delay: 0.25s; }
+  .articles-grid .article-card:nth-child(n+6) { animation-delay: 0.3s; }
+
+  @keyframes rc-rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
-  .read-more {
-    color: var(--main-color);
-    font-weight: 600;
-    text-decoration: none;
-    display: inline-block;
-    margin-top: 10px;
-  }
-
-  .read-more:hover {
-    text-decoration: underline;
-  }
-
-  .blog-stats {
-    background: var(--card-bg);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 40px;
-    border-radius: 15px;
-    text-align: center;
-    margin-bottom: 40px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-  }
-
-  .stat-item {
-    display: inline-block;
-    margin: 0 30px;
-  }
-
-  .stat-number {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: var(--main-color);
-  }
-
-  .stat-label {
-    color: var(--text-color);
-    opacity: 0.8;
-    font-size: 0.95rem;
-    margin-top: 5px;
-  }
+  /* ---------- Newsletter, styled as a clip-out coupon ---------- */
 
   .blog-newsletter {
-    background: linear-gradient(135deg, rgba(255, 71, 71, 0.08), var(--card-bg));
-    border: 1px solid rgba(255, 71, 71, 0.16);
-    color: var(--text-color);
-    padding: 50px 40px;
-    border-radius: 20px;
+    position: relative;
+    background: var(--card-bg);
+    border: 1px dashed rgba(255, 71, 71, 0.35);
+    border-radius: 18px;
+    padding: 48px 44px;
     text-align: center;
-    margin-top: 60px;
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
   }
 
+  .blog-newsletter::before,
+  .blog-newsletter::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 26px;
+    height: 26px;
+    background: var(--bg-color);
+    border-radius: 50%;
+    transform: translateY(-50%);
+  }
+
+  .blog-newsletter::before { left: -13px; }
+  .blog-newsletter::after { right: -13px; }
+
   .blog-newsletter h2 {
-    font-size: 2rem;
-    margin-bottom: 15px;
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
     color: var(--text-color);
+    margin-bottom: 10px;
   }
 
   .blog-newsletter p {
-    font-size: 1.1rem;
-    margin-bottom: 30px;
-    opacity: 0.8;
+    font-size: 1.02rem;
+    color: var(--text-color);
+    opacity: 0.72;
+    margin-bottom: 26px;
   }
 
   .blog-newsletter-form {
-    max-width: 500px;
+    max-width: 460px;
     margin: 0 auto;
     display: flex;
     gap: 10px;
@@ -194,9 +306,9 @@
 
   .blog-newsletter-input {
     flex: 1;
-    padding: 14px;
+    padding: 13px 16px;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.02);
     color: var(--text-color);
     font-size: 1rem;
@@ -204,78 +316,86 @@
 
   .blog-newsletter-input::placeholder {
     color: var(--text-color);
-    opacity: 0.55;
+    opacity: 0.5;
   }
 
-  @media (max-width: 768px) {
-    .blog-header h1 {
-      font-size: 2rem;
-    }
+  @media (max-width: 800px) {
+    .featured-article { grid-template-columns: 1fr; }
+    .featured-visual { min-height: 180px; font-size: 5rem; }
+    .featured-body { padding: 28px 26px; }
+  }
 
-    .articles-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .stat-item {
-      display: block;
-      margin: 15px 0;
-    }
-
-    .blog-newsletter-form {
-      flex-direction: column;
-    }
+  @media (max-width: 640px) {
+    .blog-masthead h1 { max-width: none; }
+    .masthead-stats { gap: 20px; }
+    .masthead-stat { padding-right: 20px; }
+    .articles-grid { grid-template-columns: 1fr; }
+    .blog-newsletter { padding: 40px 24px; }
+    .blog-newsletter-form { flex-direction: column; }
+    .blog-newsletter::before, .blog-newsletter::after { display: none; }
   }
 </style>
 
 <div class="blog-container">
-  <!-- Header -->
-  <div class="blog-header">
-    <h1>📝 RedCart Blog</h1>
-    <p>Shopping tips, product guides, and exclusive deals</p>
+
+  <!-- Masthead -->
+  <div class="blog-masthead">
+    <h1>Shopping smarter starts here</h1>
+    <p>Product guides, buying tips, and the deals worth knowing about — written by the RedCart team.</p>
+    <div class="masthead-stats">
+      <div class="masthead-stat">
+        <strong>{{ total_articles }}</strong>
+        <span>Articles published</span>
+      </div>
+      <div class="masthead-stat">
+        <strong>10K+</strong>
+        <span>Monthly readers</span>
+      </div>
+      <div class="masthead-stat">
+        <strong>50+</strong>
+        <span>Contributors</span>
+      </div>
+    </div>
   </div>
 
-  <!-- Stats -->
-  <div class="blog-stats">
-    <div class="stat-item">
-      <div class="stat-number">{{ total_articles }}</div>
-      <div class="stat-label">Articles Published</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-number">10K+</div>
-      <div class="stat-label">Monthly Readers</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-number">50+</div>
-      <div class="stat-label">Expert Contributors</div>
-    </div>
-  </div>
-
-  <!-- Articles Grid -->
-  <div class="articles-grid">
-    {% for article in articles %}
-      <div class="article-card">
-        <div class="article-image">{{ article.image_emoji }}</div>
-        <div class="article-content">
-          <span class="article-category">{{ article.category }}</span>
-          <h3 class="article-title">{{ article.title }}</h3>
-          <p class="article-excerpt">{{ article.excerpt }}</p>
-          <div class="article-meta">
-            <div>
-              <span class="article-author">{{ article.author }}</span>
-              <br>
-              <span>{{ article.date }}</span>
-            </div>
-            <span class="read-more">Read →</span>
+  <!-- Articles -->
+  {% for article in articles %}
+    {% if forloop.first %}
+      <div class="featured-article">
+        <div class="featured-visual">{{ article.image_emoji }}</div>
+        <div class="featured-body">
+          <span class="price-tag">{{ article.category }}</span>
+          <h2>{{ article.title }}</h2>
+          <p>{{ article.excerpt }}</p>
+          <div class="article-byline">
+            <strong>{{ article.author }}</strong>
+            <span class="dot">·</span>
+            <span>{{ article.date }}</span>
           </div>
         </div>
       </div>
-    {% endfor %}
+      <div class="articles-grid">
+    {% else %}
+        <div class="article-card">
+          <div class="article-image">{{ article.image_emoji }}</div>
+          <div class="article-content">
+            <span class="price-tag">{{ article.category }}</span>
+            <h3 class="article-title">{{ article.title }}</h3>
+            <p class="article-excerpt">{{ article.excerpt }}</p>
+            <div class="article-meta">
+              <span class="author">{{ article.author }}</span>
+              <span>{{ article.date }}</span>
+            </div>
+          </div>
+        </div>
+    {% endif %}
+  {% endfor %}
   </div>
 
-  <!-- Newsletter Signup -->
+  <!-- Newsletter -->
   <div class="blog-newsletter">
-    <h2>📬 Subscribe to Our Blog</h2>
-    <p>Get the latest shopping tips and exclusive offers delivered to your inbox</p>
+    <h2>Get the good deals first</h2>
+    <p>One email a week — shopping tips and offers worth opening.</p>
     <form method="post" action="{% url 'products:newsletter-signup' %}" class="blog-newsletter-form">
       {% csrf_token %}
       <input type="email" name="email" placeholder="your@email.com" required class="blog-newsletter-input">

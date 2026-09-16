@@ -19,6 +19,7 @@ urlpatterns = [
     path('add-to-cart/<int:item_id>/', views.add_to_cart, name='add-to-cart'),
     path('delete-from-cart/<int:product_id>/', views.delete_from_cart, name='delete-from-cart'),
     path('cart/', views.view_cart, name='view-cart'),
+    path('api/update-cart/', views.update_cart, name='update-cart'),
 
     # 💳 Checkout & payments
     path('checkout/', views.checkout, name='checkout'),

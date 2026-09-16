@@ -25,7 +25,7 @@ from . import login_rewards
 from django.conf import settings
 from decouple import config
 
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from django.core.paginator import Paginator
 from django.db.models import Count, Avg
 from django.core.cache import cache
@@ -993,9 +993,12 @@ def update_cart(request):
 
 
 def recalculate_cart(request):
-    subtotal = Decimal("0.00")
-    discount = Decimal("0.00")
-    return subtotal, discount, subtotal - discount
+    cart = request.session.get('cart', {})
+    _, subtotal = _get_cart_products(request, cart)
+    _, discount = _get_coupon_values(request, subtotal)
+    subtotal = Decimal(str(subtotal))
+    discount = Decimal(str(discount))
+    return subtotal, discount, max(subtotal - discount, Decimal('0.00'))
 
 
 def checkout(request):

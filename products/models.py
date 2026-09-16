@@ -165,23 +165,45 @@ class Coupon(models.Model):
         return min(subtotal, self.discount_value)
 
 class Comment(models.Model):
+    MODERATION_STATUS_CHOICES = [
+        ('pending_review', 'Pending Review'),
+        ('published', 'Published'),
+        ('hidden', 'Hidden'),
+    ]
+
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='comments')
     name = models.CharField(max_length=100)
     text = models.TextField()
     rating = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Moderation & fraud detection
+    moderation_status = models.CharField(max_length=20, choices=MODERATION_STATUS_CHOICES, default='pending_review')
+    fraud_score = models.FloatField(default=0.0, help_text='Automated fraud risk score (0.0–1.0)')
+    fraud_flags = models.JSONField(default=list, blank=True, help_text='List of fraud signals detected for this comment')
+
     def __str__(self):
         return f"{self.name} - {self.rating} stars on {self.product.name}"
 
 
 class Review(models.Model):
+    MODERATION_STATUS_CHOICES = [
+        ('pending_review', 'Pending Review'),
+        ('published', 'Published'),
+        ('hidden', 'Hidden'),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
     rating = models.PositiveSmallIntegerField(choices=[(i, str(i)) for i in range(1, 6)])
     review_text = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     verified_purchase = models.BooleanField(default=False)
+
+    # Moderation & fraud detection
+    moderation_status = models.CharField(max_length=20, choices=MODERATION_STATUS_CHOICES, default='pending_review')
+    fraud_score = models.FloatField(default=0.0, help_text='Automated fraud risk score (0.0–1.0)')
+    fraud_flags = models.JSONField(default=list, blank=True, help_text='List of fraud signals detected for this review')
 
     class Meta:
         ordering = ['-created_at']

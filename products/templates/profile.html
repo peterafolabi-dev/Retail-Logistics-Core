@@ -6,52 +6,35 @@
   <div class="row g-4">
     <!-- Profile Info -->
     <div class="col-md-4">
-      <div class="rc-profile-card">
-        <div class="rc-profile-card-glow"></div>
-        <div class="text-center mb-4 position-relative">
-          <div class="rc-avatar">
+      <div class="card border-0 shadow-lg rounded-4 p-4 theme-card">
+        <div class="text-center mb-4">
+          <div class="avatar rounded-circle mx-auto mb-3" style="width: 100px; height: 100px; background: linear-gradient(135deg, #ff4747, #ff6b6b); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #fff;">
             {{ user.first_name|default:user.username|first|upper }}
           </div>
-          <h4 class="rc-profile-name">{{ user.first_name|default:user.username }}</h4>
-          <p class="rc-profile-handle">@{{ user.username }}</p>
+          <h4 class="fw-bold">{{ user.first_name|default:user.username }}</h4>
+          <p class="text-muted">@{{ user.username }}</p>
         </div>
 
-        <div class="rc-profile-stats">
-          <div class="rc-stat-row">
-            <span class="rc-stat-label">Email</span>
-            <span class="rc-stat-value rc-stat-value-small">{{ user.email }}</span>
-          </div>
-          <div class="rc-stat-row">
-            <span class="rc-stat-label">Member since</span>
-            <span class="rc-stat-value">{{ user.date_joined|date:"M d, Y" }}</span>
-          </div>
-          <div class="rc-stat-row">
-            <span class="rc-stat-label">Wallet balance</span>
-            <span class="rc-pill rc-pill-success">₦{{ wallet.balance|floatformat:2|intcomma }}</span>
-          </div>
-          <div class="rc-stat-row">
-            <span class="rc-stat-label">Total orders</span>
-            <span class="rc-pill rc-pill-coral">{{ order_count }}</span>
-          </div>
-          <div class="rc-stat-row">
-            <span class="rc-stat-label">Loyalty points</span>
-            <span class="rc-pill rc-pill-success">{{ loyalty_points|default:0 }}</span>
-          </div>
-          <div class="rc-stat-row rc-stat-row-stacked">
-            <span class="rc-stat-label">Referral link</span>
-            <a href="{{ referral_link }}" class="rc-referral-link">{{ referral_link }}</a>
-          </div>
+        <div class="mb-3">
+          <p><strong>Email:</strong> {{ user.email }}</p>
+          <p><strong>Member Since:</strong> {{ user.date_joined|date:"M d, Y" }}</p>
+          <p><strong>Wallet Balance:</strong> <span class="badge bg-success">₦{{ wallet.balance|floatformat:2|intcomma }}</span></p>
+          <p><strong>Total Orders:</strong> <span class="badge bg-danger">{{ order_count }}</span></p>
+          <p><strong>Loyalty Points:</strong> <span class="badge bg-success">{{ loyalty_points|default:0 }}</span></p>
+          <p><strong>Referral Link:</strong><br>
+            <a href="{{ referral_link }}" class="text-decoration-none">{{ referral_link }}</a>
+          </p>
         </div>
 
-        <a href="{% url 'products:wallet' %}" class="rc-btn-primary w-100 mb-3">
-          <span>💰</span> Top up wallet
-        </a>
+        <div class="d-grid gap-2 mb-3">
+          <a href="{% url 'products:wallet' %}" class="btn btn-success rounded-pill fw-semibold">💰 Top Up Wallet</a>
+        </div>
 
         <div class="d-flex gap-2">
-          <a href="{% url 'products:product-list' %}" class="rc-btn-outline w-100">
-            <i class="bi bi-shop"></i> Shop
+          <a href="{% url 'products:product-list' %}" class="btn btn-warning w-100 fw-semibold rounded-pill">
+            <i class="bi bi-shop"></i> Continue Shopping
           </a>
-          <a href="{% url 'products:logout' %}" class="rc-btn-outline-danger w-100">
+          <a href="{% url 'products:logout' %}" class="btn btn-outline-danger w-100 fw-semibold rounded-pill">
             <i class="bi bi-box-arrow-right"></i> Logout
           </a>
         </div>
@@ -60,70 +43,65 @@
 
     <!-- Order History -->
     <div class="col-md-8">
-      <div class="rc-panel-card">
-        <h5 class="rc-panel-heading">📦 Order history</h5>
+      <div class="card border-0 shadow-lg rounded-4 p-4 theme-card">
+        <h5 class="fw-bold mb-4 text-gradient">📦 Order History</h5>
 
         {% if orders %}
           <div class="table-responsive">
-            <table class="rc-order-table">
-              <thead>
+            <table class="table">
+              <thead class="table-light">
                 <tr>
-                  <th>Order</th>
+                  <th>Order ID</th>
                   <th>Date</th>
                   <th>Items</th>
                   <th>Total</th>
                   <th>Status</th>
-                  <th>Est. delivery</th>
+                  <th>Est. Delivery</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {% for order in orders %}
                   <tr>
-                    <td class="rc-order-id">#{{ order.id }}</td>
-                    <td class="rc-order-muted">{{ order.created_at|date:"M d, Y" }}</td>
+                    <td>#{{ order.id }}</td>
+                    <td>{{ order.created_at|date:"M d, Y" }}</td>
                     <td>
-                      <span class="rc-pill rc-pill-blue">{{ order.items.count }} item{{ order.items.count|pluralize }}</span>
+                      <span class="badge bg-info">{{ order.items.count }} item{{ order.items.count|pluralize }}</span>
                     </td>
-                    <td class="rc-order-total">₦{{ order.total|floatformat:2|intcomma }}</td>
+                    <td class="fw-semibold">₦{{ order.total|floatformat:2|intcomma }}</td>
                     <td>
-                      <div class="d-flex flex-column gap-1 align-items-start">
-                        {% if order.is_paid %}
-                          <span class="rc-pill rc-pill-success">Paid</span>
-                        {% else %}
-                          <span class="rc-pill rc-pill-warning">Pending</span>
-                        {% endif %}
-                        <span class="rc-pill rc-pill-blue">Escrow: {{ order.escrow_badge }}</span>
-                        {% if order.escrow_status == 'held' %}
-                          <div class="rc-escrow-note">Payment held safely — released after delivery confirmation.</div>
-                          <form method="post" action="{% url 'products:release-escrow' order.id %}" class="d-inline">
+                      {% if order.is_paid %}
+                        <span class="badge bg-success">Paid</span>
+                      {% else %}
+                        <span class="badge bg-warning">Pending</span>
+                      {% endif %}
+                      <br>
+                      <span class="badge bg-info mt-1">Escrow: {{ order.escrow_badge }}</span>
+                      {% if order.escrow_status == 'held' %}
+                        <div class="small text-muted mt-2">Your payment is held safely — will be released after delivery confirmation.</div>
+                        <form method="post" action="{% url 'products:release-escrow' order.id %}" class="d-inline">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-success mt-2">Confirm Delivery</button>
+                        </form>
+                      {% endif %}
+                    </td>
+                    <td>{{ order.estimated_delivery_date|date:"M d, Y" }}</td>
+                    <td>
+                      <a href="{% url 'products:order-track' order.id %}" class="rc-btn rc-btn-secondary rc-btn-sm">Track</a>
+                      <a href="{% url 'products:reorder-order' order.id %}" class="rc-btn rc-btn-secondary rc-btn-sm">Reorder</a>
+                      <a href="{% url 'products:order-invoice' order.id %}" class="rc-btn rc-btn-secondary rc-btn-sm">Invoice</a>
+                      {% if order.escrow_is_protected %}
+                        <div class="mt-2 d-flex gap-2 flex-wrap">
+                          <form method="post" action="{% url 'products:release-escrow' order.id %}">
                             {% csrf_token %}
-                            <button type="submit" class="rc-btn-mini rc-btn-mini-success">Confirm delivery</button>
+                            <button type="submit" class="btn btn-sm btn-outline-success">Release</button>
                           </form>
-                        {% endif %}
-                      </div>
-                    </td>
-                    <td class="rc-order-muted">{{ order.estimated_delivery_date|date:"M d, Y" }}</td>
-                    <td>
-                      <div class="d-flex flex-column gap-2">
-                        <div class="d-flex gap-1 flex-wrap">
-                          <a href="{% url 'products:order-track' order.id %}" class="rc-btn-mini rc-btn-mini-ghost">Track</a>
-                          <a href="{% url 'products:reorder-order' order.id %}" class="rc-btn-mini rc-btn-mini-ghost">Reorder</a>
-                          <a href="{% url 'products:order-invoice' order.id %}" class="rc-btn-mini rc-btn-mini-ghost">Invoice</a>
+                          <form method="post" action="{% url 'products:dispute-escrow' order.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Dispute</button>
+                          </form>
                         </div>
-                        {% if order.escrow_is_protected %}
-                          <div class="d-flex gap-1 flex-wrap">
-                            <form method="post" action="{% url 'products:release-escrow' order.id %}">
-                              {% csrf_token %}
-                              <button type="submit" class="rc-btn-mini rc-btn-mini-success">Release</button>
-                            </form>
-                            <form method="post" action="{% url 'products:dispute-escrow' order.id %}">
-                              {% csrf_token %}
-                              <button type="submit" class="rc-btn-mini rc-btn-mini-danger">Dispute</button>
-                            </form>
-                          </div>
-                        {% endif %}
-                      </div>
+                      {% endif %}
                     </td>
                   </tr>
                 {% endfor %}
@@ -131,9 +109,9 @@
             </table>
           </div>
         {% else %}
-          <div class="rc-empty-state">
-            <i class="bi bi-inbox"></i>
-            <p>No orders yet. <a href="{% url 'products:product-list' %}">Start shopping now</a></p>
+          <div class="text-center py-5">
+            <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">No orders yet. <a href="{% url 'products:product-list' %}" class="link-danger fw-semibold">Start shopping now!</a></p>
           </div>
         {% endif %}
       </div>
@@ -142,219 +120,20 @@
 </div>
 
 <style>
-  .rc-profile-card {
-    position: relative;
-    overflow: hidden;
-    border-radius: 24px;
-    padding: 28px;
-    background: linear-gradient(160deg, #1a1035 0%, #2b1a4a 55%, #3d1f3d 100%);
-    color: #f5f3ff;
-    box-shadow: 0 20px 50px -12px rgba(76, 29, 149, 0.45);
-  }
-  .rc-profile-card-glow {
-    position: absolute;
-    top: -50px;
-    left: -50px;
-    width: 220px;
-    height: 220px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(246, 139, 30, 0.3) 0%, rgba(246, 139, 30, 0) 70%);
-    pointer-events: none;
+  .avatar {
+    box-shadow: 0 4px 12px rgba(255, 71, 71, 0.3);
+    font-weight: bold;
   }
 
-  .rc-avatar {
-    width: 96px;
-    height: 96px;
-    margin: 0 auto 14px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.2rem;
-    font-weight: 700;
-    color: #fff;
-    background: linear-gradient(135deg, #f68b1e, #f6521e);
-    box-shadow: 0 8px 22px -6px rgba(246, 82, 30, 0.55);
-  }
-  .rc-profile-name { font-weight: 700; margin: 0; color: #fff; }
-  .rc-profile-handle { margin: 2px 0 0; color: rgba(245, 243, 255, 0.6); font-size: 0.88rem; }
-
-  .rc-profile-stats {
-    position: relative;
-    z-index: 1;
-    margin: 20px 0 22px;
-    padding: 16px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  .rc-stat-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 8px 0;
-  }
-  .rc-stat-row-stacked { flex-direction: column; align-items: flex-start; gap: 4px; }
-  .rc-stat-label { font-size: 0.85rem; color: rgba(245, 243, 255, 0.55); }
-  .rc-stat-value { font-size: 0.9rem; font-weight: 600; color: #fff; }
-  .rc-stat-value-small { font-size: 0.82rem; font-weight: 500; word-break: break-all; text-align: right; }
-  .rc-referral-link {
-    font-size: 0.82rem;
-    color: #ffb877;
-    text-decoration: none;
-    word-break: break-all;
-  }
-  .rc-referral-link:hover { color: #ffcd9e; text-decoration: underline; }
-
-  .rc-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 600;
-  }
-  .rc-pill-success { background: rgba(34, 197, 94, 0.16); color: #4ade80; }
-  .rc-pill-warning { background: rgba(246, 139, 30, 0.18); color: #f6a83e; }
-  .rc-pill-coral { background: rgba(246, 82, 30, 0.16); color: #ff8a5c; }
-  .rc-pill-blue { background: rgba(56, 130, 246, 0.16); color: #60a5fa; }
-  /* Light-surface contexts (order table) need darker text for contrast */
-  .rc-order-table .rc-pill-success { background: rgba(34, 197, 94, 0.12); color: #15803d; }
-  .rc-order-table .rc-pill-warning { background: rgba(246, 139, 30, 0.14); color: #b45309; }
-  .rc-order-table .rc-pill-blue { background: rgba(56, 130, 246, 0.12); color: #1d4ed8; }
-  [data-theme="dark"] .rc-order-table .rc-pill-success { background: rgba(34, 197, 94, 0.16); color: #4ade80; }
-  [data-theme="dark"] .rc-order-table .rc-pill-warning { background: rgba(246, 139, 30, 0.18); color: #f6a83e; }
-  [data-theme="dark"] .rc-order-table .rc-pill-blue { background: rgba(56, 130, 246, 0.16); color: #60a5fa; }
-
-  .rc-btn-primary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 20px;
-    border-radius: 999px;
-    border: none;
-    background: linear-gradient(135deg, #f68b1e, #f6521e);
-    color: #fff;
-    font-weight: 600;
-    font-size: 0.92rem;
-    text-decoration: none;
-    box-shadow: 0 8px 20px -6px rgba(246, 82, 30, 0.55);
-    transition: transform 0.15s ease;
-  }
-  .rc-btn-primary:hover { transform: translateY(-1px); color: #fff; }
-
-  .rc-btn-outline {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px 14px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.06);
-    color: #f5f3ff;
-    font-weight: 600;
-    font-size: 0.86rem;
-    text-decoration: none;
-    transition: background 0.15s ease;
-  }
-  .rc-btn-outline:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
-
-  .rc-btn-outline-danger {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px 14px;
-    border-radius: 999px;
-    border: 1px solid rgba(239, 68, 68, 0.4);
-    background: rgba(239, 68, 68, 0.1);
-    color: #fca5a5;
-    font-weight: 600;
-    font-size: 0.86rem;
-    text-decoration: none;
-    transition: background 0.15s ease;
-  }
-  .rc-btn-outline-danger:hover { background: rgba(239, 68, 68, 0.18); color: #fecaca; }
-
-  .rc-panel-card {
-    border-radius: 24px;
-    padding: 28px;
-    background: var(--card-bg, #fff);
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    box-shadow: 0 10px 30px -18px rgba(15, 23, 42, 0.25);
-  }
-  [data-theme="dark"] .rc-panel-card {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.08);
+  [data-theme="dark"] .avatar {
+    box-shadow: 0 4px 12px rgba(255, 112, 112, 0.3);
   }
 
-  .rc-panel-heading {
-    font-weight: 700;
-    font-size: 1.15rem;
-    margin: 0 0 20px;
-    background: linear-gradient(45deg, #f6521e, #f68b1e, #7c3aed);
+  .text-gradient {
+    background: linear-gradient(45deg, #ff6b6b, #f8c471, #6ab04c, #2980b9, #8e44ad);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    display: inline-block;
   }
-
-  .rc-order-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
-  .rc-order-table thead th {
-    text-align: left;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--text-muted-color, #9ca3af);
-    font-weight: 600;
-    padding: 0 14px 8px;
-  }
-  .rc-order-table tbody tr {
-    background: rgba(148, 163, 184, 0.06);
-  }
-  [data-theme="dark"] .rc-order-table tbody tr { background: rgba(255, 255, 255, 0.03); }
-  .rc-order-table tbody td {
-    padding: 14px;
-    vertical-align: top;
-    font-size: 0.88rem;
-    border-top: none;
-  }
-  .rc-order-table tbody tr td:first-child { border-radius: 12px 0 0 12px; }
-  .rc-order-table tbody tr td:last-child { border-radius: 0 12px 12px 0; }
-  .rc-order-id { font-weight: 700; }
-  .rc-order-total { font-weight: 700; color: #f6521e; }
-  .rc-order-muted { color: var(--text-muted-color, #6b7280); }
-  .rc-escrow-note { font-size: 0.76rem; color: var(--text-muted-color, #6b7280); max-width: 180px; }
-
-  .rc-btn-mini {
-    display: inline-flex;
-    align-items: center;
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: 0.76rem;
-    font-weight: 600;
-    text-decoration: none;
-    border: 1px solid transparent;
-    cursor: pointer;
-  }
-  .rc-btn-mini-ghost {
-    background: rgba(148, 163, 184, 0.12);
-    color: var(--text-color, #374151);
-    border-color: rgba(148, 163, 184, 0.25);
-  }
-  [data-theme="dark"] .rc-btn-mini-ghost { color: #e5e7eb; background: rgba(255, 255, 255, 0.06); }
-  .rc-btn-mini-ghost:hover { background: rgba(148, 163, 184, 0.22); }
-  .rc-btn-mini-success { background: rgba(34, 197, 94, 0.12); color: #15803d; border-color: rgba(34, 197, 94, 0.3); }
-  [data-theme="dark"] .rc-btn-mini-success { background: rgba(34, 197, 94, 0.16); color: #4ade80; }
-  .rc-btn-mini-danger { background: rgba(239, 68, 68, 0.12); color: #b91c1c; border-color: rgba(239, 68, 68, 0.3); }
-  [data-theme="dark"] .rc-btn-mini-danger { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
-
-  .rc-empty-state { text-align: center; padding: 60px 20px; }
-  .rc-empty-state i { font-size: 2.6rem; color: #d1d5db; }
-  .rc-empty-state p { margin-top: 14px; color: var(--text-muted-color, #6b7280); }
-  .rc-empty-state a { color: #f6521e; font-weight: 600; text-decoration: none; }
-  .rc-empty-state a:hover { text-decoration: underline; }
 </style>
 
 {% endblock %}

@@ -5,190 +5,287 @@
 
 {% block content %}
 <style>
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
   .about-container {
-    max-width: 1150px;
+    max-width: 1080px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 56px 20px 80px;
   }
 
-  .hero-section {
-    text-align: center;
-    padding: 70px 30px;
-    border-radius: 25px;
-    background: var(--bg-color);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02), 0 20px 60px rgba(0, 0, 0, 0.18);
-    margin-bottom: 50px;
+  /* ---------- Masthead ---------- */
+
+  .about-masthead {
+    padding-bottom: 40px;
+    margin-bottom: 48px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .hero-section h1 {
-    font-size: 3rem;
-    margin-bottom: 20px;
+  .about-masthead h1 {
+    font-size: clamp(2.4rem, 5vw, 3.6rem);
     font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
     color: var(--text-color);
+    max-width: 18ch;
+    margin-bottom: 18px;
   }
 
-  .hero-section p {
-    font-size: 1.2rem;
-    max-width: 760px;
-    margin: 0 auto;
+  .about-masthead p {
+    font-size: 1.12rem;
     color: var(--text-color);
-    opacity: 0.8;
+    opacity: 0.75;
+    max-width: 58ch;
+    line-height: 1.6;
   }
 
-  .about-grid {
+  /* ---------- Editorial split (Who we are / What we believe) ---------- */
+
+  .split-section {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    margin-bottom: 50px;
+    grid-template-columns: 1fr 1px 1fr;
+    gap: 40px;
+    margin-bottom: 56px;
   }
 
-  .about-card,
-  .team-card,
-  .stat-card {
-    background: var(--card-bg);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
+  .split-section .rule {
+    background: rgba(255, 255, 255, 0.08);
   }
 
-  .about-card {
-    padding: 30px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  .split-section h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--main-color);
+    margin-bottom: 14px;
   }
 
-  .about-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 16px 40px rgba(255, 71, 71, 0.12);
-  }
-
-  .about-card h3,
-  .team-card h4 {
-    font-size: 1.5rem;
-    margin-bottom: 15px;
+  .split-section p {
     color: var(--text-color);
+    opacity: 0.78;
+    line-height: 1.75;
   }
 
-  .about-card p,
-  .team-card p {
-    color: var(--text-color);
-    opacity: 0.8;
-    line-height: 1.8;
+  /* ---------- Stats strip (matches the blog masthead treatment) ---------- */
+
+  .stats-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    padding: 32px 0;
+    margin-bottom: 56px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.16);
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.16);
   }
 
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 25px;
-    margin-bottom: 40px;
+  .stat-item {
+    flex: 1 1 160px;
+    padding: 0 28px;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .stat-card {
-    padding: 30px;
-    text-align: center;
-  }
+  .stat-item:last-child { border-right: none; }
 
   .stat-number {
-    font-size: 2.5rem;
+    font-size: 2.3rem;
     font-weight: 800;
     color: var(--main-color);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
   }
 
   .stat-label {
-    margin-top: 10px;
+    margin-top: 6px;
     color: var(--text-color);
-    opacity: 0.8;
-    font-weight: 600;
+    opacity: 0.68;
+    font-size: 0.92rem;
+  }
+
+  /* ---------- Promise & contact ---------- */
+
+  .receipt-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.16);
+    font-size: 0.98rem;
+  }
+
+  .receipt-line span:first-child {
+    color: var(--text-color);
+    opacity: 0.65;
+  }
+
+  .receipt-line a {
+    color: var(--main-color);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .receipt-line a:hover { text-decoration: underline; }
+
+  /* ---------- Team ---------- */
+
+  .team-heading {
+    font-size: 1.7rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--text-color);
+    margin-bottom: 28px;
   }
 
   .team-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 22px;
+    margin-bottom: 20px;
   }
 
   .team-card {
-    padding: 25px;
+    position: relative;
+    background: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px 18px 4px 18px;
+    padding: 26px 24px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
   }
 
-  .team-card .role {
-    color: var(--main-color);
+  .team-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 30px rgba(255, 71, 71, 0.12);
+  }
+
+  .team-card h4 {
+    font-size: 1.15rem;
     font-weight: 700;
-    margin-bottom: 12px;
+    color: var(--text-color);
+    margin-bottom: 10px;
   }
 
-  @media(max-width: 768px) {
-    .about-grid {
+  .team-role {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 5px 12px 5px 18px;
+    margin-bottom: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--main-color);
+    background: rgba(255, 71, 71, 0.12);
+    clip-path: polygon(12px 0, 100% 0, 100% 100%, 12px 100%, 0 50%);
+  }
+
+  .team-role::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    transform: translateY(-50%);
+  }
+
+  .team-card p {
+    color: var(--text-color);
+    opacity: 0.75;
+    line-height: 1.6;
+    font-size: 0.94rem;
+  }
+
+  @media (max-width: 768px) {
+    .split-section {
       grid-template-columns: 1fr;
+      gap: 28px;
+    }
+    .split-section .rule { display: none; }
+    .stat-item {
+      flex: 1 1 45%;
+      border-right: none;
+      padding: 10px 0;
     }
   }
 </style>
 
 <div class="about-container">
-  <section class="hero-section">
-    <h1>About RedCart</h1>
+
+  <section class="about-masthead">
+    <h1>Shopping, without the friction</h1>
     <p>RedCart is built to make online shopping exciting, easy, and trusted. We bring the latest fashion, gadgets, and essentials together with fast support and delightful deals.</p>
   </section>
 
-  <div class="about-grid">
-    <div class="about-card">
-      <h3>Who We Are</h3>
+  <section class="split-section">
+    <div>
+      <h3>Who we are</h3>
       <p>RedCart is a modern online marketplace designed for smart buyers. We combine curated products, exclusive offers, and intuitive shopping tools so you can find what you need fast.</p>
     </div>
-    <div class="about-card">
-      <h3>What We Believe</h3>
+    <div class="rule"></div>
+    <div>
+      <h3>What we believe</h3>
       <p>Shopping should be joyful, secure, and affordable. We focus on transparent prices, reliable delivery, and a polished experience whether you're browsing on mobile or desktop.</p>
     </div>
-  </div>
+  </section>
 
-  <div class="stats-grid">
-    <div class="stat-card">
+  <div class="stats-strip">
+    <div class="stat-item">
       <div class="stat-number">{{ stats.products }}</div>
-      <div class="stat-label">Products Available</div>
+      <div class="stat-label">Products available</div>
     </div>
 
     {% if stats.users %}
-      <div class="stat-card">
+      <div class="stat-item">
         <div class="stat-number">{{ stats.users }}</div>
-        <div class="stat-label">Registered Shoppers</div>
+        <div class="stat-label">Registered shoppers</div>
       </div>
     {% endif %}
 
     {% if stats.orders %}
-      <div class="stat-card">
+      <div class="stat-item">
         <div class="stat-number">{{ stats.orders }}</div>
-        <div class="stat-label">Orders Completed</div>
+        <div class="stat-label">Orders completed</div>
       </div>
     {% endif %}
 
     {% if stats.countries %}
-      <div class="stat-card">
+      <div class="stat-item">
         <div class="stat-number">{{ stats.countries }}</div>
-        <div class="stat-label">Countries Served</div>
+        <div class="stat-label">Countries served</div>
       </div>
     {% endif %}
   </div>
 
-  <div class="about-grid">
-    <div class="about-card">
-      <h3>Our Promise</h3>
+  <section class="split-section">
+    <div>
+      <h3>Our promise</h3>
       <p>We promise a polished store experience, support when you need it, and a commitment to keep improving with every update.</p>
     </div>
-    <div class="about-card">
-      <h3>Contact & Support</h3>
-      <p>Need help? Reach us anytime at <strong>afolabiprosper329@gmail.com</strong>. Our support team is ready to help with orders, returns, and product questions.</p>
+    <div class="rule"></div>
+    <div>
+      <h3>Contact & support</h3>
+      <p>Need help with an order, a return, or a product question? We're ready.</p>
+      <div class="receipt-line">
+        <span>Support email</span>
+        <a href="mailto:afolabiprosper329@gmail.com">afolabiprosper329@gmail.com</a>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <h2 class="text-center fw-bold mb-4">Meet the Team</h2>
+  <h2 class="team-heading">Meet the team</h2>
   <div class="team-grid">
     {% for member in team %}
       <div class="team-card">
         <h4>{{ member.name }}</h4>
-        <div class="role">{{ member.role }}</div>
+        <span class="team-role">{{ member.role }}</span>
         <p>{{ member.bio }}</p>
       </div>
     {% endfor %}
   </div>
+
 </div>
 {% endblock %}

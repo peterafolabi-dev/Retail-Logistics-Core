@@ -32,6 +32,15 @@
           </ul>
         </div>
 
+        <hr>
+
+        <div class="mb-4">
+          <h5 class="fw-bold">🎁 Daily Login Reward</h5>
+          <div id="daily-reward-widget" class="daily-reward-widget">
+            <p class="text-muted mb-0">Loading...</p>
+          </div>
+        </div>
+
         <div id="wallet-message" class="alert alert-info d-none" role="alert"></div>
       </div>
     </div>
@@ -48,6 +57,21 @@
   [data-theme="dark"] .wallet-steps .wallet-step {
     color: #e8e8e8;
     border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .daily-reward-widget {
+    padding: 16px;
+    border-radius: 14px;
+    background: rgba(102, 126, 234, 0.08);
+    border: 1px solid rgba(102, 126, 234, 0.18);
+  }
+  [data-theme="dark"] .daily-reward-widget {
+    background: rgba(102, 126, 234, 0.12);
+    border-color: rgba(102, 126, 234, 0.3);
+  }
+  .daily-reward-streak {
+    font-weight: 700;
+    color: #f68b1e;
   }
 </style>
 
@@ -99,5 +123,55 @@
       handler.openIframe();
     });
   });
+
+  async function loadDailyReward() {
+    const widget = document.getElementById('daily-reward-widget');
+    if (!widget) return;
+    try {
+      const response = await fetch('{% url "products:daily-reward-status" %}');
+      const data = await response.json();
+      if (!data.success) {
+        widget.innerHTML = '<p class="text-muted mb-0">Could not load reward status.</p>';
+        return;
+      }
+      if (data.already_claimed_today) {
+        widget.innerHTML = `
+          <span class="daily-reward-streak">🔥 Day ${data.current_streak} streak</span>
+          <p class="text-muted mb-0 mt-2">You've already claimed today's reward. Come back tomorrow for ₦${data.next_reward_amount}!</p>
+        `;
+      } else {
+        widget.innerHTML = `
+          <p class="mb-2">Day ${data.current_streak} of your streak — claim your reward:</p>
+          <button id="claim-reward-btn" class="btn btn-success rounded-pill">🎁 Claim ₦${data.next_reward_amount}</button>
+        `;
+        document.getElementById('claim-reward-btn')?.addEventListener('click', claimDailyReward);
+      }
+    } catch (error) {
+      widget.innerHTML = '<p class="text-muted mb-0">Could not load reward status.</p>';
+    }
+  }
+
+  async function claimDailyReward() {
+    const btn = document.getElementById('claim-reward-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Claiming...'; }
+    try {
+      const response = await fetch('{% url "products:claim-daily-reward" %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      });
+      const data = await response.json();
+      if (data.success) {
+        window.showToast ? window.showToast(data.message, 'success') : alert(data.message);
+        setTimeout(() => location.reload(), 800);
+      } else {
+        window.showToast ? window.showToast(data.message || 'Could not claim reward.', 'error') : alert(data.message);
+        loadDailyReward();
+      }
+    } catch (error) {
+      window.showToast ? window.showToast('Something went wrong claiming your reward.', 'error') : alert('Error claiming reward.');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadDailyReward);
 </script>
 {% endblock %}

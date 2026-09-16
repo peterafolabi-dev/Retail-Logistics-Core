@@ -20,6 +20,7 @@ from django.http import JsonResponse, HttpResponse
 from .models import Product, Comment, Order, OrderItem, Wishlist, AbandonedCart, Coupon, Review, Wallet, WalletTransaction, UserAddress, ChatConversation, ChatMessage
 from .utils import get_product_recommendations_ai, get_ai_chat_response, update_stock
 from . import fraud_detection
+from . import login_rewards
 from django.conf import settings
 from decouple import config
 
@@ -1700,6 +1701,20 @@ def wallet(request):
         'paystack_public_key': getattr(settings, 'PAYSTACK_PUBLIC_KEY', ''),
         'user_email': request.user.email,
     })
+
+
+@login_required(login_url='products:login')
+@require_http_methods(["GET"])
+def daily_reward_status(request):
+    status = login_rewards.get_reward_status(request.user)
+    return JsonResponse({'success': True, **status})
+
+
+@login_required(login_url='products:login')
+@require_http_methods(["POST"])
+def claim_daily_reward_view(request):
+    result = login_rewards.claim_daily_reward(request.user)
+    return JsonResponse(result)
 
 
 @login_required(login_url='products:login')

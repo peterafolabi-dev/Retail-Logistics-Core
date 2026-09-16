@@ -14,6 +14,7 @@ import json
 import traceback
 import urllib.request
 import urllib.error
+from decimal import Decimal
 
 from django.urls import reverse
 from django.http import JsonResponse, HttpResponse
@@ -953,6 +954,48 @@ def delete_from_cart(request, product_id):
         messages.warning(request, "⚠️ Item not found in your cart.")
 
     return redirect('products:view-cart')
+
+
+@require_POST
+def update_cart(request):
+    try:
+        payload = json.loads(request.body or "{}")
+        product_id = str(payload["product_id"])
+        quantity = int(payload["quantity"])
+    except (ValueError, KeyError, TypeError):
+        return JsonResponse({"success": False, "error": "Bad request"}, status=400)
+
+    if not 1 <= quantity <= 99:
+        return JsonResponse({"success": False, "error": "Quantity must be 1–99"}, status=400)
+
+    cart = request.session.get("cart", {})
+    if product_id not in cart:
+        return JsonResponse({"success": False, "error": "Item not in cart"}, status=404)
+
+    if isinstance(cart[product_id], dict):
+        cart[product_id]["quantity"] = quantity
+    else:
+        cart[product_id] = quantity
+
+    request.session["cart"] = cart
+    request.session.modified = True
+    _sync_abandoned_cart(request, cart)
+
+    subtotal, discount, total = recalculate_cart(request)
+
+    return JsonResponse({
+        "success": True,
+        "quantity": quantity,
+        "subtotal": str(subtotal),
+        "discount": str(discount),
+        "total": str(total),
+    })
+
+
+def recalculate_cart(request):
+    subtotal = Decimal("0.00")
+    discount = Decimal("0.00")
+    return subtotal, discount, subtotal - discount
 
 
 def checkout(request):

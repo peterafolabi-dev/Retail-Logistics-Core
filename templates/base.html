@@ -850,23 +850,23 @@
       <div class="rc-footer-inner">
         <div class="rc-footer-grid">
 
-          <!-- ===== TOP CATEGORIES — now matches all 13 script categories ===== -->
+          <!-- Top categories -->
           <div class="rc-footer-column">
             <h5><i class="bi bi-tags"></i> Top Categories</h5>
-            <ul>
-              <li><a href="{% url 'products:category-page' 'phones' %}">📱 Phones</a></li>
-              <li><a href="{% url 'products:category-page' 'laptops' %}">💻 Laptops</a></li>
-              <li><a href="{% url 'products:category-page' 'gaming' %}">🎮 Gaming</a></li>
-              <li><a href="{% url 'products:category-page' 'watches' %}">⌚ Watches</a></li>
-              <li><a href="{% url 'products:category-page' 'sneakers' %}">👟 Sneakers</a></li>
-              <li><a href="{% url 'products:category-page' 'electronics' %}">🔌 Electronics</a></li>
-              <li><a href="{% url 'products:category-page' 'home-appliances' %}">🏠 Home Appliances</a></li>
-              <li><a href="{% url 'products:category-page' 'fitness' %}">🏋️ Fitness</a></li>
-              <li><a href="{% url 'products:category-page' 'accessories' %}">🎒 Accessories</a></li>
-              <li><a href="{% url 'products:category-page' 'fashion' %}">👕 Fashion</a></li>
-              <li><a href="{% url 'products:category-page' 'home' %}">🛋️ Home</a></li>
-              <li><a href="{% url 'products:category-page' 'beauty' %}">💄 Beauty</a></li>
-              <li><a href="{% url 'products:category-page' 'other' %}">🗂️ Other</a></li>
+            <ul class="rc-footer-categories">
+              <li><a href="{% url 'products:category-page' 'phones' %}"><i class="bi bi-phone"></i> Phones</a></li>
+              <li><a href="{% url 'products:category-page' 'laptops' %}"><i class="bi bi-laptop"></i> Laptops</a></li>
+              <li><a href="{% url 'products:category-page' 'gaming' %}"><i class="bi bi-controller"></i> Gaming</a></li>
+              <li><a href="{% url 'products:category-page' 'watches' %}"><i class="bi bi-watch"></i> Watches</a></li>
+              <li><a href="{% url 'products:category-page' 'sneakers' %}"><i class="bi bi-handbag"></i> Sneakers</a></li>
+              <li><a href="{% url 'products:category-page' 'electronics' %}"><i class="bi bi-plug"></i> Electronics</a></li>
+              <li><a href="{% url 'products:category-page' 'home-appliances' %}"><i class="bi bi-house-gear"></i> Home Appliances</a></li>
+              <li><a href="{% url 'products:category-page' 'fitness' %}"><i class="bi bi-activity"></i> Fitness</a></li>
+              <li><a href="{% url 'products:category-page' 'accessories' %}"><i class="bi bi-bag"></i> Accessories</a></li>
+              <li><a href="{% url 'products:category-page' 'fashion' %}"><i class="bi bi-bag-heart"></i> Fashion</a></li>
+              <li><a href="{% url 'products:category-page' 'home' %}"><i class="bi bi-house"></i> Home</a></li>
+              <li><a href="{% url 'products:category-page' 'beauty' %}"><i class="bi bi-stars"></i> Beauty</a></li>
+              <li><a href="{% url 'products:category-page' 'other' %}"><i class="bi bi-grid"></i> Other</a></li>
             </ul>
           </div>
 
@@ -899,7 +899,7 @@
             <form class="newsletter-input" id="newsletter-form" method="post" action="{% url 'products:newsletter-signup' %}">
               {% csrf_token %}
               <input type="email" name="email" id="newsletter-email" placeholder="Your email address" required>
-              <button type="submit" id="newsletter-btn"><i class="bi bi-send"></i></button>
+              <button type="submit" id="newsletter-btn" aria-label="Subscribe to the newsletter"><i class="bi bi-send"></i></button>
             </form>
             <p class="small mt-2">Already subscribed? <a href="{% url 'products:newsletter-unsubscribe' %}">Unsubscribe</a>.</p>
             <div class="social-links mt-4">

@@ -320,31 +320,25 @@
     margin-bottom: 36px;
   }
   .latest-card {
-    background: #fff;
-    border-radius: 16px;
-    border: 1px solid #e8effb;
+    background: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
     box-shadow: 0 6px 20px rgba(0,0,0,0.05);
     overflow: hidden;
     transition: transform 0.22s ease, box-shadow 0.22s ease;
   }
-  [data-theme="dark"] .latest-card {
-    background: #1a1a24;
-    border-color: #2a2a35;
-    box-shadow: none;
-  }
-  .latest-card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(102,126,234,0.14); }
+  [data-theme="dark"] .latest-card { box-shadow: none; }
+  .latest-card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.14); }
 
   .latest-image {
     width: 100%;
     height: 200px;
     object-fit: contain;
     display: block;
-    background: #f9f9f9;
+    background: var(--bg-color);
     padding: 10px;
     box-sizing: border-box;
   }
-  [data-theme="dark"] .latest-image { background: #252530; }
-
   .latest-body  { padding: 16px; }
   .latest-meta  { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .latest-meta span:last-child { font-size: 0.8rem; color: #888 !important; }
@@ -353,34 +347,40 @@
   .latest-description { color: #777 !important; font-size: 0.85rem; line-height: 1.5; margin-bottom: 14px; }
   [data-theme="dark"] .latest-description { color: #bbbbbb !important; }
 
-  .latest-card .latest-body div[style] { color: #222 !important; }
-  [data-theme="dark"] .latest-card .latest-body div[style] { color: #f0f0f0 !important; }
+  .latest-card .latest-body div[style] { color: var(--text-color) !important; }
 
   .latest-cta {
     display: inline-block;
     padding: 9px 16px;
-    border-radius: 999px;
-    background: #667eea;
+    border-radius: 6px;
+    background: var(--main-color);
     color: #fff !important;
     text-decoration: none;
     font-weight: 700;
     font-size: 0.85rem;
   }
-  .latest-cta:hover { background: #5a6edc; color: #fff !important; }
+  .latest-cta:hover { background: #a82c2c; color: #fff !important; }
 
   .product-badge {
     display: inline-block;
     padding: 4px 10px;
-    border-radius: 999px;
-    background: rgba(102,126,234,0.12);
-    color: #3f51b5 !important;
+    border-radius: 4px;
+    background: rgba(207, 61, 61, 0.12);
+    color: var(--main-color) !important;
     font-size: 0.78rem;
     font-weight: 700;
   }
-  [data-theme="dark"] .product-badge {
-    background: rgba(102,126,234,0.25);
-    color: #99aaff !important;
+  [data-theme="dark"] .product-badge { background: rgba(255, 112, 112, 0.16); color: #ff9b9b !important; }
+
+  .shop-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 2.5rem 0 1rem;
   }
+  .shop-section-heading h2 { margin: 0; color: var(--text-color); font-size: 1.25rem; font-weight: 700; }
+  .shop-section-heading p { margin: 0; color: var(--text-color-secondary); font-size: .88rem; }
 
   /* ── SEARCH INFO ── */
   .search-info {
@@ -779,6 +779,10 @@
 
   <!-- LATEST PRODUCTS -->
   {% if latest_products %}
+  <div class="shop-section-heading">
+    <h2>Latest arrivals</h2>
+    <p>Freshly added to the catalog</p>
+  </div>
   <div class="latest-row">
     {% for product in latest_products %}
       <div class="latest-card rc-latest-card">

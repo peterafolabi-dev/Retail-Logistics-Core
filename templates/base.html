@@ -848,6 +848,13 @@
     <!-- Footer -->
     <footer class="footer rc-page-footer">
       <div class="rc-footer-inner">
+        <div class="rc-footer-intro">
+          <div>
+            <p class="rc-footer-kicker"><span aria-hidden="true"></span> RedCart field notes</p>
+            <h2>Good finds deserve a better last stop.</h2>
+          </div>
+          <p class="rc-footer-intro-copy">A considered marketplace for the objects that make everyday life more interesting.</p>
+        </div>
         <div class="rc-footer-grid">
 
           <!-- Top categories -->
@@ -871,7 +878,7 @@
           </div>
 
           <div class="rc-footer-column">
-            <h5><i class="bi bi-grid-3x3-gap-fill"></i> Platform</h5>
+            <h5><i class="bi bi-grid-3x3-gap-fill"></i> Explore</h5>
             <ul>
               <li><a href="{% url 'products:about' %}">About Us</a></li>
               <li><a href="{% url 'products:blog' %}">Blog & News</a></li>
@@ -881,7 +888,7 @@
           </div>
 
           <div class="rc-footer-column">
-            <h5><i class="bi bi-building"></i> Company</h5>
+            <h5><i class="bi bi-shield-check"></i> Support</h5>
             <ul>
               <li><a href="{% url 'products:about' %}">About</a></li>
               <li><a href="{% url 'products:contact' %}">Help Center</a></li>
@@ -894,8 +901,8 @@
           </div>
 
           <div class="rc-footer-column">
-            <h5><i class="bi bi-envelope-paper"></i> Stay Updated</h5>
-            <p class="small">Subscribe to get special offers, free giveaways, and exclusive deals.</p>
+            <h5><i class="bi bi-envelope-paper"></i> The Dispatch</h5>
+            <p class="small">Fresh arrivals, sharp prices, and genuinely useful updates. No noise.</p>
             <form class="newsletter-input" id="newsletter-form" method="post" action="{% url 'products:newsletter-signup' %}">
               {% csrf_token %}
               <input type="email" name="email" id="newsletter-email" placeholder="Your email address" required>
@@ -903,10 +910,10 @@
             </form>
             <p class="small mt-2">Already subscribed? <a href="{% url 'products:newsletter-unsubscribe' %}">Unsubscribe</a>.</p>
             <div class="social-links mt-4">
-              <a href="#"><i class="bi bi-instagram"></i></a>
-              <a href="#"><i class="bi bi-linkedin"></i></a>
-              <a href="#"><i class="bi bi-youtube"></i></a>
-              <a href="https://whatsapp.com/channel/0029Vb8ou1k0wajuuzWo5d1Y" target="_blank" rel="noopener noreferrer"><i class="bi bi-whatsapp"></i></a>
+              <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+              <a href="#" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+              <a href="#" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+              <a href="https://whatsapp.com/channel/0029Vb8ou1k0wajuuzWo5d1Y" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp channel"><i class="bi bi-whatsapp"></i></a>
             </div>
           </div>
 
@@ -914,7 +921,7 @@
         <div class="footer-bottom rc-footer-bottom">
           <div class="rc-footer-bottom-grid">
             <div class="rc-footer-copyright">
-              <p>&copy; 2026 RedCart. All rights reserved.</p>
+              <p><strong>REDCART</strong> &copy; 2026. Curated with intent.</p>
             </div>
             <div class="rc-footer-legal">
               <a href="{% url 'products:terms-of-service' %}">Terms of Service</a> &nbsp;|&nbsp;

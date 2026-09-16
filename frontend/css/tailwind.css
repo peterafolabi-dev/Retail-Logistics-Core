@@ -439,7 +439,11 @@
     display: block;
     width: 100%;
     gap: 0;
-    @apply mt-16 border-t border-border bg-[hsl(24_12%_8%)] py-12;
+    position: relative;
+    overflow: hidden;
+    color: #d6d3d1;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+    @apply mt-16 border-t border-border bg-[#0c0c0f] py-12;
   }
 
   .rc-footer-inner {
@@ -447,10 +451,58 @@
     margin-inline: auto;
   }
 
+  .rc-footer-intro {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 2rem;
+    padding-bottom: 2.75rem;
+    margin-bottom: 2.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, .12);
+  }
+
+  .rc-footer-kicker {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    margin: 0 0 .9rem;
+    color: var(--main-color);
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+  }
+
+  .rc-footer-kicker span {
+    width: .5rem;
+    height: .5rem;
+    border-radius: 999px;
+    background: var(--main-color);
+    box-shadow: 0 0 0 5px rgba(207, 61, 61, .15);
+  }
+
+  .rc-footer-intro h2 {
+    max-width: 38rem;
+    margin: 0;
+    color: #fff;
+    font-size: 3.6rem;
+    font-weight: 700;
+    line-height: .98;
+    letter-spacing: 0;
+  }
+
+  .rc-footer-intro-copy {
+    max-width: 18rem;
+    margin: 0;
+    color: #a8a29e;
+    font-size: .95rem;
+    line-height: 1.65;
+  }
+
   .rc-footer-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 2rem;
+    grid-template-columns: minmax(14rem, 1.45fr) repeat(2, minmax(9rem, 1fr)) minmax(15rem, 1.35fr);
+    gap: 2.5rem;
     align-items: start;
   }
 
@@ -461,11 +513,35 @@
 
   .rc-footer-column h5 {
     min-height: 1.75rem;
+    margin: 0 0 1.1rem;
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+
+  .rc-footer-column h5 i {
+    margin-right: .5rem;
+    color: var(--main-color);
   }
 
   .rc-footer-column ul {
     margin: 0;
     padding: 0;
+  }
+
+  .rc-footer-column ul li {
+    margin-bottom: .7rem;
+  }
+
+  .rc-footer-column ul a {
+    color: #a8a29e;
+    font-size: .88rem;
+  }
+
+  .rc-footer-column ul a:hover {
+    color: #fff;
   }
 
   .rc-footer-categories {
@@ -497,11 +573,52 @@
   .rc-footer-column .newsletter-input input {
     min-width: 0;
     flex: 1 1 10rem;
+    border-radius: .35rem;
+    padding: .7rem .8rem;
+  }
+
+  .rc-footer-column .newsletter-input button {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    padding: 0;
+    border-radius: .35rem;
+  }
+
+  .rc-footer-column > .small {
+    max-width: 20rem;
+    color: #a8a29e !important;
+    font-size: .86rem;
+    line-height: 1.6;
+  }
+
+  .rc-footer-column .social-links {
+    display: flex;
+    gap: .55rem;
+  }
+
+  .rc-footer-column .social-links a {
+    display: grid;
+    width: 2.35rem;
+    height: 2.35rem;
+    margin: 0;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: .35rem;
+    background: transparent;
+  }
+
+  .rc-footer-column .social-links a:hover {
+    border-color: var(--main-color);
+    background: var(--main-color);
+    transform: translateY(-2px);
   }
 
   .rc-footer-bottom {
     margin-top: 2.5rem;
     padding-top: 1.5rem;
+    border-top-color: rgba(255, 255, 255, .12) !important;
   }
 
   .rc-footer-bottom-grid {
@@ -521,12 +638,22 @@
     text-align: right;
   }
 
+  .rc-footer-copyright strong {
+    color: #fff;
+    font-size: .72rem;
+    letter-spacing: .12em;
+  }
+
   @media (max-width: 900px) {
     .rc-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .rc-footer-intro { align-items: start; flex-direction: column; }
+    .rc-footer-intro-copy { max-width: 32rem; }
   }
 
   @media (max-width: 560px) {
     .rc-footer-inner { width: min(100% - 2rem, 80rem); }
+    .rc-footer-intro { gap: 1.25rem; padding-bottom: 2rem; margin-bottom: 2rem; }
+    .rc-footer-intro h2 { font-size: 2.25rem; }
     .rc-footer-grid,
     .rc-footer-bottom-grid { grid-template-columns: 1fr; }
     .rc-footer-copyright,

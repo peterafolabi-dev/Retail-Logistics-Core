@@ -52,6 +52,8 @@ urlpatterns = [
     path('payment-methods/', views.payment_methods, name='payment-methods'),
     path('wallet/', views.wallet, name='wallet'),
     path('wallet/topup/verify/', views.wallet_topup_verify, name='wallet-topup-verify'),
+    path('api/rewards/status/', views.daily_reward_status, name='daily-reward-status'),
+    path('api/rewards/claim/', views.claim_daily_reward_view, name='claim-daily-reward'),
     
     # 📧 Support & Communication
     path('contact/', views.contact_us, name='contact'),

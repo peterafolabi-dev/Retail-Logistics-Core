@@ -5,17 +5,21 @@
 {% block title %}Checkout - RedCart{% endblock %}
 
 {% block content %}
-<div class="container py-5">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div class="container py-5 rc-checkout">
 
   <!-- Checkout progress indicator -->
-  <div class="checkout-progress mb-4" aria-label="Checkout progress">
+  <div class="checkout-progress mb-5" aria-label="Checkout progress">
     <div class="checkout-progress-step completed">
-      <span class="checkout-progress-dot">1</span>
+      <span class="checkout-progress-dot"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.2 8.2L11 1.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
       <span class="checkout-progress-label">Cart</span>
     </div>
     <div class="checkout-progress-line completed"></div>
     <div class="checkout-progress-step completed">
-      <span class="checkout-progress-dot">2</span>
+      <span class="checkout-progress-dot"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.2 8.2L11 1.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
       <span class="checkout-progress-label">Address</span>
     </div>
     <div class="checkout-progress-line completed"></div>
@@ -28,8 +32,8 @@
   <div class="row g-4">
     <!-- LEFT: Checkout -->
     <div class="col-lg-8">
-      <div class="card border-0 shadow-sm p-4 rounded-4 theme-card">
-        <div class="d-flex align-items-center justify-content-between mb-3 checkout-header">
+      <div class="card border-0 shadow-sm p-4 p-md-5 rounded-4 theme-card">
+        <div class="d-flex align-items-center justify-content-between mb-4 checkout-header">
           <div class="d-flex align-items-center gap-3">
             <div class="checkout-logo d-flex align-items-center justify-content-center">
               <span>RC</span>
@@ -42,16 +46,16 @@
         </div>
 
         <!-- Customer Email (for Paystack) -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold">📧 Email Address</label>
+        <div class="mb-3 rc-field">
+          <label class="form-label fw-semibold" for="customer-email">Email address</label>
           <input type="email" id="customer-email" class="form-control rounded-pill px-4"
             value="{{ request.user.email }}"
             placeholder="your@email.com" required>
         </div>
 
         <!-- Customer Name -->
-        <div class="mb-4">
-          <label class="form-label fw-semibold">👤 Full Name</label>
+        <div class="mb-4 rc-field">
+          <label class="form-label fw-semibold" for="customer-name">Full name</label>
           <input type="text" id="customer-name" class="form-control rounded-pill px-4"
             value="{{ request.user.get_full_name }}"
             placeholder="Your full name" required>
@@ -59,8 +63,8 @@
 
         <!-- Accepted Payment Methods - WORKING SVG ICONS -->
         <div class="mb-4">
-          <p class="fw-semibold mb-3">We Accept:</p>
-          <div class="d-flex align-items-center gap-3 flex-wrap">
+          <p class="fw-semibold mb-3 rc-eyebrow">We accept</p>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
             <!-- Visa -->
             <div class="payment-badge">
               <svg width="45" height="30" viewBox="0 0 72 45" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -100,8 +104,8 @@
           </div>
         </div>
 
-        <div class="mb-4">
-          <label class="form-label fw-semibold">Promo Code</label>
+        <div class="mb-4 rc-field">
+          <label class="form-label fw-semibold" for="coupon-code">Promo code</label>
           <div class="input-group">
             <input type="text" id="coupon-code" name="coupon_code" class="form-control rounded-pill px-4" placeholder="Enter coupon code" value="{{ coupon_code }}">
             <button type="button" id="apply-coupon-btn" class="btn btn-primary rounded-pill apply-coupon-btn" onclick="applyCoupon()">Apply</button>
@@ -110,15 +114,18 @@
         </div>
 
         <div class="ssl-badge mb-4" role="status" aria-label="Secure checkout">
-          <i class="bi bi-shield-check"></i>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M12 2L4 5v6c0 5 3.4 8.9 8 10 4.6-1.1 8-5 8-10V5l-8-3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+            <path d="M9 12.2l2.1 2.1L15.5 10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           <span><strong>Secure checkout</strong> · Your payment is protected with HTTPS encryption.</span>
         </div>
 
         <div class="mb-4">
-          <label class="form-label fw-semibold">Payment Method</label>
+          <label class="form-label fw-semibold">Payment method</label>
           {% if request.user.is_authenticated %}
-          <div class="mb-3">
-            <label class="form-label" for="shipping-address">Delivery Address</label>
+          <div class="mb-3 rc-field">
+            <label class="form-label" for="shipping-address">Delivery address</label>
             <select id="shipping-address" class="form-select rounded-pill" required>
               {% if addresses %}
                 <option value="">Choose a saved address</option>
@@ -141,29 +148,49 @@
             {% endif %}
           </div>
           {% endif %}
-          <div class="d-flex gap-3 flex-wrap" id="payment-method-options">
+          <div class="rc-payment-grid" id="payment-method-options">
             <label class="payment-method-option selected">
               <input type="radio" name="payment-channel" value="card" class="form-check-input" checked>
-              <span>Card</span>
+              <span class="payment-method-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2.5" y="5.5" width="19" height="13" rx="2.2" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 9.5h19" stroke="currentColor" stroke-width="1.6"/><path d="M6 14.5h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              </span>
+              <span class="payment-method-text">Card</span>
+              <span class="payment-method-check" aria-hidden="true"></span>
             </label>
             <label class="payment-method-option">
               <input type="radio" name="payment-channel" value="bank" class="form-check-input">
-              <span>Bank Transfer</span>
+              <span class="payment-method-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 9.5 12 4l9 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 9.5v9M9 9.5v9M15 9.5v9M19.5 9.5v9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M3 18.5h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              </span>
+              <span class="payment-method-text">Bank transfer</span>
+              <span class="payment-method-check" aria-hidden="true"></span>
             </label>
             <label class="payment-method-option">
               <input type="radio" name="payment-channel" value="ussd" class="form-check-input">
-              <span>USSD</span>
+              <span class="payment-method-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="6.5" y="2.5" width="11" height="19" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M10 18h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              </span>
+              <span class="payment-method-text">USSD</span>
+              <span class="payment-method-check" aria-hidden="true"></span>
             </label>
             <label class="payment-method-option payment-method-option-wallet {% if not wallet_available %}payment-method-option-disabled{% endif %}" data-wallet-available="{{ wallet_available|yesno:'true,false' }}" title="{% if not wallet_available %}Top up your RedCart wallet to enable this payment option.{% endif %}">
               <input type="radio" name="payment-channel" value="wallet" class="form-check-input" data-wallet-available="{{ wallet_available|yesno:'true,false' }}" aria-disabled="{% if not wallet_available %}true{% else %}false{% endif %}">
-              <span>RedCart Wallet <span class="payment-method-wallet-balance">(Balance: ₦{{ wallet_balance|floatformat:2|intcomma }})</span></span>
+              <span class="payment-method-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2.5" y="6" width="19" height="13" rx="2.2" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 10.5H21" stroke="currentColor" stroke-width="1.6"/><circle cx="17" cy="14" r="1.3" fill="currentColor"/></svg>
+              </span>
+              <span class="payment-method-text">RedCart Wallet <span class="payment-method-wallet-balance">Balance: ₦{{ wallet_balance|floatformat:2|intcomma }}</span></span>
+              <span class="payment-method-check" aria-hidden="true"></span>
             </label>
             <label class="payment-method-option">
               <input type="radio" name="payment-channel" value="cod" class="form-check-input">
-              <span>Cash on Delivery</span>
+              <span class="payment-method-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="13" height="9" rx="1.6" stroke="currentColor" stroke-width="1.6"/><path d="M15 10h3.4L21 13.2V16h-6" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="7" cy="17.5" r="1.7" stroke="currentColor" stroke-width="1.6"/><circle cx="17.5" cy="17.5" r="1.7" stroke="currentColor" stroke-width="1.6"/></svg>
+              </span>
+              <span class="payment-method-text">Cash on delivery</span>
+              <span class="payment-method-check" aria-hidden="true"></span>
             </label>
           </div>
-          <div class="form-text">Choose Card, Bank Transfer, USSD, or Cash on Delivery. COD orders are payable when the package arrives.</div>
+          <div class="form-text mt-2">Choose Card, Bank Transfer, USSD, or Cash on Delivery. COD orders are payable when the package arrives.</div>
 
           <!-- Dynamic delivery/confirmation note based on selected payment method -->
           <div id="payment-method-timing-note" class="payment-method-timing-note"></div>
@@ -184,7 +211,7 @@
 
         <!-- Paystack Pay Button -->
           <button id="paystack-btn" type="button" class="btn btn-success w-100 py-3 fw-semibold rounded-pill shadow-sm btn-glow text-dark">
-            💳 Pay ₦<span id="pay-btn-amount">{{ total_after_coupon|default:total|floatformat:2|intcomma }}</span>
+            <span class="rc-pay-icon" aria-hidden="true">💳</span> Pay ₦<span id="pay-btn-amount">{{ total_after_coupon|default:total|floatformat:2|intcomma }}</span>
           </button>
           <div id="pay-btn-hint" class="pay-btn-hint" style="display:none;">Choose a delivery address above to continue.</div>
 
@@ -194,7 +221,10 @@
     <!-- RIGHT: Order Summary -->
     <div class="col-lg-4">
       <div class="card border-0 shadow-sm p-4 rounded-4 theme-card sticky-top" style="top: 90px;">
-        <h5 class="fw-bold mb-3"><i class="bi bi-receipt"></i> Order Summary</h5>
+        <h5 class="fw-bold mb-3 rc-summary-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 8h6M9 12h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          Order summary
+        </h5>
 
         {% if products %}
         <div class="checkout-summary-list mb-3">
@@ -266,14 +296,34 @@
 </div>
 
 <style>
+  .rc-checkout {
+    --rc-ink: #1c1410;
+    --rc-coral: #ff4747;
+    --rc-coral-deep: #c62828;
+    --rc-coral-soft: rgba(255, 71, 71, 0.1);
+    --rc-border: #ece3de;
+    --rc-muted: #8a7f78;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  .rc-checkout h3,
+  .rc-checkout h5,
+  .rc-checkout .checkout-progress-label,
+  .rc-checkout .checkout-summary-total,
+  .rc-checkout .checkout-logo span {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  }
+
   .theme-card {
     width: 100%;
     max-width: 640px;
     margin: 0 auto;
     box-sizing: border-box;
     background: var(--card-bg);
-    border-radius: 20px;
+    border-radius: 22px;
+    border: 1px solid var(--rc-border);
     transition: all 0.4s ease;
+    position: relative;
   }
 
   /* Checkout progress indicator */
@@ -290,50 +340,54 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: #9ca3af;
+    color: #b3aaa4;
     font-weight: 600;
     font-size: 0.9rem;
   }
 
   .checkout-progress-step.completed {
-    color: #16a34a;
+    color: #1e9e5a;
   }
 
   .checkout-progress-step.active {
-    color: #0d6efd;
+    color: var(--rc-coral);
   }
 
   .checkout-progress-dot {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
-    background: #e5e7eb;
-    color: #6b7280;
+    background: #efe9e5;
+    color: #8a7f78;
     font-size: 0.8rem;
     font-weight: 700;
+    transition: background 0.3s ease, color 0.3s ease;
   }
 
   .checkout-progress-step.completed .checkout-progress-dot {
-    background: #16a34a;
+    background: #1e9e5a;
     color: #fff;
   }
 
   .checkout-progress-step.active .checkout-progress-dot {
-    background: #0d6efd;
+    background: var(--rc-coral);
     color: #fff;
+    box-shadow: 0 0 0 5px var(--rc-coral-soft);
   }
 
   .checkout-progress-line {
     width: 40px;
     height: 2px;
-    background: #e5e7eb;
+    background: #efe9e5;
+    position: relative;
+    overflow: hidden;
   }
 
   .checkout-progress-line.completed {
-    background: #16a34a;
+    background: #1e9e5a;
   }
 
   [data-theme="dark"] .checkout-progress-step {
@@ -345,9 +399,22 @@
     color: #9ca3af;
   }
 
+  [data-theme="dark"] .checkout-progress-line {
+    background: #374151;
+  }
+
+  .rc-eyebrow {
+    font-size: 0.92rem;
+    color: var(--rc-ink);
+  }
+
+  .rc-field label {
+    font-size: 0.9rem;
+  }
+
   .apply-coupon-btn {
-    background: #0d6efd;
-    border-color: #0d6efd;
+    background: var(--rc-ink);
+    border-color: var(--rc-ink);
     color: #ffffff;
     font-weight: 700;
     padding-left: 1.4rem;
@@ -357,11 +424,17 @@
 
   .apply-coupon-btn:hover,
   .apply-coupon-btn:focus {
-    background: #0b5ed7;
-    border-color: #0b5ed7;
+    background: var(--rc-coral);
+    border-color: var(--rc-coral);
     color: #ffffff;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.35);
+    box-shadow: 0 4px 12px rgba(255, 71, 71, 0.35);
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    border-color: var(--rc-coral);
+    box-shadow: 0 0 0 0.2rem var(--rc-coral-soft);
   }
 
   .payment-badge {
@@ -387,15 +460,14 @@
   }
 
   .checkout-logo {
-    width: 50px;
-    height: 50px;
-    border-radius: 18px;
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
     background: linear-gradient(135deg, #ff4747, #ff7a6b);
     color: #fff;
-    font-size: 1.1rem;
-    font-weight: 800;
-    font-family: 'Poppins', sans-serif;
-    box-shadow: 0 12px 30px rgba(255, 71, 71, 0.22);
+    font-size: 1.15rem;
+    font-weight: 700;
+    box-shadow: 0 12px 30px rgba(255, 71, 71, 0.28);
   }
 
   .checkout-logo span {
@@ -404,10 +476,11 @@
     justify-content: center;
     width: 100%;
     height: 100%;
+    letter-spacing: 0.02em;
   }
 
   .checkout-header h3 {
-    letter-spacing: -0.04em;
+    letter-spacing: -0.03em;
   }
 
   .checkout-header p {
@@ -420,10 +493,16 @@
     background: linear-gradient(135deg, #28a745, #20c997);
     border: none;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
   }
   .btn-success:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(32, 201, 151, 0.4);
+  }
+
+  .rc-pay-icon {
+    display: inline-block;
   }
 
   .btn-glow {
@@ -458,8 +537,8 @@
     font-size: 0.95rem;
   }
 
-  .ssl-badge i {
-    font-size: 1.1rem;
+  .ssl-badge svg {
+    flex-shrink: 0;
     color: #198754;
   }
 
@@ -472,100 +551,118 @@
     background-color: transparent;
   }
 
-  #payment-method-options {
-    flex-wrap: wrap;
+  /* Payment method grid — icon cards instead of plain pills */
+  .rc-payment-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .payment-method-option-wallet {
+    grid-column: span 2;
   }
 
   .payment-method-option {
-    display: inline-flex;
+    position: relative;
+    display: flex;
     align-items: center;
-    gap: 0.75rem;
-    flex: 1 1 180px;
-    min-width: 0;
-    padding: 0.75rem 1.25rem;
-    border-radius: 999px;
-    border: 1px solid #333333;
+    gap: 0.7rem;
+    padding: 0.85rem 1.1rem;
+    border-radius: 14px;
+    border: 1.5px solid var(--rc-border);
     background: #ffffff;
-    color: #1f2937;
+    color: var(--rc-ink);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     font-weight: 600;
   }
 
-  .payment-method-option span {
-    white-space: nowrap;
-    color: #1f2937;
-  }
-
-  /* Wallet option has longer text (name + balance), so it needs more
-     room and a slightly smaller/lighter balance portion so it doesn't
-     feel cramped against the pill's rounded edges. */
-  .payment-method-option-wallet {
-    flex: 1 1 280px;
-    padding: 0.75rem 1.4rem;
-  }
-
-  .payment-method-option-wallet span {
-    white-space: normal;
-    line-height: 1.3;
-  }
-
-  .payment-method-wallet-balance {
-    font-weight: 500;
-    font-size: 0.88em;
-    opacity: 0.85;
-  }
-
-  .payment-method-option input {
-    position: relative;
-    margin: 0;
-    width: 1rem;
-    height: 1rem;
-    appearance: none;
-    -webkit-appearance: none;
-    border-radius: 50%;
-    border: 2px solid #adb5bd;
-    background: #fff;
-    display: inline-block;
-    transition: all 0.2s ease;
+  .payment-method-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #f5f1ee;
+    color: var(--rc-ink);
     flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
   }
 
-  .payment-method-option input::after {
+  .payment-method-text {
+    flex: 1;
+    min-width: 0;
+    color: #1f2937;
+    line-height: 1.25;
+  }
+
+  .payment-method-check {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #d7cec8;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .payment-method-check::after {
     content: "";
     position: absolute;
-    inset: 50% auto auto 50%;
-    width: 0.45rem;
-    height: 0.45rem;
+    inset: 3px;
     border-radius: 50%;
-    background: #0d6efd;
-    transform: translate(-50%, -50%) scale(0);
+    background: var(--rc-coral);
+    transform: scale(0);
     transition: transform 0.15s ease;
   }
 
-  .payment-method-option input:checked {
-    border-color: #0d6efd;
-    background: #fff;
-    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.12);
+  .payment-method-option input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
   }
 
-  .payment-method-option input:checked::after {
-    transform: translate(-50%, -50%) scale(1);
+  /* Wallet option has longer text (name + balance) */
+  .payment-method-option-wallet span.payment-method-text {
+    white-space: normal;
   }
 
-  .payment-method-option input:not(:checked) {
-    border-color: #adb5bd;
-    background: #fff;
+  .payment-method-wallet-balance {
+    display: block;
+    font-weight: 500;
+    font-size: 0.85em;
+    opacity: 0.75;
+    margin-top: 0.1rem;
+  }
+
+  .payment-method-option:hover {
+    border-color: #e3c9c9;
   }
 
   .payment-method-option.selected {
-    border-color: #0d6efd;
-    background: rgba(13, 110, 253, 0.08);
-    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.12);
+    border-color: var(--rc-coral);
+    background: var(--rc-coral-soft);
+    box-shadow: 0 0 0 3px rgba(255, 71, 71, 0.08);
   }
 
+  .payment-method-option.selected .payment-method-icon {
+    background: var(--rc-coral);
+    color: #fff;
+  }
+
+  .payment-method-option.selected .payment-method-check {
+    border-color: var(--rc-coral);
+  }
+
+  .payment-method-option.selected .payment-method-check::after {
+    transform: scale(1);
+  }
+
+  .payment-method-option.selected .payment-method-text,
   .payment-method-option.selected span {
-    color: #1f2937;
+    color: var(--rc-ink);
   }
 
   #paystack-btn {
@@ -592,12 +689,17 @@
     color: #6b7280;
   }
 
+  .payment-method-option-disabled .payment-method-icon {
+    background: #e5e7eb;
+    color: #9ca3af;
+  }
+
   .payment-method-option-disabled input {
     cursor: not-allowed;
   }
 
   .payment-method-option-note {
-    margin-top: 0.5rem;
+    margin-top: 0.7rem;
     font-size: 0.82rem;
     color: #6b7280;
   }
@@ -605,7 +707,7 @@
   .payment-method-option-note-link {
     margin-left: 0.4rem;
     font-weight: 600;
-    color: #0d6efd;
+    color: var(--rc-coral);
     text-decoration: underline;
   }
 
@@ -614,6 +716,12 @@
     font-size: 0.82rem;
     color: #6b7280;
     min-height: 1.1em;
+  }
+
+  .rc-summary-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .checkout-summary-list {
@@ -673,16 +781,17 @@
   }
 
   .checkout-summary-total {
-    font-size: 1.05rem;
-    font-weight: 800;
+    font-size: 1.15rem;
+    font-weight: 700;
     margin-top: 0.25rem;
   }
 
   .checkout-summary-total-value {
-    font-size: 1.05rem;
-    font-weight: 800;
-    color: #dc3545;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--rc-coral-deep);
     text-decoration: none !important;
+    transition: color 0.2s ease;
   }
 
   .checkout-summary-insurance-option {
@@ -690,6 +799,12 @@
   }
 
   /* Dark Theme */
+  [data-theme="dark"] .rc-checkout {
+    --rc-ink: #e8e8e8;
+    --rc-border: #333340;
+    --rc-coral-soft: rgba(255, 71, 71, 0.16);
+  }
+
   [data-theme="dark"] .theme-card {
     background-color: #1a1a24 !important;
     color: #e8e8e8 !important;
@@ -704,13 +819,15 @@
     border-color: rgba(255, 255, 255, 0.08);
   }
 
-  [data-theme="dark"] .form-control {
+  [data-theme="dark"] .form-control,
+  [data-theme="dark"] .form-select {
     background-color: #2a2a2a;
     color: #e8e8e8;
     border-color: #444;
   }
 
-  [data-theme="dark"] .form-control:focus {
+  [data-theme="dark"] .form-control:focus,
+  [data-theme="dark"] .form-select:focus {
     border-color: #ff4747;
     box-shadow: 0 0 0 0.2rem rgba(255, 71, 71, 0.25);
   }
@@ -723,6 +840,10 @@
     background: linear-gradient(135deg, #163423, #214b35);
     color: #d8f5e2;
     border-color: #3d6b4d;
+  }
+
+  [data-theme="dark"] .ssl-badge svg {
+    color: #7be0a5;
   }
 
   [data-theme="dark"] .list-group-item {
@@ -739,22 +860,36 @@
   }
 
   [data-theme="dark"] .form-text a {
-    color: #bfdbfe;
+    color: #ffb3ab;
   }
 
   [data-theme="dark"] .payment-method-option {
-    border-color: #333333;
-    color: #1f2937;
-    background-color: #ffffff;
+    border-color: #333340;
+    color: #e8e8e8;
+    background-color: #20202b;
   }
 
-  /* These two rules must come AFTER the global dark-theme "span" rule below,
-     so payment-method text stays dark-on-white instead of light-on-white. */
-  [data-theme="dark"] .payment-method-option-disabled {
-    background-color: #374151;
+  [data-theme="dark"] .payment-method-icon {
+    background: #2b2b38;
+    color: #d1d5db;
+  }
+
+  [data-theme="dark"] .payment-method-check {
     border-color: #4b5563;
+  }
+
+  /* These rules must come AFTER the global dark-theme "span" rule below,
+     so payment-method text stays light-on-dark correctly. */
+  [data-theme="dark"] .payment-method-option-disabled {
+    background-color: #2a2a33;
+    border-color: #3f3f4a;
     color: #9ca3af;
     opacity: 1;
+  }
+
+  [data-theme="dark"] .payment-method-option-disabled .payment-method-icon {
+    background: #33333f;
+    color: #6b7280;
   }
 
   [data-theme="dark"] .payment-method-option-note {
@@ -773,15 +908,24 @@
     color: #e8e8e8;
   }
 
-  /* Force payment-option text back to dark-on-white; must be declared after
-     the global [data-theme="dark"] span rule above so it wins the cascade
-     even at equal specificity. This is what fixes the washed-out text. */
+  /* Force payment-option text back to correct contrast on its own card;
+     must be declared after the global [data-theme="dark"] span rule above
+     so it wins the cascade even at equal specificity. */
   [data-theme="dark"] .payment-method-option span {
-    color: #1f2937 !important;
+    color: #e8e8e8 !important;
   }
 
   [data-theme="dark"] .payment-method-option-disabled span {
     color: #9ca3af !important;
+  }
+
+  [data-theme="dark"] .payment-method-option.selected {
+    background: rgba(255, 71, 71, 0.14);
+    border-color: var(--rc-coral);
+  }
+
+  [data-theme="dark"] .checkout-summary-total-value {
+    color: #ff8a80;
   }
 
   /* Responsive */
@@ -798,6 +942,22 @@
     }
     .checkout-progress-label {
       display: none;
+    }
+    .rc-payment-grid {
+      grid-template-columns: 1fr;
+    }
+    .payment-method-option-wallet {
+      grid-column: span 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn-glow,
+    .theme-card,
+    .payment-method-option,
+    .checkout-summary-total-value {
+      animation: none !important;
+      transition: none !important;
     }
   }
 </style>

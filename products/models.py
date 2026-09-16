@@ -165,45 +165,23 @@ class Coupon(models.Model):
         return min(subtotal, self.discount_value)
 
 class Comment(models.Model):
-    MODERATION_STATUS_CHOICES = [
-        ('published', 'Published'),
-        ('pending_review', 'Pending Review'),
-        ('hidden', 'Hidden'),
-    ]
-
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='comments')
     name = models.CharField(max_length=100)
     text = models.TextField()
     rating = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])
     created_at = models.DateTimeField(auto_now_add=True)
-    fraud_score = models.FloatField(default=0)
-    fraud_flags = models.JSONField(default=list, blank=True)
-    moderation_status = models.CharField(
-        max_length=20, choices=MODERATION_STATUS_CHOICES, default='published'
-    )
 
     def __str__(self):
         return f"{self.name} - {self.rating} stars on {self.product.name}"
 
 
 class Review(models.Model):
-    MODERATION_STATUS_CHOICES = [
-        ('published', 'Published'),
-        ('pending_review', 'Pending Review'),
-        ('hidden', 'Hidden'),
-    ]
-
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
     rating = models.PositiveSmallIntegerField(choices=[(i, str(i)) for i in range(1, 6)])
     review_text = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     verified_purchase = models.BooleanField(default=False)
-    fraud_score = models.FloatField(default=0)
-    fraud_flags = models.JSONField(default=list, blank=True)
-    moderation_status = models.CharField(
-        max_length=20, choices=MODERATION_STATUS_CHOICES, default='published'
-    )
 
     class Meta:
         ordering = ['-created_at']
@@ -350,6 +328,7 @@ class WalletTransaction(models.Model):
         ('top_up', 'Top Up'),
         ('spend', 'Spend'),
         ('refund', 'Refund'),
+        ('reward', 'Reward'),
     ]
 
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='transactions')
@@ -361,6 +340,17 @@ class WalletTransaction(models.Model):
 
     def __str__(self):
         return f"{self.wallet.user.username} {self.transaction_type} ₦{self.amount:.2f}"
+
+
+class LoginRewardStreak(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='login_streak')
+    current_streak = models.IntegerField(default=0)
+    longest_streak = models.IntegerField(default=0)
+    last_claimed_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - streak {self.current_streak}"
 
 
 # 📦 Enhanced Order Model

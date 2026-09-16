@@ -8,1186 +8,858 @@
 {% block content %}
 
 <style>
-  
-  /* ── Page heading ── */
-  
-  .cart-page-title {
-  
-    font-size: 1.5rem;
-  
-    font-weight: 800;
-  
-    color: var(--text-color);
-  
-    letter-spacing: -0.02em;
-  
-    margin-bottom: 1.5rem;
-  
-  }
-  
-  .cart-page-title span {
-  
-    color: var(--main-color);
-  
-  }
-  
+  /* ═══════════════════════════════════════════════
+     RedCart — cart
+     Tokens inherited from base.html:
+     --main-color, --card-bg, --text-color
+     ═══════════════════════════════════════════════ */
 
-  
-  /* ── Main card shell ── */
-  
-  .rc-panel {
-  
-    background: var(--card-bg);
-  
-    border: 1px solid rgba(128,128,128,0.12);
-  
-    border-radius: 16px;
-  
-    padding: 1.75rem;
-  
+  .rc {
+    --rc-line: rgba(128, 128, 128, 0.14);
+    --rc-line-soft: rgba(128, 128, 128, 0.08);
+    --rc-fill: rgba(128, 128, 128, 0.05);
+    --rc-good: #1a8a3c;
+    --rc-warn: #a06b00;
+    --rc-radius: 14px;
   }
-  
+  [data-theme="dark"] .rc {
+    --rc-good: #4cd97a;
+    --rc-warn: #f8b400;
+  }
 
-  
-  /* ── Section label ── */
-  
-  .rc-section-label {
-  
-    font-size: 0.7rem;
-  
-    font-weight: 700;
-  
-    letter-spacing: 0.1em;
-  
-    text-transform: uppercase;
-  
-    color: var(--text-color);
-  
-    opacity: 0.4;
-  
-    margin-bottom: 1rem;
-  
-  }
-  
-
-  
-  /* ── Table header ── */
-  
-  .rc-thead th {
-  
-    font-size: 0.7rem;
-  
-    font-weight: 700;
-  
-    letter-spacing: 0.08em;
-  
-    text-transform: uppercase;
-  
-    color: var(--text-color) !important;
-  
-    opacity: 0.4;
-  
-    border: none !important;
-  
-    padding: 0 0.75rem 0.85rem !important;
-  
-    background: transparent !important;
-  
-  }
-  
-
-  
-  /* ── Table rows ── */
-  
-  .rc-table {
-  
-    border-collapse: collapse;
-  
-    width: 100%;
-  
-  }
-  
-  .rc-table tbody tr {
-  
-    border-top: 1px solid rgba(128,128,128,0.1);
-  
-    transition: background 0.15s;
-  
-  }
-  
-  .rc-table tbody tr:hover {
-  
-    background: rgba(128,128,128,0.04);
-  
-  }
-  
-  .rc-table td {
-  
-    padding: 1rem 0.75rem;
-  
-    vertical-align: middle;
-  
-    color: var(--text-color) !important;
-  
-    border: none !important;
-  
-  }
-  
-
-  
-  /* ── Product name ── */
-  
-  .rc-name {
-  
-    font-weight: 700;
-  
-    font-size: 0.92rem;
-  
-    color: var(--text-color) !important;
-  
-    text-decoration: none;
-  
-    display: block;
-  
-    line-height: 1.3;
-  
-    transition: color 0.15s;
-  
-  }
-  
-  .rc-name:hover { color: var(--main-color) !important; }
-  
-
-  
-  /* ── Description ── */
-  
-  .rc-desc {
-  
-    font-size: 0.77rem;
-  
-    color: var(--text-color) !important;
-  
-    opacity: 0.45;
-  
-    margin-top: 3px;
-  
-    line-height: 1.4;
-  
-  }
-  
-
-  
-  /* ── Badges ── */
-  
-  .rc-badge-sale {
-  
-    display: inline-block;
-  
-    font-size: 0.66rem;
-  
-    font-weight: 700;
-  
-    padding: 2px 9px;
-  
-    border-radius: 999px;
-  
-    background: rgba(255, 71, 71, 0.12);
-  
-    color: var(--main-color);
-  
-    border: 1px solid rgba(255, 71, 71, 0.22);
-  
-    margin-top: 5px;
-  
-  }
-  
-  .rc-badge-off {
-  
-    display: inline-block;
-  
-    font-size: 0.66rem;
-  
-    font-weight: 700;
-  
-    padding: 2px 8px;
-  
-    border-radius: 999px;
-  
-    background: rgba(248, 180, 0, 0.12);
-  
-    color: #c98a00;
-  
-    border: 1px solid rgba(248, 180, 0, 0.22);
-  
-    margin-top: 3px;
-  
-  }
-  
-  [data-theme="dark"] .rc-badge-off { color: #f8b400; }
-  
-
-  
-  /* ── Price ── */
-  
-  .rc-price-sale {
-  
-    font-weight: 800;
-  
-    font-size: 0.92rem;
-  
-    color: var(--main-color) !important;
-  
-  }
-  
-  .rc-price-original {
-  
-    font-size: 0.75rem;
-  
-    text-decoration: line-through;
-  
-    color: var(--text-color) !important;
-  
-    opacity: 0.35;
-  
-    display: block;
-  
-    margin-top: 1px;
-  
-  }
-  
-  .rc-price-regular {
-  
-    font-weight: 700;
-  
-    font-size: 0.9rem;
-  
-    color: var(--text-color) !important;
-  
-  }
-  
-  .rc-row-total {
-  
-    font-weight: 800;
-  
-    font-size: 0.95rem;
-  
-    color: var(--text-color) !important;
-  
-  }
-  
-
-  
-  /* ── Qty input ── */
-  
-  .rc-qty {
-  
-    width: 68px;
-  
-    text-align: center;
-  
-    background: rgba(128,128,128,0.08) !important;
-  
-    border: 1px solid rgba(128,128,128,0.18) !important;
-  
-    color: var(--text-color) !important;
-  
-    border-radius: 8px;
-  
-    padding: 6px 8px;
-  
-    font-size: 0.9rem;
-  
-    font-weight: 700;
-  
-    outline: none;
-  
-  }
-  
-  .rc-qty:focus {
-  
-    border-color: var(--main-color) !important;
-  
-    box-shadow: 0 0 0 3px rgba(255,71,71,0.12) !important;
-  
-  }
-  
-
-  
-  /* ── Remove btn ── */
-  
-  .rc-remove {
-  
-    display: inline-flex;
-  
-    align-items: center;
-  
-    justify-content: center;
-  
-    width: 34px; height: 34px;
-  
-    border-radius: 50%;
-  
-    border: 1px solid rgba(128,128,128,0.15);
-  
-    background: transparent;
-  
-    color: var(--text-color);
-  
-    opacity: 0.4;
-  
-    font-size: 0.8rem;
-  
-    text-decoration: none;
-  
-    transition: all 0.2s;
-  
-  }
-  
-  .rc-remove:hover {
-  
-    background: rgba(255,71,71,0.1);
-  
-    border-color: rgba(255,71,71,0.3);
-  
-    color: var(--main-color);
-  
-    opacity: 1;
-  
-  }
-  
-
-  
-  /* ── Product image ── */
-  
-  .rc-img {
-  
-    width: 66px;
-  
-    height: 66px;
-  
-    object-fit: cover;
-  
-    border-radius: 10px;
-  
-    border: 1px solid rgba(128,128,128,0.12);
-  
-    flex-shrink: 0;
-  
-  }
-  
-
-  
-  /* ── Coupon section ── */
-  
-  .rc-coupon-wrap {
-  
-    background: rgba(128,128,128,0.05);
-  
-    border: 1px dashed rgba(128,128,128,0.18);
-  
-    border-radius: 12px;
-  
-    padding: 1rem 1.25rem;
-  
-    margin-top: 1.5rem;
-  
-  }
-  
-  .rc-coupon-input {
-  
-    background: var(--card-bg) !important;
-  
-    border: 1px solid rgba(128,128,128,0.18) !important;
-  
-    color: var(--text-color) !important;
-  
-    border-radius: 8px;
-  
-    font-size: 0.88rem;
-  
-  }
-  
-  .rc-coupon-input::placeholder { opacity: 0.35; }
-  
-  .rc-coupon-input:focus {
-  
-    border-color: var(--main-color) !important;
-  
-    box-shadow: 0 0 0 3px rgba(255,71,71,0.1) !important;
-  
-  }
-  
-  .rc-coupon-btn {
-  
-    background: var(--main-color);
-  
-    color: #fff;
-  
-    border: none;
-  
-    border-radius: 8px;
-  
-    font-weight: 700;
-  
-    font-size: 0.85rem;
-  
-    padding: 0.5rem 1.25rem;
-  
-    transition: opacity 0.2s;
-  
-    white-space: nowrap;
-  
-  }
-  
-  .rc-coupon-btn:hover { opacity: 0.85; color: #fff; }
-  
-  .rc-coupon-applied {
-  
-    background: rgba(40,167,69,0.08);
-  
-    border: 1px solid rgba(40,167,69,0.22);
-  
-    border-radius: 8px;
-  
-    padding: 8px 14px;
-  
-    font-size: 0.82rem;
-  
-    color: #1a8a3c;
-  
-    margin-top: 0.6rem;
-  
-  }
-  
-  [data-theme="dark"] .rc-coupon-applied { color: #4cd97a; }
-  
-
-  
-  /* ── Summary panel ── */
-  
-  .rc-summary {
-  
-    background: var(--card-bg);
-  
-    border: 1px solid rgba(128,128,128,0.12);
-  
-    border-radius: 16px;
-  
-    padding: 1.5rem;
-  
-    position: sticky;
-  
-    top: 90px;
-  
-  }
-  
-  .rc-summary-title {
-  
-    font-size: 1rem;
-  
-    font-weight: 800;
-  
-    color: var(--text-color);
-  
-    margin-bottom: 1.1rem;
-  
-  }
-  
-  .rc-sum-row {
-  
+  /* ── Header ── */
+  .rc-head {
     display: flex;
-  
+    align-items: baseline;
     justify-content: space-between;
-  
-    align-items: center;
-  
-    padding: 0.45rem 0;
-  
-    font-size: 0.88rem;
-  
-  }
-  
-  .rc-sum-label { color: var(--text-color); opacity: 0.55; }
-  
-  .rc-sum-value { color: var(--text-color); font-weight: 600; }
-  
-  .rc-sum-divider {
-  
-    border: none;
-  
-    border-top: 1px solid rgba(128,128,128,0.13);
-  
-    margin: 0.7rem 0;
-  
-  }
-  
-  .rc-sum-total-label { color: var(--text-color); font-weight: 800; font-size: 1.05rem; }
-  
-  .rc-sum-total-value { color: var(--text-color); font-weight: 800; font-size: 1.05rem; }
-  
-
-  
-  /* ── Checkout button ── */
-  
-  .rc-btn-checkout {
-  
-    display: block;
-  
-    width: 100%;
-  
-    text-align: center;
-  
-    background: var(--main-color);
-  
-    color: #fff !important;
-  
-    font-weight: 700;
-  
-    font-size: 0.95rem;
-  
-    padding: 14px;
-  
-    border-radius: 10px;
-  
-    text-decoration: none;
-  
-    border: none;
-  
-    transition: opacity 0.2s, transform 0.15s;
-  
-    margin-bottom: 0.65rem;
-  
-  }
-  
-  .rc-btn-checkout:hover { opacity: 0.88; transform: translateY(-1px); color: #fff !important; }
-  
-
-  
-  .rc-btn-continue {
-  
-    display: block;
-  
-    width: 100%;
-  
-    text-align: center;
-  
-    background: transparent;
-  
-    color: var(--text-color) !important;
-  
-    font-weight: 600;
-  
-    font-size: 0.88rem;
-  
-    padding: 11px;
-  
-    border-radius: 10px;
-  
-    text-decoration: none;
-  
-    border: 1px solid rgba(128,128,128,0.2);
-  
-    transition: border-color 0.2s, background 0.2s;
-  
-  }
-  
-  .rc-btn-continue:hover {
-  
-    border-color: rgba(128,128,128,0.4);
-  
-    background: rgba(128,128,128,0.06);
-  
-    color: var(--text-color) !important;
-  
-  }
-  
-
-  
-  /* ── Flash warning ── */
-  
-  .rc-flash-warn {
-  
-    background: rgba(248,180,0,0.08);
-  
-    border: 1px solid rgba(248,180,0,0.25);
-  
-    border-radius: 8px;
-  
-    padding: 9px 14px;
-  
-    font-size: 0.8rem;
-  
-    color: #a06b00;
-  
-    margin-bottom: 0.85rem;
-  
-  }
-  
-  [data-theme="dark"] .rc-flash-warn { color: #f8b400; }
-  
-
-  
-  /* ── Discount row ── */
-  
-  .rc-sum-discount { color: #1a8a3c !important; }
-  
-  [data-theme="dark"] .rc-sum-discount { color: #4cd97a !important; }
-  
-
-  
-  /* ── Empty cart ── */
-  
-  .rc-empty-icon {
-  
-    width: 110px; height: 110px;
-  
-    border-radius: 50%;
-  
-    background: rgba(255,193,7,0.1);
-  
-    border: 2px dashed rgba(255,193,7,0.28);
-  
-    display: inline-flex;
-  
-    align-items: center;
-  
-    justify-content: center;
-  
-    font-size: 3rem;
-  
-    color: #ffc107;
-  
-  }
-  
-  .rc-empty-title {
-  
-    font-size: 1.05rem;
-  
-    font-weight: 700;
-  
-    color: var(--text-color);
-  
-    margin: 1rem 0 0.35rem;
-  
-  }
-  
-  .rc-empty-sub {
-  
-    font-size: 0.88rem;
-  
-    color: var(--text-color);
-  
-    opacity: 0.45;
-  
-    margin-bottom: 1.5rem;
-  
-  }
-  
-
-  
-  /* ── Secure badges ── */
-  
-  .rc-secure-row {
-  
-    display: flex;
-  
-    align-items: center;
-  
-    justify-content: center;
-  
     gap: 1rem;
-  
-    margin-top: 1rem;
-  
-    padding-top: 1rem;
-  
-    border-top: 1px solid rgba(128,128,128,0.1);
-  
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
   }
-  
-  .rc-secure-badge {
-  
-    display: flex;
-  
-    align-items: center;
-  
-    gap: 5px;
-  
-    font-size: 0.72rem;
-  
+  .rc-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
     color: var(--text-color);
-  
-    opacity: 0.4;
-  
+    margin: 0;
+  }
+  .rc-count {
+    font-size: 0.85rem;
+    color: var(--text-color);
+    opacity: 0.5;
   }
 
-  /* ── Fix column alignment ── */
-  .rc-table th:nth-child(1) { width: 50%; }
-  .rc-table th:nth-child(2) { width: 80px; }
-  .rc-table th:nth-child(3) { width: 130px; }
-  .rc-table th:nth-child(4) { width: 120px; }
-  .rc-table th:nth-child(5) { width: 44px; }
-  
-</style><p class="cart-page-title"><span>🛒</span> Shopping Cart</p><div class="row g-4">  <!-- ── LEFT: CART ITEMS ──────────────────────────────── -->  <div class="col-lg-8"><div class="rc-panel">
+  /* ── Panels ── */
+  .rc-panel,
+  .rc-summary {
+    background: var(--card-bg);
+    border: 1px solid var(--rc-line);
+    border-radius: var(--rc-radius);
+  }
+  .rc-panel { padding: 0.5rem 1.5rem 1.5rem; }
+  .rc-summary { padding: 1.5rem; position: sticky; top: 90px; }
+
+  /* ── Item list ── */
+  .rc-item {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "img info price"
+      "img qty  total";
+    gap: 0.35rem 1.1rem;
+    align-items: center;
+    padding: 1.35rem 0;
+    border-top: 1px solid var(--rc-line-soft);
+  }
+  .rc-item:first-child { border-top: none; }
+  .rc-item.is-busy { opacity: 0.5; pointer-events: none; }
+  .rc-item.is-leaving {
+    opacity: 0;
+    transform: translateX(-12px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+  }
+
+  .rc-thumb { grid-area: img; display: block; }
+  .rc-thumb img {
+    width: 76px;
+    height: 76px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--rc-line);
+    background: var(--rc-fill);
+  }
+
+  .rc-info { grid-area: info; min-width: 0; }
+  .rc-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.3;
+    color: var(--text-color) !important;
+    text-decoration: none;
+    display: block;
+  }
+  .rc-name:hover { color: var(--main-color) !important; }
+  .rc-desc {
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--text-color);
+    opacity: 0.45;
+    margin: 4px 0 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ── Price column ── */
+  .rc-unit {
+    grid-area: price;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .rc-unit-now {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--text-color);
+  }
+  .rc-item[data-sale="1"] .rc-unit-now { color: var(--main-color); }
+  .rc-unit-was {
+    display: block;
+    font-size: 0.75rem;
+    text-decoration: line-through;
+    color: var(--text-color);
+    opacity: 0.35;
+    margin-top: 2px;
+  }
+
+  .rc-total {
+    grid-area: total;
+    text-align: right;
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--text-color);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Tags ── */
+  .rc-tag {
+    display: inline-block;
+    font-size: 0.66rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 999px;
+    margin-top: 6px;
+  }
+  .rc-tag-sale {
+    background: rgba(255, 71, 71, 0.1);
+    color: var(--main-color);
+    border: 1px solid rgba(255, 71, 71, 0.22);
+  }
+  .rc-tag-off {
+    background: rgba(248, 180, 0, 0.1);
+    color: var(--rc-warn);
+    border: 1px solid rgba(248, 180, 0, 0.22);
+    margin-left: 4px;
+  }
+
+  /* ── Quantity stepper ── */
+  .rc-qty {
+    grid-area: qty;
+    display: inline-flex;
+    align-items: center;
+    align-self: start;
+    border: 1px solid var(--rc-line);
+    border-radius: 9px;
+    overflow: hidden;
+    background: var(--rc-fill);
+    width: fit-content;
+  }
+  .rc-step {
+    width: 30px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--text-color);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+  }
+  .rc-step:hover:not(:disabled) { background: rgba(128, 128, 128, 0.14); }
+  .rc-step:disabled { opacity: 0.28; cursor: not-allowed; }
+  .rc-qty input {
+    width: 40px;
+    height: 32px;
+    border: none;
+    border-left: 1px solid var(--rc-line);
+    border-right: 1px solid var(--rc-line);
+    background: transparent;
+    color: var(--text-color);
+    text-align: center;
+    font-size: 0.88rem;
+    font-weight: 700;
+    outline: none;
+    -moz-appearance: textfield;
+  }
+  .rc-qty input::-webkit-outer-spin-button,
+  .rc-qty input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .rc-qty:focus-within { border-color: var(--main-color); }
+
+  .rc-drop {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-left: 0.85rem;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text-color);
+    opacity: 0.4;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.15s, opacity 0.15s;
+  }
+  .rc-drop:hover { color: var(--main-color); opacity: 1; }
+
+  /* ── Coupon ── */
+  .rc-coupon {
+    margin-top: 1.4rem;
+    padding-top: 1.4rem;
+    border-top: 1px dashed var(--rc-line);
+  }
+  .rc-coupon-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.6rem;
+    display: block;
+  }
+  .rc-coupon-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .rc-coupon-input {
+    flex: 1 1 200px;
+    background: transparent;
+    border: 1px solid var(--rc-line);
+    color: var(--text-color);
+    border-radius: 9px;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.88rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    outline: none;
+  }
+  .rc-coupon-input::placeholder { opacity: 0.35; text-transform: none; letter-spacing: 0; }
+  .rc-coupon-input:focus { border-color: var(--main-color); }
+  .rc-coupon-btn {
+    background: var(--main-color);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.55rem 1.4rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .rc-coupon-btn:hover:not(:disabled) { opacity: 0.85; }
+  .rc-coupon-btn:disabled { opacity: 0.5; cursor: wait; }
+  .rc-msg { font-size: 0.8rem; margin-top: 0.6rem; }
+  .rc-msg-ok { color: var(--rc-good); }
+  .rc-msg-err { color: var(--main-color); }
+
+  .rc-applied {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    background: rgba(40, 167, 69, 0.07);
+    border: 1px solid rgba(40, 167, 69, 0.2);
+    border-radius: 9px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.82rem;
+    color: var(--rc-good);
+    margin-top: 0.7rem;
+  }
+  .rc-applied button {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    opacity: 0.7;
+    font-size: 0.78rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  /* ── Summary ── */
+  .rc-summary-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--text-color);
+    margin: 0 0 1.1rem;
+  }
+  .rc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.42rem 0;
+    font-size: 0.88rem;
+  }
+  .rc-row dt { color: var(--text-color); opacity: 0.55; font-weight: 400; margin: 0; }
+  .rc-row dd { color: var(--text-color); font-weight: 600; margin: 0; font-variant-numeric: tabular-nums; }
+  .rc-row dd.rc-good { color: var(--rc-good); font-weight: 700; }
+  .rc-rule { border: none; border-top: 1px solid var(--rc-line); margin: 0.8rem 0; }
+  .rc-grand dt, .rc-grand dd { font-weight: 800; font-size: 1.12rem; opacity: 1; }
+
+  .rc-note {
+    background: rgba(248, 180, 0, 0.07);
+    border: 1px solid rgba(248, 180, 0, 0.22);
+    border-radius: 9px;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--rc-warn);
+    margin-top: 1rem;
+  }
+
+  /* ── Buttons ── */
+  .rc-checkout {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: var(--main-color);
+    color: #fff !important;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 14px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: none;
+    transition: opacity 0.2s;
+  }
+  .rc-checkout:hover { opacity: 0.88; color: #fff !important; }
+  .rc-continue {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: transparent;
+    color: var(--text-color) !important;
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 11px;
+    margin-top: 0.6rem;
+    border-radius: 10px;
+    text-decoration: none;
+    border: 1px solid var(--rc-line);
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .rc-continue:hover { background: var(--rc-fill); border-color: rgba(128, 128, 128, 0.32); }
+
+  .rc-trust {
+    display: flex;
+    justify-content: center;
+    gap: 1.1rem;
+    flex-wrap: wrap;
+    margin-top: 1.1rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--rc-line-soft);
+    font-size: 0.72rem;
+    color: var(--text-color);
+    opacity: 0.42;
+  }
+  .rc-trust span { display: inline-flex; align-items: center; gap: 5px; }
+
+  /* ── Empty ── */
+  .rc-empty { text-align: center; padding: 3.5rem 1rem; }
+  .rc-empty i {
+    font-size: 2.6rem;
+    color: var(--text-color);
+    opacity: 0.22;
+  }
+  .rc-empty h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 1rem 0 0.35rem;
+  }
+  .rc-empty p { font-size: 0.88rem; color: var(--text-color); opacity: 0.45; margin-bottom: 1.6rem; }
+
+  /* ── Toast ── */
+  .rc-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translate(-50%, 140%);
+    background: var(--text-color);
+    color: var(--card-bg);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.65rem 1.15rem;
+    border-radius: 999px;
+    z-index: 1080;
+    transition: transform 0.25s ease;
+    max-width: 90vw;
+  }
+  .rc-toast.is-up { transform: translate(-50%, 0); }
+
+  /* ── Mobile checkout bar ── */
+  .rc-bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 1rem;
+    background: var(--card-bg);
+    border-top: 1px solid var(--rc-line);
+    z-index: 1040;
+  }
+  .rc-bar strong { font-size: 1.05rem; color: var(--text-color); font-variant-numeric: tabular-nums; }
+  .rc-bar small { display: block; font-size: 0.7rem; opacity: 0.5; color: var(--text-color); }
+  .rc-bar .rc-checkout { width: auto; padding: 11px 22px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 991px) {
+    .rc-summary { position: static; }
+    .rc-bar { display: flex; }
+    .rc-page { padding-bottom: 5rem; }
+  }
+  @media (max-width: 575px) {
+    .rc-panel { padding: 0.5rem 1.1rem 1.25rem; }
+    .rc-item {
+      grid-template-columns: 62px minmax(0, 1fr);
+      grid-template-areas:
+        "img info"
+        "img price"
+        "qty total";
+      gap: 0.5rem 0.9rem;
+      align-items: start;
+    }
+    .rc-thumb img { width: 62px; height: 62px; }
+    .rc-unit { text-align: left; }
+    .rc-unit-was { display: inline; margin-left: 6px; }
+    .rc-qty { grid-area: qty; margin-top: 0.4rem; }
+    .rc-total { grid-area: total; align-self: center; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rc *, .rc-toast { transition: none !important; }
+  }
+
+  .rc :focus-visible {
+    outline: 2px solid var(--main-color);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+</style>
+
+<div class="rc rc-page">
+
+  <div class="rc-head">
+    <h1 class="rc-title">Shopping cart</h1>
+    {% if products %}
+      <span class="rc-count" id="rc-count">{{ products|length }} item{{ products|length|pluralize }}</span>
+    {% endif %}
+  </div>
 
   {% if products %}
-
-    <p class="rc-section-label">{{ products|length }} item{{ products|length|pluralize }} in your cart</p>
-
-    <div class="table-responsive">
-
-      <table class="rc-table">
-
-        <thead>
-
-          <tr class="rc-thead">
-
-            <th style="padding-left:0 !important">Product</th>
-
-            <th class="text-center">Qty</th>
-
-            <th class="text-end">Unit Price</th>
-
-            <th class="text-end">Total</th>
-
-            <th></th>
-
-          </tr>
-
-        </thead>
-
-        <tbody>
-
-          {% for product in products %}
-
-          <tr class="cart-row"
-
-              data-product-id="{{ product.id }}"
-
-              data-price="{% if product.has_active_sale %}{{ product.sale_price }}{% else %}{{ product.price }}{% endif %}">
-
-
-
-            <!-- Product info -->
-
-            <td style="padding-left:0">
-
-              <div class="d-flex align-items-center gap-3">
-
-                <a href="{% url 'products:product-detail' product.id %}">
-
-                  <img src="{{ product.image_src }}" alt="{{ product.name }}" class="rc-img">
-
-                </a>
-
-                <div>
-
-                  <a href="{% url 'products:product-detail' product.id %}" class="rc-name">{{ product.name }}</a>
-
-                  {% if product.has_active_sale %}
-
-                    <span class="rc-badge-sale">⚡ Flash Sale</span>
-
-                  {% endif %}
-
-                  <p class="rc-desc mb-0">{{ product.description|truncatechars:72 }}</p>
-
-                </div>
-
-              </div>
-
-            </td>
-
-
-
-            <!-- Qty -->
-
-            <td class="text-center">
-
-              <input type="number" min="1" value="{{ product.quantity }}"
-
-                     class="rc-qty qty-input form-control">
-
-            </td>
-
-
-
-            <!-- Unit price -->
-
-            <td class="text-end cart-price-cell">
-
-              {% if product.has_active_sale %}
-
-                <span class="rc-price-sale sale-price-text">₦{{ product.sale_price|floatformat:2|intcomma }}</span>
-
-                <span class="rc-price-original original-price-text">₦{{ product.price|floatformat:2|intcomma }}</span>
-
-                <span class="rc-badge-off d-block" style="width:fit-content;margin-left:auto">-{{ product.discount_percentage|floatformat:0 }}%</span>
-
-              {% else %}
-
-                  <span class="rc-price-regular regular-price-text">₦{{ product.price|floatformat:2|intcomma }}</span>
-
-              {% endif %}
-            </td>
-
-
-
-            <!-- Row total -->
-
-            <td class="text-end" style="padding-right:0">
-
-              <span class="rc-row-total cart-total-cell">
-
-                {% if product.has_active_sale %}
-
-                  ₦{% widthratio product.sale_price 1 product.quantity %}
-
-                {% else %}
-
-                  ₦{{ product.total_price|floatformat:2|intcomma }}
-
-                {% endif %}
-
-              </span>
-
-            </td>
-
-
-
-            <!-- Remove -->
-
-            <td style="width:44px;padding-right:0">
-
-              <a href="{% url 'products:delete-from-cart' product.id %}" class="rc-remove" title="Remove">
-
-                <i class="bi bi-trash"></i>
-
-              </a>
-
-            </td>
-
-
-
-          </tr>
-
-          {% endfor %}
-
-        </tbody>
-
-      </table>
-
+  <div class="row g-4">
+
+    <!-- ══ Items ══ -->
+    <div class="col-lg-8">
+      <div class="rc-panel" id="rc-items">
+
+        {% for product in products %}
+        <div class="rc-item"
+             data-id="{{ product.id }}"
+             data-sale="{% if product.has_active_sale %}1{% else %}0{% endif %}"
+             data-price="{% if product.has_active_sale %}{{ product.sale_price|floatformat:2 }}{% else %}{{ product.price|floatformat:2 }}{% endif %}"
+             data-base-price="{{ product.price|floatformat:2 }}"
+             data-remove-url="{% url 'products:delete-from-cart' product.id %}">
+
+          <a href="{% url 'products:product-detail' product.id %}" class="rc-thumb" tabindex="-1" aria-hidden="true">
+            <img src="{{ product.image_src }}" alt="" loading="lazy">
+          </a>
+
+          <div class="rc-info">
+            <a href="{% url 'products:product-detail' product.id %}" class="rc-name">{{ product.name }}</a>
+            {% if product.has_active_sale %}
+              <span class="rc-tag rc-tag-sale">Flash sale</span>
+              <span class="rc-tag rc-tag-off">{{ product.discount_percentage|floatformat:0 }}% off</span>
+            {% endif %}
+            <p class="rc-desc">{{ product.description|truncatechars:90 }}</p>
+          </div>
+
+          <div class="rc-unit">
+            {% if product.has_active_sale %}
+              <span class="rc-unit-now">&#8358;{{ product.sale_price|floatformat:2|intcomma }}</span>
+              <span class="rc-unit-was">&#8358;{{ product.price|floatformat:2|intcomma }}</span>
+            {% else %}
+              <span class="rc-unit-now">&#8358;{{ product.price|floatformat:2|intcomma }}</span>
+            {% endif %}
+          </div>
+
+          <div class="rc-qty-wrap" style="grid-area: qty; display:flex; align-items:center;">
+            <div class="rc-qty">
+              <button type="button" class="rc-step" data-delta="-1" aria-label="Decrease quantity of {{ product.name }}">&minus;</button>
+              <input type="number" min="1" max="99" step="1"
+                     value="{{ product.quantity }}"
+                     class="rc-qty-input"
+                     aria-label="Quantity of {{ product.name }}">
+              <button type="button" class="rc-step" data-delta="1" aria-label="Increase quantity of {{ product.name }}">+</button>
+            </div>
+            <button type="button" class="rc-drop">Remove</button>
+          </div>
+
+          <div class="rc-total" data-role="line-total">&#8358;{{ product.total_price|floatformat:2|intcomma }}</div>
+
+        </div>
+        {% endfor %}
+
+        <!-- ══ Coupon ══ -->
+        <div class="rc-coupon">
+          <label for="coupon-code" class="rc-coupon-label">Coupon code</label>
+          <div class="rc-coupon-row">
+            <input id="coupon-code" name="coupon_code" type="text" class="rc-coupon-input"
+                   placeholder="Enter a code" value="{{ coupon_code }}" autocomplete="off" spellcheck="false">
+            <button type="button" class="rc-coupon-btn" id="coupon-apply">Apply</button>
+          </div>
+          <div id="coupon-message" class="rc-msg" role="status" aria-live="polite"></div>
+
+          {% if coupon_discount > 0 %}
+          <div class="rc-applied">
+            <span><strong>{{ coupon_code }}</strong> is applied — you save &#8358;{{ coupon_discount|floatformat:2|intcomma }}</span>
+            <button type="button" id="coupon-remove">Remove</button>
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
     </div>
 
-    <div class="rc-coupon-wrap">
-      <label for="coupon-code" class="form-label fw-semibold mb-2">Have a coupon code?</label>
-      <div class="d-flex flex-wrap gap-2 align-items-center">
-        <input id="coupon-code" name="coupon_code" type="text" class="form-control rc-coupon-input" placeholder="Enter coupon code" value="{{ coupon_code }}">
-        <button type="button" class="rc-coupon-btn" onclick="applyCoupon()">Apply</button>
+    <!-- ══ Summary ══ -->
+    <div class="col-lg-4">
+      <div class="rc-summary">
+        <h2 class="rc-summary-title">Order summary</h2>
+
+        <dl class="mb-0">
+          <div class="rc-row">
+            <dt>Subtotal</dt>
+            <dd id="sum-subtotal">&#8358;{{ total|floatformat:2|intcomma }}</dd>
+          </div>
+
+          <div class="rc-row" id="sum-savings-row" hidden>
+            <dt>Flash sale savings</dt>
+            <dd class="rc-good" id="sum-savings">&#8358;0.00</dd>
+          </div>
+
+          {% if coupon_discount > 0 %}
+          <div class="rc-row">
+            <dt>Coupon ({{ coupon_code }})</dt>
+            <dd class="rc-good" id="sum-coupon">&minus;&#8358;{{ coupon_discount|floatformat:2|intcomma }}</dd>
+          </div>
+          {% endif %}
+
+          <div class="rc-row">
+            <dt>Shipping</dt>
+            <dd class="rc-good">Free</dd>
+          </div>
+
+          <hr class="rc-rule">
+
+          <div class="rc-row rc-grand">
+            <dt>Total</dt>
+            <dd id="sum-total" aria-live="polite">&#8358;{{ total_after_coupon|floatformat:2|intcomma }}</dd>
+          </div>
+        </dl>
+
+        <div id="sale-note" class="rc-note" hidden>
+          Flash sale pricing is locked in while the timer runs. Check out before it ends to keep these prices.
+        </div>
+
+        <div class="mt-3">
+          <a href="{% url 'products:checkout' %}" class="rc-checkout">Go to checkout</a>
+          <a href="{% url 'products:product-list' %}" class="rc-continue">Keep shopping</a>
+        </div>
+
+        <div class="rc-trust">
+          <span><i class="bi bi-shield-check"></i> Secure</span>
+          <span><i class="bi bi-lock"></i> Encrypted</span>
+          <span><i class="bi bi-arrow-counterclockwise"></i> Easy returns</span>
+        </div>
       </div>
-      <div id="coupon-message" class="mt-2"></div>
-      {% if coupon_discount > 0 %}
-      <div class="rc-coupon-applied">
-        Coupon <strong>{{ coupon_code }}</strong> applied successfully — saved ₦{{ coupon_discount|floatformat:2|intcomma }}.
-        <button type="button" onclick="removeCoupon()" class="btn btn-link p-0">Remove</button>
-      </div>
-      {% endif %}
     </div>
+
+  </div>
+
+  <!-- ══ Mobile bar ══ -->
+  <div class="rc-bar">
+    <div>
+      <small>Total</small>
+      <strong id="bar-total">&#8358;{{ total_after_coupon|floatformat:2|intcomma }}</strong>
+    </div>
+    <a href="{% url 'products:checkout' %}" class="rc-checkout">Checkout</a>
+  </div>
 
   {% else %}
-    <!-- Empty state -->
-
-    <div class="text-center py-5">
-
-      <div class="rc-empty-icon"><i class="bi bi-cart3"></i></div>
-
-      <p class="rc-empty-title">Your cart is empty</p>
-
-      <p class="rc-empty-sub">Add something you love ✨🛒</p>
-
-      <a href="{% url 'products:product-list' %}" class="rc-btn-checkout"
-
-         style="display:inline-block;width:auto;padding:12px 36px">
-
-        Browse Products
-
+  <div class="rc-panel">
+    <div class="rc-empty">
+      <i class="bi bi-bag"></i>
+      <h2>Your cart is empty</h2>
+      <p>Browse the catalogue and add something you like.</p>
+      <a href="{% url 'products:product-list' %}" class="rc-checkout" style="display:inline-block;width:auto;padding:12px 34px">
+        Browse products
       </a>
-
     </div>
-
-
-
+  </div>
   {% endif %}
 
+  <div class="rc-toast" id="rc-toast" role="status" aria-live="polite"></div>
 </div>
 
-  </div>  <!-- ── RIGHT: ORDER SUMMARY ─────────────────────────── -->  <div class="col-lg-4"><div class="rc-summary">
-
-
-
-  <p class="rc-summary-title">💳 Order Summary</p>
-
-
-
-  <div class="rc-sum-row">
-
-    <span class="rc-sum-label">Subtotal</span>
-
-    <span class="rc-sum-value" id="summary-subtotal">₦{{ total|floatformat:2|intcomma }}</span>
-
-  </div>
-
-
-
-  {% if coupon_discount > 0 %}
-
-  <div class="rc-sum-row">
-
-    <span class="rc-sum-label">Discount <small style="opacity:.7">({{ coupon_code }})</small></span>
-
-    <span class="rc-sum-discount fw-bold">-₦{{ coupon_discount|floatformat:2|intcomma }}</span>
-
-  </div>
-
-  {% endif %}
-
-
-
-  <div class="rc-sum-row">
-
-    <span class="rc-sum-label">Shipping</span>
-
-    <span class="rc-sum-discount fw-bold" style="font-size:0.85rem">FREE</span>
-
-  </div>
-
-
-
-  <hr class="rc-sum-divider">
-
-
-
-  <div class="rc-sum-row mb-1">
-
-    <span class="rc-sum-total-label">Total</span>
-
-    <span class="rc-sum-total-value" id="summary-total">₦{{ total_after_coupon|floatformat:2|intcomma }}</span>
-
-  </div>
-
-
-
-  {% for product in products %}
-
-    {% if product.has_active_sale and forloop.first %}
-
-      <div class="rc-flash-warn mt-3">
-
-        ⚡ Flash sale prices applied valid until timer ends!
-
-      </div>
-
-    {% endif %}
-
-  {% endfor %}
-
-
-
-  <div class="mt-3">
-
-    <a href="{% url 'products:checkout' %}" class="rc-btn-checkout">
-
-      Proceed to Checkout →
-
-    </a>
-
-    <a href="{% url 'products:product-list' %}" class="rc-btn-continue">
-
-      ← Continue Shopping
-
-    </a>
-
-  </div>
-
-
-
-  <!-- Secure badges -->
-
-  <div class="rc-secure-row">
-
-    <span class="rc-secure-badge"><i class="bi bi-shield-check"></i> Secure</span>
-
-    <span class="rc-secure-badge"><i class="bi bi-lock"></i> Encrypted</span>
-
-    <span class="rc-secure-badge"><i class="bi bi-arrow-counterclockwise"></i> Easy Returns</span>
-
-  </div>
-
-
-
-</div>
-
-  </div></div><script>
-  
-  function getCookie(name) {
-  
-    for (let c of document.cookie.split(';')) {
-  
-      c = c.trim();
-  
-      if (c.startsWith(name + '=')) return decodeURIComponent(c.substring(name.length + 1));
-  
-    }
-  
-    return null;
-  
-  }
-  
-
-  
-  document.querySelectorAll('.qty-input').forEach(input => {
-  
-    input.addEventListener('change', function () {
-  
-      const row = this.closest('.cart-row');
-  
-      const qty = Math.max(1, parseInt(this.value) || 1);
-  
-      this.value = qty;
-  
-      const unitPrice = parseFloat(row.dataset.price);
-  
-      const totalCell = row.querySelector('.cart-total-cell');
-  
-      if (totalCell) totalCell.textContent = '₦' + (qty * unitPrice).toFixed(2);
-  
-      updateOrderSummary();
-  
-    });
-  
+<script>
+(function () {
+  'use strict';
+
+  // ── Config ─────────────────────────────────────
+  // Point these at your real endpoints.
+  var URLS = {
+    updateQty:    '/products/api/update-cart/',
+    applyCoupon:  '/products/api/apply-coupon/',
+    removeCoupon: '/products/api/remove-coupon/'
+  };
+
+  var itemsRoot = document.getElementById('rc-items');
+  if (!itemsRoot) return;
+
+  var money = new Intl.NumberFormat('en-NG', {
+    style: 'currency', currency: 'NGN',
+    minimumFractionDigits: 2, maximumFractionDigits: 2
   });
-  
+  var fmt = function (n) { return money.format(isFinite(n) ? n : 0); };
 
-  
-  function updateOrderSummary() {
-  
-    let cartTotal = 0;
-  
-    document.querySelectorAll('.cart-row').forEach(row => {
-  
-      const qty = parseInt(row.querySelector('.qty-input')?.value || 1);
-  
-      const price = parseFloat(row.dataset.price || 0);
-  
-      cartTotal += qty * price;
-  
+  function csrf() {
+    var m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]*)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  function post(url, payload) {
+    return fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrf(),
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: payload ? JSON.stringify(payload) : '{}'
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (data) {
+        if (!r.ok) { data.success = false; data.status = r.status; throw data; }
+        return data;
+      });
     });
-  
-    const subtotalEl = document.getElementById('summary-subtotal');
-  
-    const totalEl = document.getElementById('summary-total');
-  
-    if (subtotalEl) subtotalEl.textContent = '₦' + cartTotal.toFixed(2);
-  
-    if (totalEl) totalEl.textContent = '₦' + cartTotal.toFixed(2);
-  
   }
-  
 
-  
-  async function applyCoupon() {
-  
-    const code = document.getElementById('coupon-code').value.trim();
-  
-    if (!code) { showCouponMsg('Please enter a coupon code', 'error'); return; }
-  
-    
-  
-    try {
-  
-      const response = await fetch('/products/api/apply-coupon/', {
-  
-        method: 'POST',
-  
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-  
-        body: JSON.stringify({ code: code })
-  
-      });
-  
-      const data = await response.json();
-      
-  
-      if (data.success) {
-  
-        showCouponMsg(data.message || 'Coupon applied successfully!', 'success');
-  
-        // Reload the page to show the discount
-  
-        setTimeout(() => window.location.reload(), 1000);
-  
-      } else {
-  
-        showCouponMsg(data.error || 'Invalid coupon code', 'error');
-  
-      }
-  
-    } catch (error) {
-  
-      console.error('Error applying coupon:', error);
-  
-      showCouponMsg('Network error. Please try again.', 'error');
-  
+  // ── Toast ──────────────────────────────────────
+  var toastEl = document.getElementById('rc-toast');
+  var toastTimer;
+  function toast(msg) {
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.classList.add('is-up');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('is-up'); }, 2600);
+  }
+
+  // ── Coupon state (server is the source of truth) ──
+  var coupon = {
+    amount: parseFloat('{{ coupon_discount|default:0|floatformat:2 }}') || 0,
+    // discount recomputes proportionally if it was a percentage-style coupon
+    baseSubtotal: parseFloat('{{ total|default:0|floatformat:2 }}') || 0
+  };
+
+  // ── Recalculate everything from the DOM ────────
+  function recalc() {
+    var rows = itemsRoot.querySelectorAll('.rc-item');
+    var subtotal = 0, savings = 0, units = 0;
+
+    rows.forEach(function (row) {
+      var qty   = parseInt(row.querySelector('.rc-qty-input').value, 10) || 1;
+      var price = parseFloat(row.dataset.price) || 0;
+      var base  = parseFloat(row.dataset.basePrice) || price;
+      var line  = qty * price;
+
+      subtotal += line;
+      units += qty;
+      if (row.dataset.sale === '1') savings += (base - price) * qty;
+
+      row.querySelector('[data-role="line-total"]').textContent = fmt(line);
+    });
+
+    // Scale a coupon with the cart so the total never goes stale.
+    var discount = 0;
+    if (coupon.amount > 0 && coupon.baseSubtotal > 0) {
+      discount = Math.min(subtotal, coupon.amount * (subtotal / coupon.baseSubtotal));
     }
-  
-  }
-  
 
-  
-  async function removeCoupon() {
-  
-    try {
-  
-      const response = await fetch('/products/api/remove-coupon/', {
-  
-        method: 'POST',
-  
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
-  
-      });
-  
-      if (response.ok) {
-  
-        window.location.reload();
-  
-      }
-  
-    } catch (error) {
-  
-      console.error('Error removing coupon:', error);
-  
+    set('sum-subtotal', fmt(subtotal));
+    set('sum-coupon', '\u2212' + fmt(discount));
+    set('sum-savings', fmt(savings));
+    set('sum-total', fmt(Math.max(0, subtotal - discount)));
+    set('bar-total', fmt(Math.max(0, subtotal - discount)));
+
+    var savingsRow = document.getElementById('sum-savings-row');
+    if (savingsRow) savingsRow.hidden = savings <= 0;
+
+    var note = document.getElementById('sale-note');
+    if (note) note.hidden = !itemsRoot.querySelector('.rc-item[data-sale="1"]');
+
+    var count = document.getElementById('rc-count');
+    if (count) count.textContent = rows.length + ' item' + (rows.length === 1 ? '' : 's') +
+                                   (units > rows.length ? ' \u00b7 ' + units + ' units' : '');
+
+    if (!rows.length) window.location.reload();
+  }
+
+  function set(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  // ── Quantity ───────────────────────────────────
+  var syncTimers = {};
+
+  function syncQty(row, qty) {
+    var id = row.dataset.id;
+    clearTimeout(syncTimers[id]);
+    syncTimers[id] = setTimeout(function () {
+      post(URLS.updateQty, { product_id: id, quantity: qty })
+        .then(function (data) {
+          if (data && typeof data.subtotal !== 'undefined') {
+            // Trust the server if it hands back authoritative figures.
+            coupon.amount = parseFloat(data.discount) || 0;
+            coupon.baseSubtotal = parseFloat(data.subtotal) || 0;
+            recalc();
+          }
+        })
+        .catch(function () {
+          toast('Could not save that quantity. Refresh and try again.');
+        });
+    }, 450);
+  }
+
+  function setQty(row, next) {
+    var input = row.querySelector('.rc-qty-input');
+    next = Math.min(99, Math.max(1, next || 1));
+    input.value = next;
+    row.querySelector('.rc-step[data-delta="-1"]').disabled = next <= 1;
+    row.querySelector('.rc-step[data-delta="1"]').disabled = next >= 99;
+    recalc();
+    syncQty(row, next);
+  }
+
+  itemsRoot.addEventListener('click', function (e) {
+    var step = e.target.closest('.rc-step');
+    if (step) {
+      var row = step.closest('.rc-item');
+      var cur = parseInt(row.querySelector('.rc-qty-input').value, 10) || 1;
+      setQty(row, cur + parseInt(step.dataset.delta, 10));
+      return;
     }
-  
-    return false;
-  
-  }
-  
 
-  
-  function showCouponMsg(msg, type) {
-  
-    const div = document.getElementById('coupon-message');
-  
-    if (!div) return;
-  
-    div.innerHTML = `<span style="color:${type === 'success' ? '#1a8a3c' : 'var(--main-color)'}">
-  
-      <i class="bi bi-${type === 'success' ? 'check' : 'x'}-circle me-1"></i>${msg}
-  
-    </span>`;
-  
+    var drop = e.target.closest('.rc-drop');
+    if (drop) removeItem(drop.closest('.rc-item'));
+  });
+
+  itemsRoot.addEventListener('change', function (e) {
+    if (!e.target.classList.contains('rc-qty-input')) return;
+    var row = e.target.closest('.rc-item');
+    setQty(row, parseInt(e.target.value, 10));
+  });
+
+  // ── Remove ─────────────────────────────────────
+  function removeItem(row) {
+    if (!row || row.classList.contains('is-busy')) return;
+    var name = row.querySelector('.rc-name').textContent.trim();
+    row.classList.add('is-busy');
+
+    fetch(row.dataset.removeUrl, {
+      credentials: 'same-origin',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error();
+        row.classList.add('is-leaving');
+        setTimeout(function () { row.remove(); recalc(); }, 220);
+        toast(name + ' removed');
+      })
+      .catch(function () {
+        row.classList.remove('is-busy');
+        toast('Could not remove that item.');
+      });
   }
-  
+
+  // ── Coupon ─────────────────────────────────────
+  function msg(text, ok) {
+    var el = document.getElementById('coupon-message');
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'rc-msg ' + (ok ? 'rc-msg-ok' : 'rc-msg-err');
+  }
+
+  var applyBtn = document.getElementById('coupon-apply');
+  var codeInput = document.getElementById('coupon-code');
+
+  if (applyBtn) {
+    applyBtn.addEventListener('click', function () {
+      var code = (codeInput.value || '').trim();
+      if (!code) { msg('Enter a code first.', false); codeInput.focus(); return; }
+
+      applyBtn.disabled = true;
+      applyBtn.textContent = 'Checking';
+
+      post(URLS.applyCoupon, { code: code })
+        .then(function (data) {
+          if (!data.success) throw data;
+          msg(data.message || 'Coupon applied.', true);
+          window.location.reload();
+        })
+        .catch(function (data) {
+          msg((data && data.error) || 'That code is not valid.', false);
+          applyBtn.disabled = false;
+          applyBtn.textContent = 'Apply';
+        });
+    });
+  }
+
+  if (codeInput) {
+    codeInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); applyBtn.click(); }
+    });
+  }
+
+  var removeBtn = document.getElementById('coupon-remove');
+  if (removeBtn) {
+    removeBtn.addEventListener('click', function () {
+      removeBtn.disabled = true;
+      post(URLS.removeCoupon)
+        .then(function () { window.location.reload(); })
+        .catch(function () { removeBtn.disabled = false; toast('Could not remove the coupon.'); });
+    });
+  }
+
+  // ── Boot ───────────────────────────────────────
+  itemsRoot.querySelectorAll('.rc-item').forEach(function (row) {
+    var qty = parseInt(row.querySelector('.rc-qty-input').value, 10) || 1;
+    row.querySelector('.rc-step[data-delta="-1"]').disabled = qty <= 1;
+  });
+  recalc();
+})();
 </script>
 
 {% endblock %}

@@ -58,7 +58,10 @@
                 </div>
               {% endif %}
             </div>
-            <p class="mb-3 text-sm text-slate-400">{{ product.description|default:'No description available for this product. Please check back soon for details.' }}</p>
+            <section class="product-description mb-4" aria-labelledby="product-description-heading">
+              <p class="product-description-label" id="product-description-heading">About this product</p>
+              <p class="product-description-copy">{{ product_description }}</p>
+            </section>
 
             {% if product.has_active_sale %}
             <!-- Flash Sale Banner -->
@@ -350,6 +353,26 @@
 </script>
 
 <style>
+  .product-description {
+    border-left: 2px solid #f68b1e;
+    padding-left: 1rem;
+  }
+  .product-description-label {
+    margin: 0 0 .45rem;
+    color: #f68b1e;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .product-description-copy {
+    margin: 0;
+    color: #64748b;
+    font-size: .94rem;
+    line-height: 1.65;
+  }
+  [data-theme="dark"] .product-description-copy { color: #cbd5e1; }
+
   /* ── Rating Badge ── */
   .rating-badge {
     background: linear-gradient(135deg, #f68b1e, #f6521e);

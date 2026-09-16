@@ -1425,6 +1425,12 @@ def _score_comment_for_fraud(comment):
 
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+    product_description = (product.description or "").strip()
+    if not product_description:
+        product_description = (
+            f"{product.name} is available through RedCart. "
+            "Review the product information below for pricing, availability, and delivery details."
+        )
     additional_images = getattr(product, 'additional_images', [])
     reviews = product.reviews.exclude(moderation_status='hidden').order_by('-created_at') if hasattr(product, 'reviews') else []
     comments = product.comments.exclude(moderation_status='hidden').order_by('-created_at') if hasattr(product, 'comments') else []
@@ -1474,6 +1480,7 @@ def product_detail(request, product_id):
 
     return render(request, 'product_detail.html', {
         'product': product,
+        'product_description': product_description,
         'share_url': request.build_absolute_uri(reverse('products:product-detail', args=[product.id])),
         'comments': comments,
         'reviews': reviews,

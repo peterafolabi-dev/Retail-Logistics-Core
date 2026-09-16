@@ -165,6 +165,11 @@ class ProductDetailTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Gadget')
 
+    def test_product_detail_uses_fallback_for_blank_description(self):
+        response = self.client.get(reverse('products:product-detail', args=[self.product.id]))
+
+        self.assertContains(response, 'Gadget is available through RedCart.')
+
     def test_product_detail_post_comment(self):
         response = self.client.post(reverse('products:product-detail', args=[self.product.id]), {
             'name': 'Alice',

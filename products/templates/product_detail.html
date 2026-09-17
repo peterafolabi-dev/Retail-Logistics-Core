@@ -65,7 +65,7 @@
             </div>
             <section class="product-description mb-4" aria-labelledby="product-description-heading">
               <p class="product-description-label" id="product-description-heading">About this product</p>
-              <p class="product-description-copy">{{ product_description }}</p>
+              <p class="product-description-copy">{{ product_description|linebreaksbr }}</p>
             </section>
 
             {% if product.has_active_sale %}

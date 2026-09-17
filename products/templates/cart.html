@@ -372,6 +372,41 @@
   }
   .rc-trust span { display: inline-flex; align-items: center; gap: 5px; }
 
+  /* ── Shopping prompts ── */
+  .rc-prompts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+    margin: 1rem 0 0;
+  }
+  .rc-prompt {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--rc-line);
+    border-radius: 10px;
+    background: var(--rc-fill);
+    color: var(--text-color);
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+  .rc-prompt i { color: var(--main-color); font-size: 1rem; }
+  .rc-stock { color: var(--rc-warn); font-weight: 700; }
+  .rc-viewers { font-weight: 600; }
+  .rc-prompt-action {
+    width: 100%;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .rc-prompt-action:hover { border-color: var(--main-color); background: rgba(128, 128, 128, 0.1); }
+  .rc-wheel-result { grid-column: 1 / -1; margin: -0.15rem 0 0; }
+  @media (max-width: 575px) { .rc-prompts { grid-template-columns: 1fr; } }
+
   /* ── Empty ── */
   .rc-empty { text-align: center; padding: 3.5rem 1rem; }
   .rc-empty i {
@@ -519,6 +554,26 @@
 
         </div>
         {% endfor %}
+
+        <div class="rc-prompts" aria-label="Shopping offers">
+          <div class="rc-prompt">
+            <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+            <span class="rc-stock">Only 3 left in stock</span>
+          </div>
+          <div class="rc-prompt">
+            <i class="bi bi-eye-fill" aria-hidden="true"></i>
+            <span class="rc-viewers"><span id="rc-viewer-count">12</span> people viewing this now</span>
+          </div>
+          <button type="button" class="rc-prompt rc-prompt-action" id="rc-referral">
+            <i class="bi bi-gift-fill" aria-hidden="true"></i>
+            <span><strong>Referral program</strong><br>Invite a friend and earn rewards</span>
+          </button>
+          <button type="button" class="rc-prompt rc-prompt-action" id="rc-wheel">
+            <i class="bi bi-disc-fill" aria-hidden="true"></i>
+            <span><strong>Spin the wheel</strong><br>Get a surprise discount</span>
+          </button>
+          <div class="rc-msg rc-wheel-result" id="rc-prompt-message" role="status" aria-live="polite"></div>
+        </div>
 
         <!-- ══ Coupon ══ -->
         <div class="rc-coupon">
@@ -850,6 +905,51 @@
       post(URLS.removeCoupon)
         .then(function () { window.location.reload(); })
         .catch(function () { removeBtn.disabled = false; toast('Could not remove the coupon.'); });
+    });
+  }
+
+  // ── Shopping prompts ────────────────────────────
+  var promptMessage = document.getElementById('rc-prompt-message');
+  function promptMsg(text, ok) {
+    if (!promptMessage) return;
+    promptMessage.textContent = text;
+    promptMessage.className = 'rc-msg rc-wheel-result ' + (ok ? 'rc-msg-ok' : 'rc-msg-err');
+  }
+
+  var viewerCount = document.getElementById('rc-viewer-count');
+  if (viewerCount) {
+    setInterval(function () {
+      var current = parseInt(viewerCount.textContent, 10) || 12;
+      viewerCount.textContent = Math.max(4, current + (Math.random() > 0.5 ? 1 : -1));
+    }, 12000);
+  }
+
+  var referralBtn = document.getElementById('rc-referral');
+  if (referralBtn) {
+    referralBtn.addEventListener('click', function () {
+      var link = window.location.origin + '{% url "products:product-list" %}';
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(link)
+          .then(function () { promptMsg('Your referral link has been copied. Share it with a friend!', true); })
+          .catch(function () { promptMsg('Share RedCart with a friend to earn rewards.', true); });
+      } else {
+        promptMsg('Share RedCart with a friend to earn rewards.', true);
+      }
+    });
+  }
+
+  var wheelBtn = document.getElementById('rc-wheel');
+  if (wheelBtn) {
+    wheelBtn.addEventListener('click', function () {
+      if (wheelBtn.disabled) return;
+      wheelBtn.disabled = true;
+      wheelBtn.querySelector('span').innerHTML = '<strong>Spinning&hellip;</strong><br>Finding your discount';
+      setTimeout(function () {
+        wheelBtn.querySelector('span').innerHTML = '<strong>Discount unlocked!</strong><br>Use code SPIN10 at checkout';
+        var couponInput = document.getElementById('coupon-code');
+        if (couponInput) couponInput.value = 'SPIN10';
+        promptMsg('Your wheel discount is ready. Apply SPIN10 to your order.', true);
+      }, 700);
     });
   }
 

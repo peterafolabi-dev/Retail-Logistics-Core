@@ -95,6 +95,33 @@
             </div>
             {% endif %}
 
+            <section class="shopping-insights mb-4" aria-labelledby="shopping-insights-title">
+              <div class="shopping-insights-heading">
+                <span aria-hidden="true">✦</span>
+                <div>
+                  <h4 id="shopping-insights-title">Why this product</h4>
+                  <p>Helpful facts based on this listing and its customer feedback.</p>
+                </div>
+              </div>
+              <ul>
+                {% for reason in shopping_insights.reasons %}
+                  <li>{{ reason }}</li>
+                {% endfor %}
+              </ul>
+              {% if shopping_insights.outlook %}
+                <div class="shopping-insight-note">
+                  <strong>Price update:</strong> {{ shopping_insights.outlook.message }}
+                  <span>Lowest recorded: ₦{{ shopping_insights.outlook.historical_low|floatformat:2|intcomma }}</span>
+                </div>
+              {% endif %}
+              {% if shopping_insights.review_summary %}
+                <div class="shopping-insight-note">
+                  <strong>Review summary:</strong> {{ shopping_insights.review_summary.positive }} of {{ shopping_insights.review_summary.total }} reviews are 4 or 5 stars.
+                  <span>Average rating: {{ shopping_insights.review_summary.average }}/5</span>
+                </div>
+              {% endif %}
+            </section>
+
             <!-- Social Share Buttons -->
             <div class="social-share-section mb-3 pb-3 border-bottom">
               <small class="mb-2 block text-slate-400">Share Product:</small>
@@ -418,6 +445,21 @@
     box-shadow: 0 6px 18px -8px rgba(124, 58, 237, 0.55);
     animation: pulse 2s infinite;
   }
+
+  .shopping-insights {
+    border: 1px solid rgba(246, 139, 30, .28);
+    border-radius: 12px;
+    background: rgba(246, 139, 30, .06);
+    padding: 1rem;
+  }
+  .shopping-insights-heading { display: flex; gap: .7rem; align-items: flex-start; }
+  .shopping-insights-heading > span { color: #f68b1e; font-size: 1.3rem; line-height: 1; }
+  .shopping-insights h4 { margin: 0; font-size: .95rem; font-weight: 700; }
+  .shopping-insights-heading p { margin: .15rem 0 0; color: #94a3b8; font-size: .78rem; }
+  .shopping-insights ul { margin: .8rem 0; padding-left: 1.25rem; color: #cbd5e1; font-size: .84rem; }
+  .shopping-insights li + li { margin-top: .35rem; }
+  .shopping-insight-note { border-top: 1px solid rgba(246, 139, 30, .2); color: #cbd5e1; font-size: .8rem; padding-top: .65rem; margin-top: .65rem; }
+  .shopping-insight-note span { display: block; color: #94a3b8; margin-top: .2rem; }
 
   /* ── Social Share ── */
   .social-share-section .product-share-button {

@@ -1423,6 +1423,47 @@ def _score_comment_for_fraud(comment):
     comment.save(update_fields=['fraud_score', 'fraud_flags', 'moderation_status'])
 
 
+def _product_shopping_insights(product, reviews, price_history):
+    """Create transparent, on-site shopping insights without sending customer data away."""
+    current_price = product.sale_price if product.has_active_sale else product.price
+    reasons = [f"Available in the {product.category} category"]
+    if product.has_active_sale:
+        reasons.append(f"Currently {product.discount_percentage:.0f}% off in a flash sale")
+    if product.is_low_stock:
+        reasons.append(f"Only {product.available_stock} unit{'s' if product.available_stock != 1 else ''} currently available")
+    if product.review_count:
+        reasons.append(f"Rated {product.average_review_rating:.1f}/5 from {product.review_count} customer review{'s' if product.review_count != 1 else ''}")
+
+    outlook = None
+    prices = [float(item.price) for item in price_history]
+    if prices:
+        historical_low = min(prices)
+        previous_price = prices[-1]
+        if current_price < previous_price:
+            message = 'The current price is lower than the last recorded price.'
+        elif current_price <= historical_low:
+            message = 'This is the lowest recorded price in the available history.'
+        elif current_price > previous_price:
+            message = 'The price is higher than the last recorded price.'
+        else:
+            message = 'The price has not changed since the last recorded update.'
+        outlook = {'message': message, 'historical_low': historical_low, 'current_price': current_price}
+
+    review_summary = None
+    review_list = list(reviews)
+    if review_list:
+        rating_counts = {rating: sum(1 for review in review_list if review.rating == rating) for rating in range(1, 6)}
+        positive = sum(1 for review in review_list if review.rating >= 4)
+        review_summary = {
+            'total': len(review_list),
+            'positive': positive,
+            'average': round(sum(review.rating for review in review_list) / len(review_list), 1),
+            'top_rating': max(rating_counts, key=rating_counts.get),
+        }
+
+    return {'reasons': reasons, 'outlook': outlook, 'review_summary': review_summary}
+
+
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     product_description = (product.description or "").strip()
@@ -1477,6 +1518,7 @@ def product_detail(request, product_id):
 
     price_history = product.price_history.all()[:8]
     price_history_chart = list(price_history)[::-1]
+    shopping_insights = _product_shopping_insights(product, reviews, price_history_chart)
 
     return render(request, 'product_detail.html', {
         'product': product,
@@ -1490,6 +1532,7 @@ def product_detail(request, product_id):
         'ai_recommendations': ai_recommendations,
         'price_history': price_history,
         'price_history_chart': price_history_chart,
+        'shopping_insights': shopping_insights,
     })
 
 

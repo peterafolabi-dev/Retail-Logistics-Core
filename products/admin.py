@@ -7,7 +7,10 @@ from .models import (
     InventoryLog, ProductVariant, UserAddress, PaymentMethod,
     ShippingMethod, EmailTemplate, EmailLog, SupportTicket, TicketReply,
     FAQ, ProductView, ProductRecommendation, ContactFormSubmission,
-    DiscountCode, Newsletter
+    DiscountCode, Newsletter, SellerProfile, SellerVerification,
+    ProductAuthentication, DispatchEvidence, SavingsGoal, Referral,
+    BuyerMilestone, DeliverySlot, PickupHub, ReturnRequest, ProductOffer,
+    OrderExtra
 )
 
 # 🎨 Customize Admin Site
@@ -368,3 +371,17 @@ admin.site.register(ProductRecommendation, ProductRecommendationAdmin)
 admin.site.register(Review, ReviewAdmin)
 admin.site.register(Wishlist, WishlistAdmin)
 admin.site.register(Compare, CompareAdmin)
+
+# Marketplace, trust, loyalty and delivery operations
+admin.site.register(SellerProfile)
+admin.site.register(SellerVerification)
+admin.site.register(ProductAuthentication)
+admin.site.register(DispatchEvidence)
+admin.site.register(SavingsGoal)
+admin.site.register(Referral)
+admin.site.register(BuyerMilestone)
+admin.site.register(DeliverySlot)
+admin.site.register(PickupHub)
+admin.site.register(ReturnRequest)
+admin.site.register(ProductOffer)
+admin.site.register(OrderExtra)

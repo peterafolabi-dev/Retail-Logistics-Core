@@ -18,7 +18,7 @@ from decimal import Decimal
 
 from django.urls import reverse
 from django.http import JsonResponse, HttpResponse
-from .models import Product, Comment, Order, OrderItem, Wishlist, AbandonedCart, Coupon, Review, Wallet, WalletTransaction, UserAddress, ChatConversation, ChatMessage
+from .models import Product, Comment, Order, OrderItem, Wishlist, AbandonedCart, Coupon, Review, Wallet, WalletTransaction, UserAddress, ChatConversation, ChatMessage, ProductAuthentication
 from .utils import get_product_recommendations_ai, get_ai_chat_response, update_stock
 from . import fraud_detection
 from . import login_rewards
@@ -1519,6 +1519,7 @@ def product_detail(request, product_id):
     price_history = product.price_history.all()[:8]
     price_history_chart = list(price_history)[::-1]
     shopping_insights = _product_shopping_insights(product, reviews, price_history_chart)
+    authentication = ProductAuthentication.objects.filter(product=product, status='verified').first()
 
     return render(request, 'product_detail.html', {
         'product': product,
@@ -1533,6 +1534,7 @@ def product_detail(request, product_id):
         'price_history': price_history,
         'price_history_chart': price_history_chart,
         'shopping_insights': shopping_insights,
+        'authentication': authentication,
     })
 
 

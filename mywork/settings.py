@@ -8,7 +8,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 IS_TESTING = 'test' in sys.argv
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-production')
-DEBUG = config('DEBUG', cast=bool, default=False)
+# Treat deployment labels such as "release" as production (DEBUG=False) instead
+# of failing during settings loading. Only explicit truthy values enable debug mode.
+DEBUG = config('DEBUG', default='False').strip().lower() in {'1', 'true', 'yes', 'on'}
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='retail-logistics-core.onrender.com,retail-logistics-core-t0xz.onrender.com,localhost,127.0.0.1').split(',')
 

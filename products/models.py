@@ -679,6 +679,149 @@ class DiscountCode(models.Model):
         return self.is_active and self.valid_from <= now <= self.valid_until and (self.max_usage is None or self.current_usage < self.max_usage)
 
 
+# Marketplace, trust, delivery and loyalty foundations
+class SellerProfile(models.Model):
+    VERIFICATION_CHOICES = [('unverified', 'Unverified'), ('pending', 'Pending review'), ('verified', 'RedCart Verified'), ('rejected', 'Rejected')]
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='seller_profile')
+    store_name = models.CharField(max_length=120, unique=True)
+    bio = models.TextField(blank=True)
+    performance_score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    verification_status = models.CharField(max_length=20, choices=VERIFICATION_CHOICES, default='unverified')
+    verified_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def is_verified(self):
+        return self.verification_status == 'verified'
+
+    def __str__(self):
+        return self.store_name
+
+
+class SellerVerification(models.Model):
+    STATUS_CHOICES = [('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')]
+    seller = models.ForeignKey(SellerProfile, on_delete=models.CASCADE, related_name='verifications')
+    verification_type = models.CharField(max_length=50, default='identity_document')
+    document_reference = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_notes = models.TextField(blank=True)
+
+    def __str__(self):
+        return f'{self.seller} — {self.status}'
+
+
+class ProductAuthentication(models.Model):
+    STATUS_CHOICES = [('pending', 'Pending'), ('verified', 'Verified'), ('failed', 'Failed')]
+    product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='authentication')
+    serial_number = models.CharField(max_length=128, unique=True)
+    authenticity_code = models.CharField(max_length=64, unique=True)
+    is_luxury_item = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    verified_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    def __str__(self):
+        return f'{self.product} — {self.status}'
+
+
+class DispatchEvidence(models.Model):
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, related_name='dispatch_evidence')
+    photo = models.FileField(upload_to='dispatch-evidence/%Y/%m/', blank=True)
+    note = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class SavingsGoal(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='savings_goals')
+    name = models.CharField(max_length=120)
+    target_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    saved_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    target_date = models.DateField(null=True, blank=True)
+    is_completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def progress_percent(self):
+        return min(100, round(float(self.saved_amount / self.target_amount * 100), 1)) if self.target_amount else 0
+
+
+class Referral(models.Model):
+    referrer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='referrals_made')
+    referred_user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='referral_record')
+    reward_paid = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=~models.Q(referrer=models.F('referred_user')), name='referral_not_self')]
+
+
+class BuyerMilestone(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='milestones')
+    code = models.CharField(max_length=50)
+    title = models.CharField(max_length=120)
+    awarded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'code'], name='unique_user_milestone')]
+
+
+class DeliverySlot(models.Model):
+    label = models.CharField(max_length=100)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    cities = models.CharField(max_length=255, help_text='Comma-separated supported cities')
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.label
+
+
+class PickupHub(models.Model):
+    name = models.CharField(max_length=120)
+    address = models.TextField()
+    city = models.CharField(max_length=80)
+    phone = models.CharField(max_length=30, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f'{self.name}, {self.city}'
+
+
+class ReturnRequest(models.Model):
+    STATUS_CHOICES = [('requested', 'Requested'), ('approved', 'Approved'), ('received', 'Received'), ('refunded', 'Refunded'), ('rejected', 'Rejected')]
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='return_requests')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='return_requests')
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='requested')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class ProductOffer(models.Model):
+    OFFER_TYPES = [('drop', 'RedCart Drop'), ('daily_deal', 'Daily deal'), ('preorder', 'Pre-order'), ('wholesale', 'Wholesale')]
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='offers')
+    offer_type = models.CharField(max_length=20, choices=OFFER_TYPES)
+    title = models.CharField(max_length=120)
+    starts_at = models.DateTimeField(null=True, blank=True)
+    ends_at = models.DateTimeField(null=True, blank=True)
+    minimum_quantity = models.PositiveIntegerField(default=1)
+    offer_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+
+class OrderExtra(models.Model):
+    EXTRA_TYPES = [('gift_wrap', 'Luxury gift packaging'), ('gift_card', 'Gift message card'), ('priority', 'Priority processing'), ('warranty', 'Extended warranty'), ('white_glove', 'White glove delivery')]
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='extras')
+    extra_type = models.CharField(max_length=30, choices=EXTRA_TYPES)
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    details = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['order', 'extra_type'], name='unique_order_extra')]
+
+
 # 📱 App Newsletter
 class Newsletter(models.Model):
     email = models.EmailField(unique=True)

@@ -945,10 +945,11 @@
       wheelBtn.disabled = true;
       wheelBtn.querySelector('span').innerHTML = '<strong>Spinning&hellip;</strong><br>Finding your discount';
       setTimeout(function () {
-        wheelBtn.querySelector('span').innerHTML = '<strong>Discount unlocked!</strong><br>Use code SPIN10 at checkout';
+        wheelBtn.querySelector('span').innerHTML = '<strong>Discount unlocked!</strong><br>Applying your 10% reward';
         var couponInput = document.getElementById('coupon-code');
         if (couponInput) couponInput.value = 'SPIN10';
-        promptMsg('Your wheel discount is ready. Apply SPIN10 to your order.', true);
+        promptMsg('Applying your 10% wheel discount…', true);
+        if (applyBtn) applyBtn.click();
       }, 700);
     });
   }

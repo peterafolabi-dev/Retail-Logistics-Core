@@ -1053,7 +1053,24 @@ def apply_coupon(request):
     if not code:
         return JsonResponse({'success': False, 'error': 'Coupon code is required.'}, status=400)
 
-    coupon = Coupon.objects.filter(code__iexact=code.strip(), is_active=True).first()
+    code = code.strip()
+    coupon = Coupon.objects.filter(code__iexact=code, is_active=True).first()
+
+    # SPIN10 is the code awarded by the cart wheel. Keep this server-side
+    # safeguard so a fresh environment can never show a wheel reward it
+    # subsequently rejects because its seed coupon has not been created.
+    if code.upper() == 'SPIN10' and (not coupon or not coupon.is_valid(total=0)):
+        coupon, _ = Coupon.objects.update_or_create(
+            code='SPIN10',
+            defaults={
+                'discount_type': 'percentage',
+                'discount_value': 10,
+                'min_order_amount': 0,
+                'expiry_date': timezone.now() + timedelta(days=30),
+                'is_active': True,
+            },
+        )
+
     cart = request.session.get('cart', {})
     products, total = _get_cart_products(request, cart)
     if not coupon or not coupon.is_valid(total=total):

@@ -345,7 +345,7 @@ def _get_groq_api_key():
     return (api_key or '').strip()
 
 
-def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2):
+def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2, timeout=30):
     """
     Send a prompt to the Groq OpenAI-compatible endpoint.
 
@@ -385,7 +385,7 @@ def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2):
                 'https://api.groq.com/openai/v1/chat/completions',
                 json=payload,
                 headers=headers,
-                timeout=30,
+                timeout=timeout,
             )
             response.raise_for_status()
             data = response.json()

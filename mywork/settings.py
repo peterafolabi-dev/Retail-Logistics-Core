@@ -167,7 +167,7 @@ SHODAN_RESULTS_LIMIT = config('SHODAN_RESULTS_LIMIT', cast=int, default=10)
 
 GROK_API_KEY = config('GROK_API_KEY', default='')
 GROQ_API_KEY = config('GROQ_API_KEY', default=GROK_API_KEY)
-GROQ_MODEL = config('GROQ_MODEL', default='openai/gpt-oss-120b')
+GROQ_MODEL = config('GROQ_MODEL', default='llama-3.3-70b-versatile')
 
 CHANNEL_LAYERS = {
     'default': {

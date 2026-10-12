@@ -19,6 +19,7 @@ from decimal import Decimal
 from django.urls import reverse
 from django.http import JsonResponse, HttpResponse
 from .models import Product, Comment, Order, OrderItem, Wishlist, AbandonedCart, Coupon, Review, Wallet, WalletTransaction, UserAddress, ChatConversation, ChatMessage, ProductAuthentication
+from .ai_descriptions import generate_description
 from .utils import get_product_recommendations_ai, get_ai_chat_response, update_stock
 from . import fraud_detection
 from . import login_rewards
@@ -1483,12 +1484,18 @@ def _product_shopping_insights(product, reviews, price_history):
 
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    product_description = (product.description or "").strip()
-    if not product_description:
-        product_description = (
-            f"{product.name} is available through RedCart. "
-            "Review the product information below for pricing, availability, and delivery details."
-        )
+    product.description = (product.description or '').strip()
+    if not product.description and not cache.get(f'product-description-failed:{product.pk}'):
+        try:
+            generated_description = generate_description(product)
+            if generated_description:
+                product.description = generated_description
+                product.save(update_fields=['description'])
+            else:
+                cache.set(f'product-description-failed:{product.pk}', True, 600)
+        except Exception:
+            logger.exception('Could not generate or save description for product %s', product.pk)
+            cache.set(f'product-description-failed:{product.pk}', True, 600)
     additional_images = getattr(product, 'additional_images', [])
     reviews = product.reviews.exclude(moderation_status='hidden').order_by('-created_at') if hasattr(product, 'reviews') else []
     comments = product.comments.exclude(moderation_status='hidden').order_by('-created_at') if hasattr(product, 'comments') else []
@@ -1540,7 +1547,6 @@ def product_detail(request, product_id):
 
     return render(request, 'product_detail.html', {
         'product': product,
-        'product_description': product_description,
         'share_url': request.build_absolute_uri(reverse('products:product-detail', args=[product.id])),
         'comments': comments,
         'reviews': reviews,

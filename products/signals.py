@@ -1,7 +1,25 @@
 from django.db.models.signals import post_migrate
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.sites.models import Site
 from decouple import config
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+@receiver(post_save, sender='products.Product')
+def generate_product_description(sender, instance, created, raw=False, **kwargs):
+    if not created or raw or (instance.description or '').strip():
+        return
+
+    try:
+        from products.ai_descriptions import generate_description
+        description = generate_description(instance)
+        if description:
+            sender.objects.filter(pk=instance.pk).update(description=description)
+    except Exception:
+        logger.exception('Could not generate description for new product %s', instance.pk)
 
 
 @receiver(post_migrate)

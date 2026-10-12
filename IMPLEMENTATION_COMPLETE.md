@@ -55,7 +55,7 @@ Your Retail Logistics Core platform now has a **production-ready flash sale time
 - ✅ Helpful descriptions for fields
 
 ### 6. **Helper Tools**
-- ✅ `setup_flash_sales.py` - Testing & demo functions
+- ✅ `scripts/setup_flash_sales.py` - Testing & demo functions
 - ✅ Helper functions for creating/managing sales
 - ✅ Cleanup function for expired sales
 
@@ -73,7 +73,7 @@ Your Retail Logistics Core platform now has a **production-ready flash sale time
 |------|------|---------|
 | `frontend/js/flash-sale-timer.js` | 4.4 KB | Timer logic & updates |
 | `frontend/css/flash-sale-timer.css` | 5.0 KB | Styling & animations |
-| `setup_flash_sales.py` | 6.6 KB | Helper functions |
+| `scripts/setup_flash_sales.py` | 6.6 KB | Helper functions |
 | `FLASH_SALE_TIMER.md` | 7.9 KB | Full technical docs |
 | `FLASH_SALE_QUICK_START.md` | 7.0 KB | Quick reference |
 | `FLASH_SALE_CODE_EXAMPLES.md` | 9.3 KB | Code snippets |
@@ -195,7 +195,7 @@ if (timeLeft < 600000) {  // < 10 minutes instead of 1 hour
 | **FLASH_SALE_QUICK_START.md** | Getting started, quick reference |
 | **FLASH_SALE_TIMER.md** | Complete technical details |
 | **FLASH_SALE_CODE_EXAMPLES.md** | Code snippets, integration patterns |
-| **setup_flash_sales.py** | Testing, automation examples |
+| **scripts/setup_flash_sales.py** | Testing, automation examples |
 
 ---
 
@@ -262,7 +262,7 @@ The system integrates seamlessly with:
 
 1. **Batch Create Sales**
    ```python
-   exec(open('setup_flash_sales.py').read())
+   exec(open('scripts/setup_flash_sales.py').read())
    setup_demo_flash_sales()
    ```
 
@@ -320,7 +320,7 @@ The system integrates seamlessly with:
 - `FLASH_SALE_CODE_EXAMPLES.md` - 15+ code examples
 - `products/models.py` - Model implementation
 - `products/admin.py` - Admin customization
-- `setup_flash_sales.py` - Helper functions
+- `scripts/setup_flash_sales.py` - Helper functions
 
 **Key Methods to Know:**
 - `Product.has_active_sale` - Check if sale is active

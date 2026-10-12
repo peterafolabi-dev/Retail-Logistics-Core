@@ -26,6 +26,7 @@ staticfiles/
 *.egg-info/
 dist/
 build/private_key.pem
+/private_key.pem
 public_key.pem
-public_key.pem
-*.pyc
+/test_exit.txt
+/test_output.txt

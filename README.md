@@ -23,7 +23,7 @@ The centerpiece feature: a chatbot built on Groq, designed to be genuinely trust
 - **Rate limiting and response validation** — protects against abuse and automatically retries responses that come back malformed
 - **Direct database order lookups** — order status and tracking numbers are pulled straight from the database, never guessed by the AI
 
-An `evaluate.py` regression suite checks all of the above automatically after any change.
+The `scripts/evaluate.py` regression suite checks all of the above automatically after any change.
 
 ---
 
@@ -65,7 +65,8 @@ products/
     admin.py                # Django admin customization, including moderation tools
 templates/                # HTML templates (Bootstrap + Tailwind hybrid)
 mywork/                    # Project settings and URL configuration
-evaluate.py                # Automated chatbot regression test suite
+scripts/                   # Maintenance helpers and chatbot regression suite
+    evaluate.py
 manage.py
 ```
 
@@ -95,7 +96,7 @@ manage.py
 
 ### Running the chatbot test suite
 ```bash
-python evaluate.py
+python scripts/evaluate.py
 ```
 Checks intent classification, guardrails, rate limiting, and RAG retrieval. Live model checks (requiring a configured `GROQ_API_KEY`) run automatically if the key is present, and skip gracefully otherwise.
 

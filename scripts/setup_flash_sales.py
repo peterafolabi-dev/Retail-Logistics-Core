@@ -4,7 +4,7 @@ Flash Sale Timer - Demo/Test Setup Script
 
 This script demonstrates how to set up flash sales for products programmatically.
 Run this from the Django shell:
-    python manage.py shell < setup_flash_sales.py
+    python manage.py shell < scripts/setup_flash_sales.py
 
 Or import and run individual functions as needed.
 """

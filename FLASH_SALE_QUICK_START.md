@@ -82,7 +82,7 @@ The Product model now has:
 |------|---------|
 | `frontend/js/flash-sale-timer.js` | Timer logic (4KB) |
 | `frontend/css/flash-sale-timer.css` | Styling & animations |
-| `setup_flash_sales.py` | Helper script for testing |
+| `scripts/setup_flash_sales.py` | Helper script for testing |
 | `FLASH_SALE_TIMER.md` | Detailed documentation |
 
 ## Template Changes
@@ -120,7 +120,7 @@ if product.has_active_sale:
 python manage.py shell
 
 # Run helper functions
-exec(open('setup_flash_sales.py').read())
+exec(open('scripts/setup_flash_sales.py').read())
 
 # Create demo sales
 setup_demo_flash_sales()
@@ -193,7 +193,7 @@ The admin now shows:
 │       ├── index.html                    [MODIFIED] Added badges
 │       └── product_detail.html           [MODIFIED] Added banner
 ├── FLASH_SALE_TIMER.md                  [NEW] Full documentation
-└── setup_flash_sales.py                 [NEW] Test helper script
+└── scripts/setup_flash_sales.py         [NEW] Test helper script
 ```
 
 ## Testing Checklist
@@ -218,7 +218,7 @@ The admin now shows:
 
 Refer to:
 - **FLASH_SALE_TIMER.md** - Complete technical documentation
-- **setup_flash_sales.py** - Code examples and helper functions
+- **scripts/setup_flash_sales.py** - Code examples and helper functions
 - **products/models.py** - Model definition with properties
 - **products/admin.py** - Admin configuration
 

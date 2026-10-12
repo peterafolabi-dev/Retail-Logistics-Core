@@ -88,7 +88,7 @@ The timer badge appears automatically on:
 ✅ FLASH_SALE_TIMER.md                     Complete guide (250+ lines)
 ✅ FLASH_SALE_QUICK_START.md               Quick reference (170+ lines)
 ✅ FLASH_SALE_CODE_EXAMPLES.md             Code samples (330+ lines)
-✅ setup_flash_sales.py                    Helper functions
+✅ scripts/setup_flash_sales.py            Helper functions
 ✅ IMPLEMENTATION_COMPLETE.md              Full summary
 ✅ products/migrations/0008_...            Database migration (APPLIED ✓)
 ```
@@ -314,7 +314,7 @@ Shows status for each product:
 | **FLASH_SALE_QUICK_START.md** | Getting started quickly |
 | **FLASH_SALE_TIMER.md** | Complete technical details |
 | **FLASH_SALE_CODE_EXAMPLES.md** | 15+ code examples & patterns |
-| **setup_flash_sales.py** | Test helper functions |
+| **scripts/setup_flash_sales.py** | Test helper functions |
 | **IMPLEMENTATION_COMPLETE.md** | Full implementation summary |
 
 ---
@@ -324,7 +324,7 @@ Shows status for each product:
 1. **Demo Mode**
    ```bash
    python manage.py shell
-   exec(open('setup_flash_sales.py').read())
+   exec(open('scripts/setup_flash_sales.py').read())
    setup_demo_flash_sales()
    ```
    Creates 3 demo sales automatically!

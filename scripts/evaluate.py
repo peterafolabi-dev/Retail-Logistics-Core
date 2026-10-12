@@ -7,18 +7,20 @@ they get re-verified every time utils.py or prompts.py changes, instead
 of needing a manual re-test of the whole list.
 
 Run with:
-    python evaluate.py
+    python scripts/evaluate.py
 
 Exits with code 0 if everything passes, 1 if anything fails (so it can
 be wired into a CI step later if you ever want that).
 
-WHERE THIS FILE GOES: project root, next to manage.py — NOT inside the
-products/ app folder. It needs to import Django settings the same way
-manage.py does.
+This script lives in scripts/ and adds the project root to the import path
+so it can load Django settings and project modules when run from the root.
 """
 import os
 import sys
 import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 # ---------------------------------------------------------------------------
 # Django setup — EDIT THE LINE BELOW to match your actual settings module.

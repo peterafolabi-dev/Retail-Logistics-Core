@@ -226,7 +226,10 @@ class ProductDetailTests(TestCase):
 class ProductDescriptionGenerationTests(TestCase):
     def test_generate_description_uses_groq_timeout_and_returns_two_sentences(self):
         result = 'A practical item for everyday use. This listing is categorized under Home.'
-        with patch('products.utils._call_groq', return_value=result) as call_groq:
+        with patch('products.utils._get_groq_api_key', return_value='test-key'), patch(
+            'products.utils._call_groq',
+            return_value=result,
+        ) as call_groq:
             description = generate_description(Product(
                 name='Kitchen Item',
                 category='Home',
@@ -239,14 +242,17 @@ class ProductDescriptionGenerationTests(TestCase):
         self.assertEqual(call_groq.call_args.kwargs['retries'], 2)
 
     def test_generate_description_rejects_invalid_sentence_count(self):
-        with patch('products.utils._call_groq', return_value='Only one sentence.') as call_groq:
+        with patch('products.utils._get_groq_api_key', return_value='test-key'), patch(
+            'products.utils._call_groq',
+            return_value='Only one sentence.',
+        ) as call_groq:
             description = generate_description(Product(name='Kitchen Item', category='Home', price=12.5))
 
         self.assertIsNone(description)
         call_groq.assert_called_once()
 
     def test_new_empty_product_description_is_filled_by_post_save_signal(self):
-        with patch('products.signals.generate_description', return_value='A useful product. Suitable for everyday use.') as generate:
+        with patch('products.ai_descriptions.generate_description', return_value='A useful product. Suitable for everyday use.') as generate:
             product = Product.objects.create(
                 name='New Product',
                 price=10.0,

@@ -7,7 +7,11 @@ logger = logging.getLogger(__name__)
 def generate_description(product):
     """Generate a cautious, plain-text description for a product listing."""
     try:
-        from products.utils import _call_groq
+        from products.utils import _call_groq, _get_groq_api_key
+
+        if not _get_groq_api_key():
+            logger.error('Cannot generate product descriptions because GROQ_API_KEY is not configured.')
+            return None
 
         name = str(getattr(product, 'name', '') or '').strip()
         category = str(getattr(product, 'category', '') or '').strip()
@@ -34,9 +38,11 @@ def generate_description(product):
             logger.warning('Groq returned no description for product %s.', getattr(product, 'pk', None))
             return None
 
-        description = re.sub(r'\s+', ' ', result).strip().strip('"\'')
-        description = re.sub(r'^(?:[-*#]\s+|\d+[.)]\s+)', '', description)
+        description = result.strip().strip('"\'')
+        description = re.sub(r'(?m)^\s*(?:[-*+]\s+|\d+[.)]\s+|#{1,6}\s+)', '', description)
         description = description.replace('**', '').replace('__', '').replace('`', '')
+        description = re.sub(r'(?<!\w)[*_]([^*_]+)[*_](?!\w)', r'\1', description)
+        description = re.sub(r'\s+', ' ', description).strip()
         sentences = re.findall(r'[^.!?]+(?:[.!?]+|$)', description)
         if not 2 <= len(sentences) <= 3 or re.search(r'\[[^\]]+\]\([^)]+\)', description):
             logger.warning('Groq returned an invalid description for product %s.', getattr(product, 'pk', None))

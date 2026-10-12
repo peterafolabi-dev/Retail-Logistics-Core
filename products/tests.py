@@ -1,10 +1,13 @@
 import json
+from unittest.mock import patch
 
 from django.urls import reverse
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.test import TestCase
 from django.utils import timezone
 
+from .ai_descriptions import generate_description
 from .models import Product, Comment, Order, OrderItem, Review, PriceHistory, UserAddress
 
 
@@ -158,6 +161,7 @@ class CartViewTests(TestCase):
 
 class ProductDetailTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.product = Product.objects.create(name='Gadget', price=15.0, stock=7, image_url='http://a.png')
 
     def test_product_detail_page_get(self):
@@ -169,6 +173,28 @@ class ProductDetailTests(TestCase):
         response = self.client.get(reverse('products:product-detail', args=[self.product.id]))
 
         self.assertContains(response, 'Gadget is available through RedCart.')
+
+    def test_product_detail_generates_and_saves_blank_description(self):
+        Product.objects.filter(pk=self.product.pk).update(description='')
+        with patch('products.views.generate_description', return_value='A useful gadget for everyday tasks. It is listed in the Other category.') as generate:
+            response = self.client.get(reverse('products:product-detail', args=[self.product.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'A useful gadget for everyday tasks.')
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.description, 'A useful gadget for everyday tasks. It is listed in the Other category.')
+        generate.assert_called_once()
+
+    def test_product_detail_caches_generation_failures(self):
+        Product.objects.filter(pk=self.product.pk).update(description='')
+        with patch('products.views.generate_description', return_value=None) as generate:
+            first_response = self.client.get(reverse('products:product-detail', args=[self.product.id]))
+            second_response = self.client.get(reverse('products:product-detail', args=[self.product.id]))
+
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(second_response.status_code, 200)
+        self.assertContains(second_response, 'Gadget is available through RedCart.')
+        generate.assert_called_once()
 
     def test_product_detail_post_comment(self):
         response = self.client.post(reverse('products:product-detail', args=[self.product.id]), {
@@ -195,6 +221,43 @@ class ProductDetailTests(TestCase):
         review = Review.objects.get(product=self.product, user=user)
         self.assertEqual(review.rating, 5)
         self.assertTrue(review.verified_purchase)
+
+
+class ProductDescriptionGenerationTests(TestCase):
+    def test_generate_description_uses_groq_timeout_and_returns_two_sentences(self):
+        result = 'A practical item for everyday use. This listing is categorized under Home.'
+        with patch('products.utils._call_groq', return_value=result) as call_groq:
+            description = generate_description(Product(
+                name='Kitchen Item',
+                category='Home',
+                price=12.5,
+            ))
+
+        self.assertEqual(description, result)
+        call_groq.assert_called_once()
+        self.assertEqual(call_groq.call_args.kwargs['timeout'], 15)
+        self.assertEqual(call_groq.call_args.kwargs['retries'], 2)
+
+    def test_generate_description_rejects_invalid_sentence_count(self):
+        with patch('products.utils._call_groq', return_value='Only one sentence.') as call_groq:
+            description = generate_description(Product(name='Kitchen Item', category='Home', price=12.5))
+
+        self.assertIsNone(description)
+        call_groq.assert_called_once()
+
+    def test_new_empty_product_description_is_filled_by_post_save_signal(self):
+        with patch('products.signals.generate_description', return_value='A useful product. Suitable for everyday use.') as generate:
+            product = Product.objects.create(
+                name='New Product',
+                price=10.0,
+                stock=1,
+                image_url='http://a.png',
+                description='',
+            )
+
+        product.refresh_from_db()
+        self.assertEqual(product.description, 'A useful product. Suitable for everyday use.')
+        generate.assert_called_once()
 
 
 class ShopFilterTests(TestCase):
@@ -299,4 +362,3 @@ class OrderModelTests(TestCase):
         self.order.refresh_from_db()
         self.assertEqual(self.order.escrow_status, 'released')
         self.assertIsNotNone(self.order.escrow_release_date)
-

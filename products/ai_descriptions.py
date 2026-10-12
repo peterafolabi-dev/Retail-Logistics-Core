@@ -4,7 +4,7 @@ import re
 logger = logging.getLogger(__name__)
 
 
-def generate_description(product):
+def generate_description(product) -> str | None:
     """Generate a cautious, plain-text description for a product listing."""
     try:
         from products.utils import _call_groq, _get_groq_api_key

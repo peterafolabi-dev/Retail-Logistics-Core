@@ -15,11 +15,14 @@ class Command(BaseCommand):
     help = 'Generate and save descriptions for products with empty descriptions.'
 
     def add_arguments(self, parser):
-        parser.add_argument('--limit', type=int, default=25)
-        parser.add_argument('--dry-run', action='store_true')
-        parser.add_argument('--force', action='store_true')
+        parser.add_argument('--limit', type=int, default=25, help='Maximum number of products to process.')
+        parser.add_argument('--dry-run', action='store_true', help='Report matching products without generating descriptions.')
+        parser.add_argument('--force', action='store_true', help='Regenerate descriptions even when one already exists.')
 
     def handle(self, *args, **options):
+        if args:
+            raise CommandError('This command does not accept positional arguments.')
+
         limit = options['limit']
         if limit < 1:
             raise CommandError('--limit must be a positive integer.')

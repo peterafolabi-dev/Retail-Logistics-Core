@@ -30,6 +30,7 @@ class Product(models.Model):
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='Other')
     image_url = models.CharField("Main Image", max_length=2083)
     description = models.TextField(blank=True)
+    ai_description = models.TextField(blank=True, null=True)
 
     # Optional additional image fields
     image_2 = models.CharField("Image 2", max_length=2083, blank=True, null=True)

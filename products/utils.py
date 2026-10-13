@@ -353,8 +353,12 @@ def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2, timeout=30
       - prompt: a single string (wrapped as one user message), or
       - messages: a full messages list (e.g. [{'role': 'system', ...}, {'role': 'user', ...}, ...])
     """
-    api_key = _get_groq_api_key()
+    selected_model = settings.GROQ_MODEL
+    if not selected_model:
+        logger.error('GROQ_MODEL env var is not set')
+        return None
 
+    api_key = _get_groq_api_key()
     if not api_key:
         logger.error('GROQ_API_KEY is not configured.')
         return None
@@ -363,11 +367,6 @@ def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2, timeout=30
         if prompt is None:
             raise ValueError('_call_groq requires either "prompt" or "messages".')
         messages = [{'role': 'user', 'content': prompt}]
-
-    selected_model = settings.GROQ_MODEL
-    if not selected_model:
-        logger.error('GROQ_MODEL env var is not set')
-        return None
 
     for attempt in range(1):
         try:
@@ -424,12 +423,9 @@ def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2, timeout=30
             logger.error('Unexpected Groq API response structure: %s', exc)
             return ''
         except Exception as exc:
-            if attempt < retries - 1:
-                logger.warning('Groq API request failed (attempt %d/%d): %s, retrying...', attempt + 1, retries, exc)
-                time.sleep(1)
-                continue
-            logger.exception('Groq API request failed: %s', exc)
-            return ''
+            error_message = str(exc).replace(api_key, '[REDACTED]')
+            logger.error('Groq API request failed: %s', error_message)
+            return None
 
     return ''
 

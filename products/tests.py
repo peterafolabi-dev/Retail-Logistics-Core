@@ -173,9 +173,9 @@ class ProductDetailTests(TestCase):
     def test_product_detail_uses_fallback_for_blank_description(self):
         response = self.client.get(reverse('products:product-detail', args=[self.product.id]))
 
-        self.assertContains(response, 'Gadget is available through RedCart.')
+        self.assertContains(response, 'No description available yet.')
 
-    def test_product_detail_generates_and_saves_blank_description(self):
+    def test_product_detail_generates_and_saves_ai_description_when_descriptions_are_blank(self):
         Product.objects.filter(pk=self.product.pk).update(description='')
         with patch('products.views.generate_description', return_value='A useful gadget for everyday tasks. It is listed in the Other category.') as generate:
             response = self.client.get(reverse('products:product-detail', args=[self.product.id]))
@@ -183,7 +183,7 @@ class ProductDetailTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'A useful gadget for everyday tasks.')
         self.product.refresh_from_db()
-        self.assertEqual(self.product.description, 'A useful gadget for everyday tasks. It is listed in the Other category.')
+        self.assertEqual(self.product.ai_description, 'A useful gadget for everyday tasks. It is listed in the Other category.')
         generate.assert_called_once()
 
     def test_product_detail_caches_generation_failures(self):
@@ -194,8 +194,29 @@ class ProductDetailTests(TestCase):
 
         self.assertEqual(first_response.status_code, 200)
         self.assertEqual(second_response.status_code, 200)
-        self.assertContains(second_response, 'Gadget is available through RedCart.')
+        self.assertContains(second_response, 'No description available yet.')
+        self.assertTrue(cache.get(f'groq_fail:{self.product.pk}'))
         generate.assert_called_once()
+
+    def test_product_detail_prefers_ai_description_and_skips_generation_when_description_exists(self):
+        Product.objects.filter(pk=self.product.pk).update(
+            description='Regular product description.',
+            ai_description='AI product description.',
+        )
+        with patch('products.views.generate_description') as generate:
+            response = self.client.get(reverse('products:product-detail', args=[self.product.id]))
+
+        self.assertContains(response, 'AI product description.')
+        self.assertNotContains(response, 'Regular product description.')
+        generate.assert_not_called()
+
+    def test_product_detail_does_not_generate_when_regular_description_exists(self):
+        Product.objects.filter(pk=self.product.pk).update(description='Regular product description.')
+        with patch('products.views.generate_description') as generate:
+            response = self.client.get(reverse('products:product-detail', args=[self.product.id]))
+
+        self.assertContains(response, 'Regular product description.')
+        generate.assert_not_called()
 
     def test_product_detail_post_comment(self):
         response = self.client.post(reverse('products:product-detail', args=[self.product.id]), {
@@ -239,8 +260,8 @@ class ProductDescriptionGenerationTests(TestCase):
 
         self.assertEqual(description, result)
         call_groq.assert_called_once()
-        self.assertEqual(call_groq.call_args.kwargs['timeout'], 15)
-        self.assertEqual(call_groq.call_args.kwargs['retries'], 2)
+        self.assertEqual(call_groq.call_args.kwargs['timeout'], 10)
+        self.assertEqual(call_groq.call_args.kwargs['retries'], 1)
 
     def test_generate_description_rejects_invalid_sentence_count(self):
         with patch('products.utils._get_groq_api_key', return_value='test-key'), patch(
@@ -268,19 +289,41 @@ class ProductDescriptionGenerationTests(TestCase):
 
 
 class GroqClientTests(TestCase):
-    def test_call_groq_uses_available_default_model(self):
+    def test_call_groq_uses_configured_model_and_ten_second_timeout(self):
         response = Mock()
         response.json.return_value = {
             'choices': [{'message': {'content': 'Generated response.'}}],
         }
 
         with patch('products.utils._get_groq_api_key', return_value='test-key'), patch(
-            'products.utils.settings.GROQ_MODEL', None,
+            'products.utils.settings.GROQ_MODEL', 'openai/gpt-oss-120b',
         ), patch('products.utils.requests.post', return_value=response) as post:
             result = utils._call_groq(prompt='Test prompt')
 
         self.assertEqual(result, 'Generated response.')
         self.assertEqual(post.call_args.kwargs['json']['model'], 'openai/gpt-oss-120b')
+        self.assertEqual(post.call_args.kwargs['timeout'], 10)
+
+    def test_call_groq_does_not_call_api_without_model(self):
+        with patch('products.utils._get_groq_api_key', return_value='test-key'), patch(
+            'products.utils.settings.GROQ_MODEL', '',
+        ), patch('products.utils.requests.post') as post:
+            result = utils._call_groq(prompt='Test prompt')
+
+        self.assertIsNone(result)
+        post.assert_not_called()
+
+    def test_call_groq_handles_request_exception_without_retrying(self):
+        with patch('products.utils._get_groq_api_key', return_value='test-key'), patch(
+            'products.utils.settings.GROQ_MODEL', 'openai/gpt-oss-120b',
+        ), patch(
+            'products.utils.requests.post',
+            side_effect=utils.requests.exceptions.ConnectionError('unavailable'),
+        ) as post:
+            result = utils._call_groq(prompt='Test prompt', retries=5)
+
+        self.assertIsNone(result)
+        post.assert_called_once()
 
 
 class ShopFilterTests(TestCase):

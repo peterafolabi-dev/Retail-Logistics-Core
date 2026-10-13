@@ -9,6 +9,7 @@ fi
 pip install -r requirements.txt
 python manage.py collectstatic --no-input
 python manage.py migrate
+python manage.py ensure_superuser
 
 # Only load product records if no products exist. The full historical fixture
 # contains models that are no longer installed, so loaddata data.json cannot

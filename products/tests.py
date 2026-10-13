@@ -1,9 +1,12 @@
 import json
+import os
+from io import StringIO
 from unittest.mock import Mock, patch
 
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 
@@ -324,6 +327,44 @@ class GroqClientTests(TestCase):
 
         self.assertIsNone(result)
         post.assert_called_once()
+
+
+class EnsureSuperuserCommandTests(TestCase):
+    def test_missing_environment_values_warn_and_exit_cleanly(self):
+        output = StringIO()
+        with patch.dict(os.environ, {
+            'DJANGO_SUPERUSER_USERNAME': '',
+            'DJANGO_SUPERUSER_EMAIL': '',
+            'DJANGO_SUPERUSER_PASSWORD': '',
+        }):
+            call_command('ensure_superuser', stdout=output)
+
+        self.assertIn('Skipping superuser setup', output.getvalue())
+
+    def test_command_creates_then_repairs_superuser_without_printing_password(self):
+        environment = {
+            'DJANGO_SUPERUSER_USERNAME': 'deploy-admin',
+            'DJANGO_SUPERUSER_EMAIL': 'deploy-admin@example.com',
+            'DJANGO_SUPERUSER_PASSWORD': 'Test-Only-Password-123!',
+        }
+        output = StringIO()
+        with patch.dict(os.environ, environment):
+            call_command('ensure_superuser', stdout=output)
+            user = User.objects.get(username='deploy-admin')
+            user.is_staff = False
+            user.is_superuser = False
+            user.is_active = False
+            user.set_password('old-password')
+            user.save()
+            call_command('ensure_superuser', stdout=output)
+
+        user.refresh_from_db()
+        self.assertTrue(user.check_password(environment['DJANGO_SUPERUSER_PASSWORD']))
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
+        self.assertTrue(user.is_active)
+        self.assertEqual(User.objects.filter(username='deploy-admin').count(), 1)
+        self.assertNotIn(environment['DJANGO_SUPERUSER_PASSWORD'], output.getvalue())
 
 
 class ShopFilterTests(TestCase):

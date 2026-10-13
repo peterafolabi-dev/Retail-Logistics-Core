@@ -403,12 +403,8 @@ def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2, timeout=30
                 content = ''.join(part.get('text', '') for part in content if isinstance(part, dict))
             return str(content).strip()
         except requests.exceptions.Timeout:
-            if attempt < retries - 1:
-                logger.warning('Groq API timeout (attempt %d/%d), retrying...', attempt + 1, retries)
-                time.sleep(1)
-                continue
-            logger.exception('Groq API timeout after %d attempts', retries)
-            return ''
+            logger.error('Groq API request timed out after 10 seconds.')
+            return None
         except requests.exceptions.HTTPError as exc:
             status = exc.response.status_code if exc.response is not None else 'unknown'
             body = exc.response.text if exc.response is not None else str(exc)
@@ -421,13 +417,13 @@ def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2, timeout=30
             return None
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             logger.error('Unexpected Groq API response structure: %s', exc)
-            return ''
+            return None
         except Exception as exc:
             error_message = str(exc).replace(api_key, '[REDACTED]')
             logger.error('Groq API request failed: %s', error_message)
             return None
 
-    return ''
+    return None
 
 
 def _looks_incomplete(text, min_length=15):

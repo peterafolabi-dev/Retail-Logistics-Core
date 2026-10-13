@@ -356,17 +356,20 @@ def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2, timeout=30
     api_key = _get_groq_api_key()
 
     if not api_key:
-        logger.error('GROQ_API_KEY is not configured. Checked Django settings and os.environ.')
-        raise RuntimeError('GROQ_API_KEY is not configured.')
+        logger.error('GROQ_API_KEY is not configured.')
+        return None
 
     if messages is None:
         if prompt is None:
             raise ValueError('_call_groq requires either "prompt" or "messages".')
         messages = [{'role': 'user', 'content': prompt}]
 
-    selected_model = getattr(settings, 'GROQ_MODEL', None) or 'openai/gpt-oss-120b'
+    selected_model = settings.GROQ_MODEL
+    if not selected_model:
+        logger.error('GROQ_MODEL env var is not set')
+        return None
 
-    for attempt in range(retries):
+    for attempt in range(1):
         try:
             payload = {
                 'model': selected_model,
@@ -385,7 +388,7 @@ def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2, timeout=30
                 'https://api.groq.com/openai/v1/chat/completions',
                 json=payload,
                 headers=headers,
-                timeout=timeout,
+                timeout=10,
             )
             response.raise_for_status()
             data = response.json()
@@ -410,16 +413,13 @@ def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2, timeout=30
         except requests.exceptions.HTTPError as exc:
             status = exc.response.status_code if exc.response is not None else 'unknown'
             body = exc.response.text if exc.response is not None else str(exc)
-            if attempt < retries - 1 and isinstance(status, int) and (status >= 500 or status == 429):
-                wait_time = 3 if status == 429 else (2 ** attempt)
-                logger.warning(
-                    'Groq API HTTP error (attempt %d/%d): %s, retrying in %ss...',
-                    attempt + 1, retries, status, wait_time
-                )
-                time.sleep(wait_time)
-                continue
+            body = body.replace(api_key, '[REDACTED]')
             logger.error('Groq API HTTP error (%s): %s', status, body)
-            return ''
+            return None
+        except requests.exceptions.RequestException as exc:
+            error_message = str(exc).replace(api_key, '[REDACTED]')
+            logger.error('Groq API request failed: %s', error_message)
+            return None
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             logger.error('Unexpected Groq API response structure: %s', exc)
             return ''

@@ -65,10 +65,12 @@
             </div>
             <section class="product-description mb-4" aria-labelledby="product-description-heading">
               <p class="product-description-label" id="product-description-heading">About this product</p>
-              {% if product.description %}
+              {% if product.ai_description %}
+                <p class="product-description-copy">{{ product.ai_description|linebreaksbr }}</p>
+              {% elif product.description %}
                 <p class="product-description-copy">{{ product.description|linebreaksbr }}</p>
               {% else %}
-                <p class="product-description-copy">{{ product.name }} is available through RedCart. Review the product information below for pricing, availability, and delivery details.</p>
+                <p class="product-description-copy">No description available yet.</p>
               {% endif %}
             </section>
 

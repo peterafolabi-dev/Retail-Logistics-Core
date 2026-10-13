@@ -33,7 +33,7 @@ def generate_description(product) -> str | None:
             f'Brand: {brand or "Not specified"}\n'
             f'Listed price for context only: {price}'
         )
-        result = _call_groq(prompt=prompt, max_tokens=180, retries=2, timeout=15)
+        result = _call_groq(prompt=prompt, max_tokens=180, retries=1, timeout=10)
         if not isinstance(result, str) or not result.strip():
             logger.warning('Groq returned no description for product %s.', getattr(product, 'pk', None))
             return None

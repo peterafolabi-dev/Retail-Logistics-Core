@@ -1,5 +1,5 @@
 import json
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.urls import reverse
 from django.contrib.auth.models import User
@@ -7,6 +7,7 @@ from django.core.cache import cache
 from django.test import TestCase
 from django.utils import timezone
 
+from . import utils
 from .ai_descriptions import generate_description
 from .models import Product, Comment, Order, OrderItem, Review, PriceHistory, UserAddress
 
@@ -264,6 +265,22 @@ class ProductDescriptionGenerationTests(TestCase):
         product.refresh_from_db()
         self.assertEqual(product.description, 'A useful product. Suitable for everyday use.')
         generate.assert_called_once()
+
+
+class GroqClientTests(TestCase):
+    def test_call_groq_uses_available_default_model(self):
+        response = Mock()
+        response.json.return_value = {
+            'choices': [{'message': {'content': 'Generated response.'}}],
+        }
+
+        with patch('products.utils._get_groq_api_key', return_value='test-key'), patch(
+            'products.utils.settings.GROQ_MODEL', None,
+        ), patch('products.utils.requests.post', return_value=response) as post:
+            result = utils._call_groq(prompt='Test prompt')
+
+        self.assertEqual(result, 'Generated response.')
+        self.assertEqual(post.call_args.kwargs['json']['model'], 'openai/gpt-oss-120b')
 
 
 class ShopFilterTests(TestCase):

@@ -364,7 +364,7 @@ def _call_groq(prompt=None, messages=None, max_tokens=250, retries=2, timeout=30
             raise ValueError('_call_groq requires either "prompt" or "messages".')
         messages = [{'role': 'user', 'content': prompt}]
 
-    selected_model = getattr(settings, 'GROQ_MODEL', None) or 'llama-3.3-70b-versatile'
+    selected_model = getattr(settings, 'GROQ_MODEL', None) or 'openai/gpt-oss-120b'
 
     for attempt in range(retries):
         try:

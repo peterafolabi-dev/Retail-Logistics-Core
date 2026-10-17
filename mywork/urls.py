@@ -3,9 +3,16 @@ from django.urls import path, include
 from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
 from products import views as product_views
 
+
+def health_check(request):
+    """Cheap process health check for Render; deliberately avoids the database."""
+    return JsonResponse({'status': 'ok'})
+
 urlpatterns = [
+    path('healthz/', health_check, name='health-check'),
     path('admin/', admin.site.urls),
 
     # Django auth URLs (password reset etc.)

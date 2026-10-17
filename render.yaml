@@ -4,7 +4,8 @@ services:
     env: python
     plan: free
     buildCommand: bash build.sh
-    startCommand: gunicorn mywork.wsgi:application
+    startCommand: gunicorn mywork.wsgi:application --worker-class gthread --workers 1 --threads 4 --timeout 120
+    healthCheckPath: /healthz/
     envVars:
       - key: DEBUG
         value: "False"

@@ -171,7 +171,10 @@ body {
 .sf-drawer a:hover { background: var(--sf-surface-2); }
 
 /* ── Page shell ──────────────────────────────────────────────────────────── */
-.rc-page-shell { max-width: none !important; padding: 0 !important; margin-top: 0 !important; }
+.rc-page-shell { max-width: var(--sf-max) !important; padding: 1.25rem 16px 0 !important; margin: 0 auto !important; }
+@media (min-width: 768px) { .rc-page-shell { padding: 1.25rem 24px 0 !important; } }
+.rc-page-shell > .sf-container { max-width: none; padding: 0; }
+.rc-page-shell > .sf-page { padding-top: 0; }
 .sf-page { padding-top: 1.25rem; padding-bottom: 3rem; }
 .sf-breadcrumb { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; font-size: .85rem; color: var(--sf-muted); margin-bottom: 1rem; }
 .sf-breadcrumb a { color: var(--sf-muted) !important; text-decoration: none; }

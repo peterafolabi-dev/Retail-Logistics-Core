@@ -201,7 +201,7 @@ class ProductDetailTests(TestCase):
         self.assertTrue(cache.get(f'groq_fail:{self.product.pk}'))
         generate.assert_called_once()
 
-    def test_product_detail_prefers_ai_description_and_skips_generation_when_description_exists(self):
+    def test_product_detail_prefers_curated_description_over_ai_description(self):
         Product.objects.filter(pk=self.product.pk).update(
             description='Regular product description.',
             ai_description='AI product description.',
@@ -209,8 +209,8 @@ class ProductDetailTests(TestCase):
         with patch('products.views.generate_description') as generate:
             response = self.client.get(reverse('products:product-detail', args=[self.product.id]))
 
-        self.assertContains(response, 'AI product description.')
-        self.assertNotContains(response, 'Regular product description.')
+        self.assertContains(response, 'Regular product description.')
+        self.assertNotContains(response, 'AI product description.')
         generate.assert_not_called()
 
     def test_product_detail_does_not_generate_when_regular_description_exists(self):
@@ -392,20 +392,34 @@ class ShopFilterTests(TestCase):
 
     def test_supported_sort_modes_order_results(self):
         expected_orders = {
-            'low-high': {'Electronics': [self.alpha.id, self.beta.id], 'Accessories': [self.camera.id]},
-            'high-low': {'Electronics': [self.beta.id, self.alpha.id], 'Accessories': [self.camera.id]},
-            'newest': {'Accessories': [self.camera.id], 'Electronics': [self.beta.id, self.alpha.id]},
-            'name': {'Accessories': [self.camera.id], 'Electronics': [self.alpha.id, self.beta.id]},
+            'low-high': [self.alpha.id, self.camera.id, self.beta.id],
+            'high-low': [self.beta.id, self.camera.id, self.alpha.id],
+            'newest': [self.camera.id, self.beta.id, self.alpha.id],
+            'name': [self.camera.id, self.alpha.id, self.beta.id],
         }
 
         for sort, expected_ids in expected_orders.items():
             with self.subTest(sort=sort):
                 response = self.client.get(reverse('products:product-list'), {'sort': sort})
-                actual_ids = {
-                    category: [product.id for product in data['products']]
-                    for category, data in response.context['products_by_category'].items()
-                }
-                self.assertEqual(actual_ids, expected_ids)
+                self.assertEqual([product.id for product in response.context['products']], expected_ids)
+
+    def test_search_matches_description_and_paginates(self):
+        Product.objects.filter(pk=self.camera.pk).update(description='Mirrorless body with a zoom lens.')
+        response = self.client.get(reverse('products:product-list'), {'search': 'mirrorless'})
+        self.assertEqual([product.id for product in response.context['products']], [self.camera.id])
+
+        for index in range(30):
+            Product.objects.create(name=f'Bulk {index}', price=10.0, stock=1, category='Other', image_url='http://x.png')
+        first = self.client.get(reverse('products:product-list'))
+        second = self.client.get(reverse('products:product-list'), {'page': 2})
+        self.assertEqual(len(first.context['products']), 24)
+        self.assertEqual(len(second.context['products']), 9)
+        self.assertContains(second, 'Page 2 of 2')
+
+    def test_unknown_category_is_ignored(self):
+        response = self.client.get(reverse('products:product-list'), {'category': 'Nope'})
+        self.assertEqual(response.context['selected_category'], '')
+        self.assertEqual(len(response.context['products']), 3)
 
 
 class OrderTrackingTests(TestCase):

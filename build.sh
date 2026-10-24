@@ -42,4 +42,5 @@ Site.objects.update_or_create(
 print('Site domain updated successfully')
 "
 
+python manage.py fill_descriptions
 python manage.py generate_descriptions --limit 25 || true

@@ -592,22 +592,22 @@ def landing_page(request):
 
         if not username or len(username) < 3:
             messages.error(request, "❌ Username must be at least 3 characters.")
-            return render(request, 'landing.html')
+            return render(request, 'landing.html', {'featured_products': featured_products})
         if not email:
             messages.error(request, "❌ Email is required.")
-            return render(request, 'landing.html')
+            return render(request, 'landing.html', {'featured_products': featured_products})
         if User.objects.filter(email__iexact=email).exists():
             messages.error(request, "❌ Email already registered.")
-            return render(request, 'landing.html')
+            return render(request, 'landing.html', {'featured_products': featured_products})
         if User.objects.filter(username=username).exists():
             messages.error(request, "❌ Username already taken.")
-            return render(request, 'landing.html')
+            return render(request, 'landing.html', {'featured_products': featured_products})
         if len(password) < 8:
             messages.error(request, "❌ Password must be at least 8 characters.")
-            return render(request, 'landing.html')
+            return render(request, 'landing.html', {'featured_products': featured_products})
         if password != password_confirm:
             messages.error(request, "❌ Passwords do not match.")
-            return render(request, 'landing.html')
+            return render(request, 'landing.html', {'featured_products': featured_products})
 
         user = User.objects.create_user(username=username, email=email, password=password)
         user.first_name = first_name

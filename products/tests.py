@@ -37,9 +37,59 @@ class ProductModelTests(TestCase):
         self.assertEqual(history.last().price, 12.5)
 
 
+class GuestCartAccessTests(TestCase):
+    def setUp(self):
+        self.product = Product.objects.create(name='Widget', price=20.0, stock=10, image_url='http://a.png')
+
+    def test_guest_is_sent_to_login_and_nothing_is_added(self):
+        add_url = reverse('products:add-to-cart', args=[self.product.id])
+        response = self.client.get(add_url)
+        self.assertRedirects(response, f"{reverse('products:login')}?next={add_url}", fetch_redirect_response=False)
+        self.assertNotIn('cart', self.client.session)
+
+    def test_guest_cannot_open_cart_checkout_or_buy_now(self):
+        for url in [
+            reverse('products:view-cart'),
+            reverse('products:checkout'),
+            reverse('products:buy-now', args=[self.product.id]),
+        ]:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 302)
+                self.assertTrue(response['Location'].startswith(reverse('products:login')))
+
+    def test_guest_ajax_cart_update_gets_401_json(self):
+        response = self.client.post(
+            reverse('products:update-cart'), data='{}', content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()['login_url'], reverse('products:login'))
+
+    def test_login_completes_pending_add_to_cart(self):
+        User.objects.create_user(username='shopper', password='pass12345')
+        add_url = reverse('products:add-to-cart', args=[self.product.id])
+        response = self.client.post(
+            f"{reverse('products:login')}?next={add_url}",
+            {'username_or_email': 'shopper', 'password': 'pass12345'},
+            follow=True,
+        )
+        self.assertEqual(self.client.session['cart'], {str(self.product.id): 1})
+        self.assertEqual(response.status_code, 200)
+
+    def test_login_ignores_offsite_next_url(self):
+        User.objects.create_user(username='shopper', password='pass12345')
+        response = self.client.post(
+            f"{reverse('products:login')}?next=https://evil.example.com/",
+            {'username_or_email': 'shopper', 'password': 'pass12345'},
+        )
+        self.assertEqual(response['Location'], reverse('products:product-list'))
+
+
 class CartViewTests(TestCase):
     def setUp(self):
         self.product = Product.objects.create(name='Widget', price=20.0, stock=10, image_url='http://a.png')
+        User.objects.create_user(username='cart-user', password='pass')
+        self.client.login(username='cart-user', password='pass')
 
     def test_add_to_cart_sets_session(self):
         response = self.client.post(reverse('products:add-to-cart', args=[self.product.id]), follow=True)

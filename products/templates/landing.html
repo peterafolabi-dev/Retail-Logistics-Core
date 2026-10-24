@@ -1,503 +1,84 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load humanize %}
 
-{% block title %}RedCart — Nigeria's Marketplace{% endblock %}
+{% block title %}RedCart — Shop phones, laptops, fashion &amp; more in Nigeria{% endblock %}
 
 {% block content %}
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap');
+<div class="sf-container sf-page">
 
-  .rc {
-    --void: #0B0D12;
-    --panel: #12151C;
-    --panel-2: #171B24;
-    --line: rgba(255,255,255,0.09);
-    --line-soft: rgba(255,255,255,0.05);
-    --red: #FF5252;
-    --red-dim: #C23B3B;
-    --amber: #F2B84B;
-    --green: #3ECF8E;
-    --ink: #ECE9E4;
-    --ink-dim: #9A9CA5;
-    --radius: 12px;
-    font-family: 'Inter', system-ui, sans-serif;
-    color: var(--ink);
-    max-width: 1320px;
-    margin: 0 auto;
-    padding: 24px 20px 80px;
-  }
-
-  .rc h1, .rc h2, .rc h3 { font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif; }
-
-  [data-theme="light"] .rc {
-    --void: #F7F5F1;
-    --panel: #FFFFFF;
-    --panel-2: #F1EFEA;
-    --line: rgba(20,20,20,0.10);
-    --line-soft: rgba(20,20,20,0.06);
-    --ink: #16171B;
-    --ink-dim: #6B6D75;
-  }
-
-  .rc a { text-decoration: none; }
-  .rc *:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
-
-  @media (prefers-reduced-motion: reduce) {
-    .rc *, .rc *::before, .rc *::after { animation: none !important; transition: none !important; }
-  }
-
-  /* ---------- Hero ---------- */
-  .rc-hero {
-    position: relative;
-    background: var(--void);
-    border: 1px solid var(--line);
-    border-radius: 20px;
-    padding: 64px 44px;
-    overflow: hidden;
-    animation: rcRise 0.6s ease both;
-  }
-
-  .rc-hero::before {
-    content: "";
-    position: absolute;
-    top: -30%; right: -10%;
-    width: 520px; height: 520px;
-    background: radial-gradient(circle, rgba(255,82,82,0.16), transparent 65%);
-    pointer-events: none;
-  }
-
-  .rc-hero-top {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-bottom: 40px;
-  }
-
-  .rc-mark {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    font-size: 1.1rem;
-    letter-spacing: -0.01em;
-  }
-
-  .rc-mark-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: var(--red);
-    box-shadow: 0 0 0 4px rgba(255,82,82,0.18);
-  }
-
-  .rc-live {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
-    color: var(--ink-dim);
-  }
-
-  .rc-live-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--green);
-    animation: rcPulse 2s ease-in-out infinite;
-  }
-
-  .rc-hero-body { position: relative; max-width: 640px; }
-
-  .rc-hero h1 {
-    font-size: clamp(2.1rem, 4.2vw, 3.4rem);
-    font-weight: 700;
-    line-height: 1.08;
-    letter-spacing: -0.01em;
-    margin: 0 0 18px;
-  }
-
-  .rc-hero h1 span { color: var(--red); }
-
-  .rc-hero p {
-    font-size: 1.05rem;
-    line-height: 1.6;
-    color: var(--ink-dim);
-    margin: 0 0 32px;
-    max-width: 52ch;
-  }
-
-  .rc-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 36px; }
-
-  .rc-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 14px 26px;
-    border-radius: 10px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 0.96rem;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-  }
-
-  .rc-btn-primary {
-    background: var(--red);
-    color: #14090A;
-    box-shadow: 0 8px 22px rgba(255,82,82,0.28);
-  }
-  .rc-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(255,82,82,0.38); }
-
-  .rc-btn-ghost {
-    background: transparent;
-    color: var(--ink);
-    border-color: var(--line);
-  }
-  .rc-btn-ghost:hover { border-color: var(--red); color: var(--red); transform: translateY(-2px); }
-
-  .rc-cats {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
-  .rc-cat-pill {
-    font-size: 0.82rem;
-    color: var(--ink-dim);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 6px 14px;
-  }
-
-  /* ---------- Section shell ---------- */
-  .rc-section { margin-top: 64px; }
-
-  .rc-section-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 28px;
-    flex-wrap: wrap;
-  }
-
-  .rc-section-head h2 {
-    font-size: 1.6rem;
-    font-weight: 700;
-    margin: 0;
-    letter-spacing: -0.01em;
-  }
-
-  .rc-section-link {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--red);
-  }
-  .rc-section-link:hover { text-decoration: underline; }
-
-  /* ---------- Product grid ---------- */
-  .rc-products {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 20px;
-  }
-
-  .rc-card {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    color: var(--ink);
-    transition: border-color 0.2s ease, transform 0.2s ease;
-  }
-
-  .rc-card:hover {
-    border-color: var(--red-dim);
-    transform: translateY(-4px);
-  }
-
-  .rc-card-img {
-    aspect-ratio: 4 / 3;
-    background: var(--panel-2);
-    overflow: hidden;
-  }
-
-  .rc-card-img img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    transition: transform 0.35s ease;
-  }
-  .rc-card:hover .rc-card-img img { transform: scale(1.06); }
-
-  .rc-card-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
-
-  .rc-card-cat {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--ink-dim);
-  }
-
-  .rc-card-name {
-    font-weight: 600;
-    font-size: 1rem;
-    line-height: 1.35;
-  }
-
-  .rc-card-price {
-    margin-top: auto;
-    padding-top: 10px;
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 1.15rem;
-    color: var(--amber);
-  }
-
-  .rc-empty {
-    text-align: center;
-    padding: 50px 20px;
-    color: var(--ink-dim);
-    border: 1px dashed var(--line);
-    border-radius: var(--radius);
-  }
-
-  /* ---------- Offers ---------- */
-  .rc-offers {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 18px;
-  }
-
-  .rc-offer {
-    background: var(--panel-2);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 26px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .rc-offer-pct {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 2.1rem;
-    color: var(--red);
-    line-height: 1;
-  }
-  .rc-offer-pct sup { font-size: 1rem; margin-left: 2px; }
-
-  .rc-offer-name { font-weight: 600; font-size: 1.05rem; }
-  .rc-offer-desc { color: var(--ink-dim); font-size: 0.9rem; line-height: 1.55; }
-
-  .rc-offer-link {
-    margin-top: 6px;
-    font-weight: 600;
-    font-size: 0.88rem;
-    color: var(--ink);
-    border-top: 1px solid var(--line);
-    padding-top: 12px;
-  }
-  .rc-offer-link:hover { color: var(--red); }
-
-  /* ---------- Auth ---------- */
-  .rc-auth {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-
-  .rc-panel {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 40px;
-  }
-
-  .rc-panel h2 { font-size: 1.5rem; margin: 0 0 12px; }
-  .rc-panel > p.rc-lead { color: var(--ink-dim); margin: 0 0 24px; line-height: 1.6; }
-
-  .rc-benefits { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
-
-  .rc-benefits li {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    padding: 13px 0;
-    border-bottom: 1px solid var(--line-soft);
-    font-size: 0.95rem;
-  }
-  .rc-benefits li:last-child { border-bottom: none; }
-
-  .rc-check { color: var(--green); font-weight: 700; flex-shrink: 0; }
-
-  .rc-stack { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
-
-  .rc-btn-block { width: 100%; }
-
-  .rc-btn-outline {
-    background: transparent;
-    color: var(--ink);
-    border: 1px solid var(--line);
-  }
-  .rc-btn-outline:hover { border-color: var(--red); color: var(--red); }
-
-  .rc-fineprint { color: var(--ink-dim); font-size: 0.85rem; margin-top: 18px; text-align: center; }
-
-  /* ---------- Support ---------- */
-  .rc-support {
-    margin-top: 64px;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-    flex-wrap: wrap;
-    background: var(--panel);
-  }
-
-  .rc-support h3 { font-size: 1.3rem; margin: 0 0 6px; }
-  .rc-support p { color: var(--ink-dim); margin: 0; font-size: 0.95rem; }
-  .rc-support-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-
-  @keyframes rcRise {
-    from { opacity: 0; transform: translateY(14px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes rcPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.35; }
-  }
-
-  @media (max-width: 900px) {
-    .rc-hero { padding: 40px 24px; }
-    .rc-auth { grid-template-columns: 1fr; }
-    .rc-panel { padding: 28px; }
-  }
-
-  .rc-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 560px) { .rc-form-row { grid-template-columns: 1fr; } }
-</style>
-
-<div class="rc">
-
-  <!-- Hero -->
-  <section class="rc-hero">
-    <div class="rc-hero-top">
-      <div class="rc-mark"><span class="rc-mark-dot"></span> RedCart</div>
-      <div class="rc-live"><span class="rc-live-dot"></span> New deals dropping today</div>
-    </div>
-    <div class="rc-hero-body">
-      <h1>Everyday essentials, priced for <span>Nigeria</span>.</h1>
-      <p>Browse thousands of items from trusted sellers, pay in naira, and track every order until it lands on your doorstep.</p>
-      <div class="rc-cta">
-        <a href="#featured-products" class="rc-btn rc-btn-primary">Shop now</a>
-        <a href="{% url 'products:register' %}" class="rc-btn rc-btn-ghost">Create free account</a>
-      </div>
-      <div class="rc-cats">
-        <span class="rc-cat-pill">Electronics</span>
-        <span class="rc-cat-pill">Fashion</span>
-        <span class="rc-cat-pill">Home &amp; Living</span>
-        <span class="rc-cat-pill">Phones &amp; Tablets</span>
-        <span class="rc-cat-pill">Health &amp; Beauty</span>
+  <section class="sf-hero">
+    <div>
+      <span class="sf-eyebrow">New arrivals every week</span>
+      <h1>The tech, fashion and home essentials you love, delivered across Nigeria.</h1>
+      <p>Shop trusted brands at naira prices, pay securely with Paystack and track every order to your door.</p>
+      <div class="sf-hero-actions">
+        <a href="{% url 'products:product-list' %}" class="sf-btn sf-btn-primary">Shop all products</a>
+        <a href="{% url 'products:register' %}" class="sf-btn sf-btn-outline">Create free account</a>
       </div>
     </div>
-  </section>
-
-  <!-- Featured Products -->
-  <section class="rc-section" id="featured-products">
-    <div class="rc-section-head">
-      <h2>Featured products</h2>
-      <a href="{% url 'products:product-list' %}" class="rc-section-link">Browse all →</a>
-    </div>
-
     {% if featured_products %}
-      <div class="rc-products">
-        {% for product in featured_products %}
-          <a href="{% url 'products:product-detail' product.id %}" class="rc-card">
-            <div class="rc-card-img">
-              <img src="{{ product.image_src }}" alt="{{ product.name }}" loading="lazy">
-            </div>
-            <div class="rc-card-body">
-              <div class="rc-card-cat">{{ product.get_category_display }}</div>
-              <div class="rc-card-name">{{ product.name|truncatewords:5 }}</div>
-              <div class="rc-card-price">₦{{ product.price|floatformat:0|intcomma }}</div>
-            </div>
-          </a>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div class="rc-empty">No products available yet. Check back soon.</div>
+    <div class="sf-hero-grid" aria-hidden="true">
+      {% for product in featured_products|slice:":6" %}
+        <a href="{% url 'products:product-detail' product.id %}" tabindex="-1"><img src="{{ product.image_src }}" alt="" loading="lazy"></a>
+      {% endfor %}
+    </div>
     {% endif %}
   </section>
 
-  <!-- Offers -->
-  {% if offers %}
-  <section class="rc-section">
-    <div class="rc-section-head">
-      <h2>Flash deals</h2>
-      <a href="{% url 'products:offers' %}" class="rc-section-link">All deals →</a>
+  <div class="sf-perks">
+    <div class="sf-panel sf-perk"><i class="bi bi-truck"></i><div><strong>Free delivery</strong><span>2–5 business days nationwide</span></div></div>
+    <div class="sf-panel sf-perk"><i class="bi bi-shield-check"></i><div><strong>Buyer protection</strong><span>Help if an order goes wrong</span></div></div>
+    <div class="sf-panel sf-perk"><i class="bi bi-credit-card"></i><div><strong>Secure checkout</strong><span>Cards, transfer &amp; wallet</span></div></div>
+    <div class="sf-panel sf-perk"><i class="bi bi-chat-dots"></i><div><strong>24/7 assistant</strong><span>Ask about any product</span></div></div>
+  </div>
+
+  <div class="sf-section-head"><h2>Shop by category</h2><a href="{% url 'products:product-list' %}">See all</a></div>
+  <div class="sf-cats">
+    <a class="sf-panel sf-cat" href="{% url 'products:category-page' 'phones' %}"><i class="bi bi-phone"></i><span>Phones</span></a>
+    <a class="sf-panel sf-cat" href="{% url 'products:category-page' 'laptops' %}"><i class="bi bi-laptop"></i><span>Laptops</span></a>
+    <a class="sf-panel sf-cat" href="{% url 'products:category-page' 'electronics' %}"><i class="bi bi-headphones"></i><span>Electronics</span></a>
+    <a class="sf-panel sf-cat" href="{% url 'products:category-page' 'gaming' %}"><i class="bi bi-controller"></i><span>Gaming</span></a>
+    <a class="sf-panel sf-cat" href="{% url 'products:category-page' 'watches' %}"><i class="bi bi-smartwatch"></i><span>Watches</span></a>
+    <a class="sf-panel sf-cat" href="{% url 'products:category-page' 'sneakers' %}"><i class="bi bi-person-walking"></i><span>Sneakers</span></a>
+    <a class="sf-panel sf-cat" href="{% url 'products:category-page' 'fashion' %}"><i class="bi bi-bag-heart"></i><span>Fashion</span></a>
+    <a class="sf-panel sf-cat" href="{% url 'products:category-page' 'accessories' %}"><i class="bi bi-sunglasses"></i><span>Accessories</span></a>
+    <a class="sf-panel sf-cat" href="{% url 'products:category-page' 'home-appliances' %}"><i class="bi bi-plug"></i><span>Appliances</span></a>
+    <a class="sf-panel sf-cat" href="{% url 'products:category-page' 'home-kitchen' %}"><i class="bi bi-house-heart"></i><span>Home &amp; Kitchen</span></a>
+    <a class="sf-panel sf-cat" href="{% url 'products:category-page' 'fitness' %}"><i class="bi bi-bicycle"></i><span>Fitness</span></a>
+    <a class="sf-panel sf-cat" href="{% url 'products:category-page' 'other' %}"><i class="bi bi-stars"></i><span>Beauty &amp; more</span></a>
+  </div>
+
+  {% if deal_products %}
+    <div class="sf-section-head"><h2><i class="bi bi-lightning-charge-fill" style="color:var(--sf-brand)"></i> Flash deals</h2><a href="{% url 'products:product-list' %}">See all</a></div>
+    <div class="sf-grid sf-grid-5">
+      {% for product in deal_products %}{% include 'partials/product_tile.html' %}{% endfor %}
     </div>
-    <div class="rc-offers">
-      {% for offer in offers %}
-        <div class="rc-offer">
-          <div class="rc-offer-pct">{{ offer.discount }}<sup>% off</sup></div>
-          <div class="rc-offer-name">{{ offer.name }}</div>
-          <div class="rc-offer-desc">{{ offer.description|truncatewords:12 }}</div>
-          <a href="{% url 'products:offers' %}" class="rc-offer-link">View deal →</a>
-        </div>
-      {% endfor %}
-    </div>
-  </section>
   {% endif %}
 
-  <!-- Registration -->
-  {% if not user.is_authenticated %}
-  <section class="rc-section rc-auth" id="register">
-    <div class="rc-panel">
-      <h2>Why join RedCart</h2>
-      <p class="rc-lead">Create a free account and unlock the full shopping experience.</p>
-      <ul class="rc-benefits">
-        <li><span class="rc-check">✓</span> Track your orders in real-time</li>
-        <li><span class="rc-check">✓</span> Save your favorite items</li>
-        <li><span class="rc-check">✓</span> Get exclusive member-only deals</li>
-        <li><span class="rc-check">✓</span> Earn rewards on every purchase</li>
-        <li><span class="rc-check">✓</span> One-click checkout</li>
-        <li><span class="rc-check">✓</span> Manage multiple addresses</li>
-        <li><span class="rc-check">✓</span> Personalized recommendations</li>
-      </ul>
+  {% if featured_products %}
+    <div class="sf-section-head"><h2>New arrivals</h2><a href="{% url 'products:product-list' %}">See all</a></div>
+    <div class="sf-grid sf-grid-5">
+      {% for product in featured_products %}{% include 'partials/product_tile.html' %}{% endfor %}
     </div>
-
-    <div class="rc-panel">
-      <h2>Start your RedCart journey</h2>
-      <p class="rc-lead">Sign up on the dedicated register page, then log in with one account.</p>
-      <div class="rc-stack">
-        <a href="{% url 'products:register' %}" class="rc-btn rc-btn-primary rc-btn-block">Create account</a>
-        <a href="{% url 'products:login' %}" class="rc-btn rc-btn-outline rc-btn-block">Sign in</a>
-      </div>
-      <p class="rc-fineprint">Already have an account? Use sign in above.</p>
-    </div>
-  </section>
   {% endif %}
 
-  <!-- Support -->
-  <section class="rc-support">
+  {% if top_rated %}
+    <div class="sf-section-head"><h2>Top rated</h2><a href="{% url 'products:reviews' %}">Read reviews</a></div>
+    <div class="sf-grid sf-grid-5">
+      {% for product in top_rated %}{% include 'partials/product_tile.html' %}{% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="sf-panel sf-cta">
     <div>
-      <h3>Questions? We're here to help.</h3>
-      <p>afolabiprosper329@gmail.com · 24/7 chat support</p>
+      <h2>Create a free RedCart account</h2>
+      <p>Track orders, save items to your wishlist, check out faster and earn rewards.</p>
     </div>
-    <div class="rc-support-actions">
-      <a href="{% url 'products:contact' %}" class="rc-btn rc-btn-primary">Contact us</a>
-      <a href="{% url 'products:faq' %}" class="rc-btn rc-btn-ghost">FAQ</a>
+    <div class="sf-hero-actions">
+      <a href="{% url 'products:register' %}" class="sf-btn sf-btn-primary">Create account</a>
+      <a href="{% url 'products:login' %}" class="sf-btn sf-btn-outline" style="color:var(--sf-text)!important;border-color:var(--sf-border)">Sign in</a>
     </div>
-  </section>
-
+  </div>
 </div>
+<script src="{% static 'js/flash-sale-timer.js' %}"></script>
 {% endblock %}

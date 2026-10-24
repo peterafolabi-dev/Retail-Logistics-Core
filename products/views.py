@@ -2413,12 +2413,20 @@ def category_page(request, category_slug):
     all_categories = Product.objects.values_list('category', flat=True).distinct()
     available_categories = sorted(set([c for c in all_categories if c]))
 
+    category_labels = dict(Product.CATEGORY_CHOICES)
+    page_obj = Paginator(products.order_by('-id').prefetch_related('reviews'), SHOP_PAGE_SIZE).get_page(request.GET.get('page'))
+    wishlisted_ids = []
+    if request.user.is_authenticated:
+        wishlisted_ids = list(Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True))
+
     context = {
-        'category_name': category_name,
+        'category_name': category_labels.get(category_name, category_name),
         'category_slug': category_slug,
-        'products': products,
-        'product_count': products.count(),
-        'available_categories': available_categories,
+        'products': page_obj.object_list,
+        'page_obj': page_obj,
+        'product_count': page_obj.paginator.count,
+        'available_categories': [(c, category_labels.get(c, c)) for c in available_categories],
+        'wishlisted_ids': wishlisted_ids,
     }
     return render(request, 'products/category_page.html', context)
 

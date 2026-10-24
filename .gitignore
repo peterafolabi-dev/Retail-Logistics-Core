@@ -25,7 +25,14 @@ staticfiles/
 # Python egg
 *.egg-info/
 dist/
-build/private_key.pem
+build/
+
+# Next.js / TypeScript build output
+*.tsbuildinfo
+
+# Keys and local scratch output
+*.pem
+private_key.pem
 /private_key.pem
 public_key.pem
 /test_exit.txt

@@ -382,7 +382,7 @@ class ShopFilterTests(TestCase):
             'sort': 'low-high',
         })
 
-        products = response.context['products_by_category']['Electronics']['products']
+        products = response.context['products']
         self.assertEqual([product.id for product in products], [self.alpha.id])
         self.assertEqual(response.context['query'], 'Alpha')
         self.assertEqual(response.context['selected_category'], 'Electronics')

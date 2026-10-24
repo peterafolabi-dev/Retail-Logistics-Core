@@ -760,7 +760,7 @@
 
         <div class="sf-search" role="search">
           <form method="get" action="{% url 'products:product-list' %}" id="navbar-search-form">
-            <input type="search" name="search" id="navbar-search-input" placeholder="Search products, brands and categories" value="{{ request.GET.search|default:request.GET.q }}" autocomplete="off" aria-label="Search products">
+            <input type="search" name="search" id="navbar-search-input" placeholder="Search products, brands and categories" value="{% firstof request.GET.search request.GET.q '' %}" autocomplete="off" aria-label="Search products">
             <button type="submit"><i class="bi bi-search"></i><span class="sf-hide-mobile">Search</span></button>
           </form>
           <div class="recent-searches-dropdown" id="recent-searches-dropdown"><div class="recent-searches-header"><span>Recent searches</span><button type="button" onclick="clearAllSearches()">Clear all</button></div><div id="recent-searches-list"></div></div>

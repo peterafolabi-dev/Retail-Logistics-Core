@@ -1,942 +1,274 @@
 {% extends 'base.html' %}
-{% load static %}
-{% load humanize %}
+{% load static humanize store_extras %}
 
-{% block title %}{{ product.name }} - MyStore{% endblock %}
+{% block title %}{{ product.name }} | RedCart{% endblock %}
+{% block meta_description %}{{ product.description|default:product.ai_description|description_summary|truncatechars:155 }}{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/flash-sale-timer.css' %}">
-<div class="mx-auto my-10 w-full max-w-7xl px-5 md:px-8">
+<div class="sf-container sf-page">
+  <nav class="sf-breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'products:landing' %}">Home</a> <i class="bi bi-chevron-right"></i>
+    <a href="{% url 'products:product-list' %}?category={{ product.category|urlencode }}">{{ product.get_category_display }}</a> <i class="bi bi-chevron-right"></i>
+    <span>{{ product.name }}</span>
+  </nav>
 
-  <div class="grid grid-cols-1 gap-8 md:grid-cols-2 md:items-start">
+  <div class="sf-pdp">
+    <!-- Gallery -->
+    <div>
+      <div class="sf-gallery-main" onclick="openImageZoom()">
+        {% if product.has_active_sale %}<span class="ptile-tag">-{{ product.discount_percentage|floatformat:0 }}%</span>{% endif %}
+        <img id="main-image" src="{{ product.image_src }}" alt="{{ product.name }}"
+             onerror="this.onerror=null;this.src='https://placehold.co/800x800/f3f4f6/9ca3af?text=No+Image'">
+      </div>
+      {% if product.additional_images %}
+      <div class="sf-thumbs" role="list">
+        <button type="button" class="is-active" onclick="changeImage(this)" aria-label="View image 1"><img src="{{ product.image_src }}" alt=""></button>
+        {% for img in product.additional_images %}
+          <button type="button" onclick="changeImage(this)" aria-label="View image {{ forloop.counter|add:1 }}"><img src="{{ img }}" alt="" loading="lazy"></button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
 
-    <div class="flex flex-col gap-4 md:flex-row md:items-start">
-      <!-- Thumbnails -->
-      <div class="flex w-full flex-row justify-center gap-3 overflow-x-auto md:w-auto md:flex-col md:items-center md:justify-start mobile-thumbs-col">
-        <img src="{{ product.image_src }}" class="thumb-img h-16 w-16 rounded border border-white/10 object-cover transition duration-300 hover:border-cyan-500/50" alt="Main" onclick="changeImage(this)" loading="lazy">
-        {% if product.additional_images %}
-          {% for img in product.additional_images %}
-            <img src="{{ img }}" class="thumb-img h-16 w-16 rounded border border-white/10 object-cover transition duration-300 hover:border-cyan-500/50" alt="Additional" onclick="changeImage(this)" loading="lazy">
-          {% endfor %}
+    <!-- Buy box -->
+    <div class="sf-buybox">
+      <span class="ptile-cat">{{ product.get_category_display }}</span>
+      <h1>{{ product.name }}</h1>
+      <div class="sf-meta">
+        {% if product.review_count %}
+          <a href="#reviews"><span class="sf-stars">{% for i in "12345" %}{% if forloop.counter <= product.average_review_rating %}★{% else %}<span class="is-empty">★</span>{% endif %}{% endfor %}</span> {{ product.average_review_rating|floatformat:1 }} ({{ product.review_count }} review{{ product.review_count|pluralize }})</a>
+        {% else %}
+          <a href="#reviews">No reviews yet</a>
+        {% endif %}
+        <span>SKU: RC-{{ product.id }}</span>
+        {% if authentication %}
+          <span class="sf-verified" title="Serial {{ authentication.serial_number }}"><i class="bi bi-patch-check-fill"></i> Authenticity verified</span>
         {% endif %}
       </div>
 
-      <!-- Main image -->
-      <div class="min-w-0 flex-1 w-full">
-        <div class="main-img-container relative overflow-hidden rounded-xl border shadow-sm animate-img">
-          <img id="main-image" src="{{ product.image_src }}" class="block h-auto w-full object-contain" alt="{{ product.name }}" onclick="openImageZoom(this)" loading="lazy">
-          {% if product.is_out_of_stock %}
-            <div class="stock-badge stock-out">🚫 Out of Stock</div>
-          {% elif product.is_low_stock %}
-            <div class="stock-badge stock-warning">⚠️ Only {{ product.available_stock }} left!</div>
-          {% else %}
-            <div class="stock-badge stock-in">✅ In Stock</div>
-          {% endif %}
-        </div>
-
-        <div id="image-zoom-modal" class="image-zoom-modal" onclick="closeImageZoom()" style="display:none;">
-          <div class="image-zoom-inner" onclick="event.stopPropagation()">
-            <button type="button" class="modal-close-button absolute right-0 top-0 m-3" onclick="closeImageZoom()">Close</button>
-            <img id="zoomed-image" src="{{ product.image_src }}" alt="{{ product.name }}" class="h-auto max-w-full rounded-xl">
-          </div>
-        </div>
+      <div class="sf-buybox-price">
+        {% if product.has_active_sale %}
+          <span class="sf-price">₦{{ product.sale_price|floatformat:0|intcomma }}</span>
+          <span class="sf-price-old">₦{{ product.price|floatformat:0|intcomma }}</span>
+          <span class="sf-pill sf-pill-danger">Save {{ product.discount_percentage|floatformat:0 }}%</span>
+        {% else %}
+          <span class="sf-price">₦{{ product.price|floatformat:0|intcomma }}</span>
+        {% endif %}
       </div>
-    </div>
 
-    <!-- Product details -->
-    <div class="min-w-0 w-full">
-      <div class="theme-card animate-card h-full rounded-xl border p-3 shadow-sm md:p-4">
-            <div class="mb-2 flex items-start justify-between gap-4">
-              <div>
-                <h3 class="mb-1 text-lg font-bold">{{ product.name }}</h3>
-                <small class="text-slate-400">SKU: #{{ product.id }}</small>
-                {% if authentication %}
-                  <span class="authenticity-badge" title="Serial {{ authentication.serial_number }}">
-                    <i class="bi bi-patch-check-fill" aria-hidden="true"></i> Authenticity verified
-                  </span>
-                {% endif %}
-              </div>
-              {% if product.review_count %}
-                <div class="rating-badge">
-                  <span class="stars">★ {{ product.average_review_rating|floatformat:1 }}/5</span>
-                  <small class="block text-slate-400">{{ product.review_count }} reviews</small>
-                </div>
-              {% endif %}
-            </div>
-            <section class="product-description mb-4" aria-labelledby="product-description-heading">
-              <p class="product-description-label" id="product-description-heading">About this product</p>
-              {% if product.ai_description %}
-                <p class="product-description-copy">{{ product.ai_description|linebreaksbr }}</p>
-              {% elif product.description %}
-                <p class="product-description-copy">{{ product.description|linebreaksbr }}</p>
-              {% else %}
-                <p class="product-description-copy">No description available yet.</p>
-              {% endif %}
-            </section>
-
-            {% if product.has_active_sale %}
-            <!-- Flash Sale Banner -->
-            <div class="product-detail-sale">
-              <div class="sale-status-icon">⚡</div>
-              <div class="sale-ends-label">Flash Sale Ends In</div>
-              <div class="sale-timer-display" data-product-id="{{ product.id }}" data-sale-ends-at="{{ product.sale_ends_at|date:'c' }}">
-                Loading...
-              </div>
-              <div class="sale-discount-info">
-                <div>
-                  <div class="sale-ends-label">Save</div>
-                  <div class="sale-discount-percentage">{{ product.discount_percentage|floatformat:0 }}%</div>
-                </div>
-                <div style="text-align: right;">
-                  <div class="sale-original-price">₦{{ product.price|floatformat:2|intcomma }}</div>
-                  <div class="sale-current-price">₦{{ product.sale_price|floatformat:2|intcomma }}</div>
-                </div>
-              </div>
-            </div>
-            {% else %}
-            <div class="mb-4 flex items-center gap-3">
-              <h4 class="animated-price mb-0 font-bold text-red-500">₦{{ product.price|floatformat:2|intcomma }}</h4>
-            </div>
-            {% endif %}
-
-            <!-- Savings Display -->
-            {% if product.has_active_sale %}
-            <div class="savings-banner mb-3">
-              <span class="savings-text">💚 You save: <strong>₦{{ product.price|add:"-"|add:product.sale_price|floatformat:2|intcomma }}</strong></span>
-            </div>
-            {% endif %}
-
-            <section class="shopping-insights mb-4" aria-labelledby="shopping-insights-title">
-              <div class="shopping-insights-heading">
-                <span aria-hidden="true">✦</span>
-                <div>
-                  <h4 id="shopping-insights-title">Why this product</h4>
-                  <p>Helpful facts based on this listing and its customer feedback.</p>
-                </div>
-              </div>
-              <ul>
-                {% for reason in shopping_insights.reasons %}
-                  <li>{{ reason }}</li>
-                {% endfor %}
-              </ul>
-              {% if shopping_insights.outlook %}
-                <div class="shopping-insight-note">
-                  <strong>Price update:</strong> {{ shopping_insights.outlook.message }}
-                  <span>Lowest recorded: ₦{{ shopping_insights.outlook.historical_low|floatformat:2|intcomma }}</span>
-                </div>
-              {% endif %}
-              {% if shopping_insights.review_summary %}
-                <div class="shopping-insight-note">
-                  <strong>Review summary:</strong> {{ shopping_insights.review_summary.positive }} of {{ shopping_insights.review_summary.total }} reviews are 4 or 5 stars.
-                  <span>Average rating: {{ shopping_insights.review_summary.average }}/5</span>
-                </div>
-              {% endif %}
-            </section>
-
-            <!-- Social Share Buttons -->
-            <div class="social-share-section mb-3 pb-3 border-bottom">
-              <small class="mb-2 block text-slate-400">Share Product:</small>
-              <div class="flex flex-wrap gap-2">
-                <a href="https://wa.me/?text=Check%20out%20this%20product:%20{{ product.name|urlencode }}%20{{ share_url|urlencode }}" 
-                   target="_blank" class="product-share-button product-share-whatsapp" title="Share on WhatsApp">
-                  <i class="bi bi-whatsapp"></i> WhatsApp
-                </a>
-                <a href="https://www.facebook.com/sharer/sharer.php?u={{ share_url|urlencode }}" 
-                   target="_blank" class="product-share-button product-share-facebook" title="Share on Facebook">
-                  <i class="bi bi-facebook"></i> Facebook
-                </a>
-                <a href="https://twitter.com/intent/tweet?text=Check%20out%20{{ product.name|urlencode }}%20{{ share_url|urlencode }}" 
-                   target="_blank" class="product-share-button product-share-twitter" title="Share on Twitter">
-                  <i class="bi bi-twitter"></i> Twitter
-                </a>
-              </div>
-            </div>
-
-            <div class="product-actions">
-              <button type="button" class="product-action-save btn-wishlist {% if is_in_wishlist %}is-saved{% else %}is-unsaved{% endif %}" data-product-id="{{ product.id }}" aria-label="Save to wishlist" title="Save to wishlist">
-                <i class="bi {% if is_in_wishlist %}bi-heart-fill{% else %}bi-heart{% endif %}" aria-hidden="true"></i>
-              </button>
-              {% if product.is_out_of_stock %}
-                <button type="button" class="product-action-button product-action-primary font-semibold text-light disabled" disabled>
-                  🚫 Out of Stock
-                </button>
-              {% else %}
-                <a href="{% url 'products:add-to-cart' product.id %}" 
-                   class="product-action-button product-action-primary font-semibold">
-                  <i class="bi bi-cart-plus" aria-hidden="true"></i> Add to Cart
-                </a>
-              {% endif %}
-              <a href="{% url 'products:buy-now' product.id %}" 
-                 class="product-action-button product-action-secondary font-semibold {% if product.is_out_of_stock %}disabled{% endif %}"
-                 {% if product.is_out_of_stock %}aria-disabled="true" tabindex="-1"{% endif %}>
-                <i class="bi bi-lightning-charge-fill" aria-hidden="true"></i> Buy Now
-              </a>
-            </div>
-
-            <!-- Product Info Card (SVG-enhanced) -->
-            <div class="product-info-card mt-4">
-              <div class="product-info-header">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="product-info-icon">
-                  <rect x="2" y="7" width="20" height="14" rx="2" fill="#F68B1E" opacity="0.15" stroke="#F68B1E" stroke-width="1.5"/>
-                  <path d="M16 7V5a4 4 0 0 0-8 0v2" stroke="#F68B1E" stroke-width="1.5" stroke-linecap="round"/>
-                  <circle cx="12" cy="13" r="2" fill="#F68B1E"/>
-                  <path d="M12 15v2" stroke="#F68B1E" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-                <span class="product-info-title">Product Info</span>
-              </div>
-
-              <div class="product-info-rows">
-
-                <div class="product-info-row">
-                  <span class="info-icon-wrap">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                      <path d="M4 6h16M4 12h16M4 18h10" stroke="#F68B1E" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                  </span>
-                  <span class="info-label">Category</span>
-                  <span class="info-value">{{ product.category }}</span>
-                </div>
-
-                <div class="product-info-row">
-                  <span class="info-icon-wrap">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="9" stroke="#F68B1E" stroke-width="2"/>
-                      <path d="M12 7v5l3 3" stroke="#F68B1E" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                  </span>
-                  <span class="info-label">Price</span>
-                  <span class="info-value font-bold" style="color:#F68B1E;">₦{% if product.has_active_sale %}{{ product.sale_price|floatformat:2|intcomma }}{% else %}{{ product.price|floatformat:2|intcomma }}{% endif %}</span>
-                </div>
-
-                <div class="product-info-row">
-                  <span class="info-icon-wrap">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                      <rect x="3" y="3" width="18" height="18" rx="2" stroke="#F68B1E" stroke-width="2"/>
-                      <path d="M3 9h18M9 21V9" stroke="#F68B1E" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                  </span>
-                  <span class="info-label">Stock</span>
-                  <span class="info-value">{{ product.available_stock|default:product.stock }} units</span>
-                </div>
-
-                <div class="product-info-row" style="border-bottom: none;">
-                  <span class="info-icon-wrap">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                      <path d="M3 12l4-4 4 4 4-4 4 4" stroke="#F68B1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M5 20h14a1 1 0 0 0 1-1V8H4v11a1 1 0 0 0 1 1z" stroke="#F68B1E" stroke-width="1.5"/>
-                    </svg>
-                  </span>
-                  <span class="info-label">Delivery</span>
-                  <span class="info-value">Free shipping nationwide</span>
-                </div>
-
-              </div>
-            </div>
-
-            <div class="mt-3 text-sm text-slate-400">
-              <p><strong>⏱️ Estimated Arrival:</strong> 3 - 7 business days</p>
-            </div>
-
-            {% if price_history %}
-            <div class="price-history-card mt-4">
-              <div class="mb-2 flex items-center justify-between">
-                <strong>📈 Price History</strong>
-                <span class="text-sm text-slate-400">Last {{ price_history|length }} updates</span>
-              </div>
-              <div class="price-history-chart mb-3">
-                <canvas id="priceHistoryChart"></canvas>
-              </div>
-              <div class="price-history-list">
-                {% for entry in price_history %}
-                <div class="price-history-item">
-                  <span>₦{{ entry.price|floatformat:2|intcomma }}</span>
-                  <small>{{ entry.recorded_at|date:"M d, Y" }}</small>
-                </div>
-                {% endfor %}
-              </div>
-            </div>
-            {% endif %}
-          </div>
+      {% if product.has_active_sale %}
+        <div class="sf-sale-box">
+          <strong><i class="bi bi-lightning-charge-fill"></i> Flash sale</strong>
+          <span>Ends in <span class="sale-timer-display" data-product-id="{{ product.id }}" data-sale-ends-at="{{ product.sale_ends_at|date:'c' }}">--:--:--</span></span>
         </div>
+      {% endif %}
 
+      {% if product.is_out_of_stock %}
+        <span class="sf-pill sf-pill-danger"><i class="bi bi-x-circle"></i> Out of stock</span>
+      {% elif product.is_low_stock %}
+        <span class="sf-pill sf-pill-warning"><i class="bi bi-exclamation-circle"></i> Only {{ product.available_stock }} left in stock</span>
+      {% else %}
+        <span class="sf-pill sf-pill-success"><i class="bi bi-check-circle"></i> In stock</span>
+      {% endif %}
+
+      {% with summary=product.description|default:product.ai_description|description_summary %}
+        {% if summary %}<p class="sf-summary">{{ summary }}</p>{% endif %}
+      {% endwith %}
+
+      <div class="sf-buy-actions">
+        {% if product.is_out_of_stock %}
+          <button type="button" class="sf-btn sf-btn-primary" disabled>Out of stock</button>
+          <span class="sf-btn sf-btn-dark is-disabled" aria-disabled="true">Buy now</span>
+        {% else %}
+          <a href="{% url 'products:add-to-cart' product.id %}" class="sf-btn sf-btn-primary"><i class="bi bi-cart-plus"></i> Add to cart</a>
+          <a href="{% url 'products:buy-now' product.id %}" class="sf-btn sf-btn-dark">Buy now</a>
+        {% endif %}
+        <button type="button" class="sf-btn sf-btn-outline sf-wish-btn btn-wishlist product-action-save {% if is_in_wishlist %}is-saved{% else %}is-unsaved{% endif %}" data-product-id="{{ product.id }}" aria-label="Save to wishlist" title="Save to wishlist">
+          <i class="bi {% if is_in_wishlist %}bi-heart-fill{% else %}bi-heart{% endif %}" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <ul class="sf-panel sf-assurance">
+        <li><i class="bi bi-truck"></i><div><strong>Free delivery</strong><span>Arrives in 2–5 business days within Nigeria. Lagos orders may arrive in 24–48 hours.</span></div></li>
+        <li><i class="bi bi-arrow-counterclockwise"></i><div><strong>Easy returns</strong><span>See our <a href="{% url 'products:faq' %}">returns FAQ</a> for eligibility and timelines.</span></div></li>
+        <li><i class="bi bi-shield-lock"></i><div><strong>Secure payment &amp; buyer protection</strong><span>Pay with Paystack. <a href="{% url 'products:buyer-protection' %}">How you're protected</a>.</span></div></li>
+      </ul>
+
+      <div class="sf-share">
+        Share:
+        <a href="https://wa.me/?text={{ product.name|urlencode }}%20{{ share_url|urlencode }}" target="_blank" rel="noopener" aria-label="Share on WhatsApp"><i class="bi bi-whatsapp"></i></a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u={{ share_url|urlencode }}" target="_blank" rel="noopener" aria-label="Share on Facebook"><i class="bi bi-facebook"></i></a>
+        <a href="https://twitter.com/intent/tweet?text={{ product.name|urlencode }}&url={{ share_url|urlencode }}" target="_blank" rel="noopener" aria-label="Share on X"><i class="bi bi-twitter-x"></i></a>
       </div>
     </div>
   </div>
 
-  {% if ai_recommendations %}
-  <div class="mt-5 pt-4">
-    <h4 class="mb-4 font-bold">You might also like</h4>
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
-      {% for rec in ai_recommendations %}
-      <div>
-        <div class="recommendation-card h-full">
-          <img src="{{ rec.image_src }}" class="h-48 w-full object-cover" alt="{{ rec.name }}" loading="lazy">
-          <div class="p-4">
-            <h5 class="mb-2 font-semibold">{{ rec.name|truncatechars:40 }}</h5>
-            <p class="mb-2 text-slate-400">₦{{ rec.price|floatformat:2|intcomma }}</p>
-            <a href="{% url 'products:product-detail' rec.id %}" class="product-outline-button">View Product</a>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
+  <!-- Description -->
+  <section class="sf-panel sf-detail" aria-labelledby="product-description-heading">
+    <h2 id="product-description-heading">Product description</h2>
+    <div class="sf-description">
+      {% if product.description %}
+        {{ product.description|format_description }}
+      {% elif product.ai_description %}
+        {{ product.ai_description|format_description }}
+      {% else %}
+        <p>No description available yet.</p>
+      {% endif %}
     </div>
-  </div>
+  </section>
+
+  <section class="sf-panel sf-detail" aria-labelledby="specs-heading">
+    <h2 id="specs-heading">Specifications</h2>
+    <table class="sf-specs">
+      <tr><th scope="row">Category</th><td>{{ product.get_category_display }}</td></tr>
+      <tr><th scope="row">SKU</th><td>RC-{{ product.id }}</td></tr>
+      <tr><th scope="row">Availability</th><td>{% if product.is_out_of_stock %}Out of stock{% else %}{{ product.available_stock }} in stock{% endif %}</td></tr>
+      <tr><th scope="row">Delivery</th><td>Free, 2–5 business days</td></tr>
+    </table>
+  </section>
+
+  {% if shopping_insights.reasons or shopping_insights.outlook or shopping_insights.review_summary %}
+  <section class="sf-panel sf-detail sf-insights" aria-labelledby="insights-heading">
+    <h2 id="insights-heading">Why shoppers choose this</h2>
+    <ul>
+      {% for reason in shopping_insights.reasons %}<li>{{ reason }}</li>{% endfor %}
+    </ul>
+    {% if shopping_insights.outlook %}
+      <p><strong>Price update:</strong> {{ shopping_insights.outlook.message }} Lowest recorded: ₦{{ shopping_insights.outlook.historical_low|floatformat:0|intcomma }}.</p>
+    {% endif %}
+    {% if shopping_insights.review_summary %}
+      <p><strong>Reviews:</strong> {{ shopping_insights.review_summary.positive }} of {{ shopping_insights.review_summary.total }} reviews are 4 or 5 stars (average {{ shopping_insights.review_summary.average }}/5).</p>
+    {% endif %}
+  </section>
   {% endif %}
 
-  <!-- Q&A Section -->
-  <div class="mt-5 pt-4 border-top">
-    <h4 class="mb-4 font-bold">❓ Questions & Answers</h4>
-    <p class="product-inline-prompt mb-4"><strong>Have a question?</strong> Ask other customers or check our reviews below for common questions about this product.</p>
-  </div>
+  {% if price_history %}
+  <section class="sf-panel sf-detail" aria-labelledby="price-history-heading">
+    <h2 id="price-history-heading">Price history</h2>
+    <div style="height:240px"><canvas id="priceHistoryChart" aria-label="Price history chart"></canvas></div>
+  </section>
+  {% endif %}
 
-  <!-- Reviews Section -->
-  <div class="mt-5 pt-4 border-top">
-    <div class="mb-4 flex items-center justify-between">
-      <h4 class="mb-0 font-bold">⭐ Customer Reviews ({{ reviews|length }})</h4>
-      {% if reviews %}
-        <span class="product-status-badge product-status-success">Highly Rated</span>
-      {% endif %}
-    </div>
+  <!-- Reviews -->
+  <section class="sf-panel sf-detail" id="reviews" aria-labelledby="reviews-heading">
+    <h2 id="reviews-heading">Customer reviews</h2>
+    {% if product.review_count %}
+      <div class="sf-review-summary">
+        <strong>{{ product.average_review_rating|floatformat:1 }}</strong>
+        <div>
+          <span class="sf-stars">{% for i in "12345" %}{% if forloop.counter <= product.average_review_rating %}★{% else %}<span class="is-empty">★</span>{% endif %}{% endfor %}</span>
+          <div class="ptile-cat">Based on {{ product.review_count }} review{{ product.review_count|pluralize }}</div>
+        </div>
+      </div>
+    {% endif %}
 
     {% for review in reviews %}
-      <div class="review-card mb-3 animate-card p-4">
-        <div class="mb-2 flex items-center justify-between">
-          <div>
-            <strong>{{ review.user.get_full_name|default:review.user.username }}</strong>
-            {% if review.verified_purchase %}
-              <span class="product-status-badge product-status-success ml-2">Verified Purchase ✅</span>
-            {% endif %}
-          </div>
-          <span class="text-warning">
-            {% for i in "12345" %}
-              {% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}
-            {% endfor %}
-          </span>
+      <article class="sf-review">
+        <div class="sf-review-head">
+          <span class="sf-stars" aria-label="{{ review.rating }} out of 5">{% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}<span class="is-empty">★</span>{% endif %}{% endfor %}</span>
+          <strong>{{ review.user.get_full_name|default:review.user.username }}</strong>
+          {% if review.verified_purchase %}<span class="sf-pill sf-pill-success"><i class="bi bi-bag-check"></i> Verified purchase</span>{% endif %}
         </div>
-        <p class="mb-2">{{ review.review_text }}</p>
-        <small class="text-slate-400">{{ review.created_at|date:"M d, Y" }}</small>
-      </div>
+        <p>{{ review.review_text }}</p>
+        <small>{{ review.created_at|date:"M d, Y" }}</small>
+      </article>
     {% empty %}
-      <p class="text-slate-400">No reviews yet. Be the first to leave one!</p>
+      <p class="ptile-cat" style="text-transform:none;letter-spacing:0;font-size:.95rem">No reviews yet. Be the first to share your experience.</p>
     {% endfor %}
 
-    <!-- Review Form -->
-    <form method="post" action="{% url 'products:submit-review' product.id %}" class="theme-card animate-card mt-4 rounded-xl border p-4 shadow-sm">
+    <form method="post" action="{% url 'products:submit-review' product.id %}" class="sf-review-form">
       {% csrf_token %}
-      <h5 class="mb-3 font-semibold">Write a Review</h5>
+      <h3>Write a review</h3>
       {% if user.is_authenticated %}
-        <div class="mb-3">
-          <label class="form-label">Your Review</label>
-          <textarea name="review_text" class="product-form-control" rows="3" required></textarea>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Rating</label>
-          <select name="rating" class="product-form-control" required>
-            <option value="">Select rating</option>
-            {% for i in "12345" %}
-              <option value="{{ i }}">{{ i }} star{% if i != '1' %}s{% endif %}</option>
-            {% endfor %}
+        <div>
+          <label for="review-rating">Rating</label>
+          <select id="review-rating" name="rating" class="sf-select" required>
+            <option value="">Select a rating</option>
+            <option value="5">5 – Excellent</option>
+            <option value="4">4 – Good</option>
+            <option value="3">3 – Average</option>
+            <option value="2">2 – Poor</option>
+            <option value="1">1 – Terrible</option>
           </select>
         </div>
-        <button type="submit" class="product-submit-button">
-          Submit Review
-        </button>
+        <div>
+          <label for="review-text">Your review</label>
+          <textarea id="review-text" name="review_text" class="sf-input" rows="4" required placeholder="What did you like or dislike?"></textarea>
+        </div>
+        <div><button type="submit" class="sf-btn sf-btn-primary">Submit review</button></div>
       {% else %}
-        <p class="product-inline-prompt mb-0">
-          Please <a href="{% url 'products:login' %}?next={{ request.path }}">log in</a> to leave a review.
-        </p>
+        <p><a href="{% url 'products:login' %}?next={{ request.path|urlencode }}">Sign in</a> to leave a review.</p>
       {% endif %}
     </form>
-  </div>
+  </section>
+
+  {% if ai_recommendations %}
+  <section>
+    <div class="sf-section-head"><h2>You may also like</h2></div>
+    <div class="sf-grid">
+      {% for rec in ai_recommendations %}
+        {% include 'partials/product_tile.html' with product=rec %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 </div>
 
-<!-- Recently Viewed Script -->
-<script>
-  function addToRecentlyViewed(productId) {
-    let recentlyViewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
-    recentlyViewed = recentlyViewed.filter(id => id != productId);
-    recentlyViewed.unshift(parseInt(productId));
-    recentlyViewed = recentlyViewed.slice(0, 10);
-    localStorage.setItem('recentlyViewed', JSON.stringify(recentlyViewed));
-  }
-  const productId = {{ product.id }};
-  addToRecentlyViewed(productId);
-</script>
+<div class="sf-zoom" id="image-zoom-modal" onclick="closeImageZoom()" role="dialog" aria-label="Image preview">
+  <button type="button" onclick="closeImageZoom()" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+  <img id="zoomed-image" src="{{ product.image_src }}" alt="{{ product.name }}" onclick="event.stopPropagation()">
+</div>
 
 <script>
-  function changeImage(thumb) {
+  (function () {
+    try {
+      const productId = {{ product.id }};
+      let viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]').filter(id => id != productId);
+      viewed.unshift(productId);
+      localStorage.setItem('recentlyViewed', JSON.stringify(viewed.slice(0, 10)));
+    } catch (e) {}
+  })();
+
+  function changeImage(button) {
+    document.querySelectorAll('.sf-thumbs button').forEach(b => b.classList.toggle('is-active', b === button));
     const main = document.getElementById('main-image');
     main.style.opacity = 0;
-    setTimeout(() => {
-      main.src = thumb.src;
-      main.style.opacity = 1;
-    }, 150);
+    setTimeout(() => { main.src = button.querySelector('img').src; main.style.opacity = 1; }, 120);
   }
-
-  function openImageZoom(image) {
-    const modal = document.getElementById('image-zoom-modal');
-    const zoomedImage = document.getElementById('zoomed-image');
-    if (modal && zoomedImage) {
-      zoomedImage.src = image.src;
-      modal.style.display = 'flex';
-    }
+  function openImageZoom() {
+    document.getElementById('zoomed-image').src = document.getElementById('main-image').src;
+    document.getElementById('image-zoom-modal').style.display = 'flex';
   }
-
   function closeImageZoom() {
-    const modal = document.getElementById('image-zoom-modal');
-    if (modal) {
-      modal.style.display = 'none';
-    }
+    document.getElementById('image-zoom-modal').style.display = 'none';
   }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeImageZoom(); });
 </script>
 
-<style>
-  .product-description {
-    border-left: 2px solid #f68b1e;
-    padding-left: 1rem;
-  }
-  .product-description-label {
-    margin: 0 0 .45rem;
-    color: #f68b1e;
-    font-size: .7rem;
-    font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-  }
-  .product-description-copy {
-    margin: 0;
-    color: #64748b;
-    font-size: .94rem;
-    line-height: 1.65;
-  }
-  [data-theme="dark"] .product-description-copy { color: #cbd5e1; }
-
-  /* ── Rating Badge ── */
-  .rating-badge {
-    background: linear-gradient(135deg, #f68b1e, #f6521e);
-    padding: 8px 12px;
-    border-radius: 12px;
-    text-align: right;
-    min-width: 70px;
-    box-shadow: 0 6px 16px -6px rgba(246, 82, 30, 0.5);
-  }
-  .rating-badge .stars {
-    font-weight: bold;
-    color: #fff;
-    display: block;
-    font-size: 1rem;
-  }
-  .rating-badge small { color: rgba(255,255,255,0.85) !important; }
-
-  /* ── Stock Badges ── */
-  .stock-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    padding: 6px 14px;
-    border-radius: 999px;
-    font-weight: 600;
-    font-size: 0.85rem;
-    z-index: 10;
-    animation: slidein 0.3s ease;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
-  }
-  .stock-badge.stock-in      { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; }
-  .stock-badge.stock-warning { background: linear-gradient(135deg, #f68b1e, #d97706); color: white; }
-  .stock-badge.stock-out     { background: linear-gradient(135deg, #ef4444, #b91c1c); color: white; }
-
-  /* ── Savings Banner ── */
-  .savings-banner {
-    background: linear-gradient(135deg, #7c3aed, #4c1d95);
-    color: white;
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 0.95rem;
-    text-align: center;
-    box-shadow: 0 6px 18px -8px rgba(124, 58, 237, 0.55);
-    animation: pulse 2s infinite;
-  }
-
-  .shopping-insights {
-    border: 1px solid rgba(246, 139, 30, .28);
-    border-radius: 12px;
-    background: rgba(246, 139, 30, .06);
-    padding: 1rem;
-  }
-  .shopping-insights-heading { display: flex; gap: .7rem; align-items: flex-start; }
-  .shopping-insights-heading > span { color: #f68b1e; font-size: 1.3rem; line-height: 1; }
-  .shopping-insights h4 { margin: 0; font-size: .95rem; font-weight: 700; }
-  .shopping-insights-heading p { margin: .15rem 0 0; color: #94a3b8; font-size: .78rem; }
-  .shopping-insights ul { margin: .8rem 0; padding-left: 1.25rem; color: #cbd5e1; font-size: .84rem; }
-  .shopping-insights li + li { margin-top: .35rem; }
-  .shopping-insight-note { border-top: 1px solid rgba(246, 139, 30, .2); color: #cbd5e1; font-size: .8rem; padding-top: .65rem; margin-top: .65rem; }
-  .shopping-insight-note span { display: block; color: #94a3b8; margin-top: .2rem; }
-  .authenticity-badge { display: inline-flex; align-items: center; gap: .3rem; margin: .5rem 0 0 .45rem; border: 1px solid rgba(34,197,94,.45); border-radius: 999px; background: rgba(34,197,94,.1); color: #4ade80; font-size: .72rem; font-weight: 700; padding: .22rem .55rem; }
-
-  /* ── Social Share ── */
-  .social-share-section .product-share-button {
-    border-radius: 999px;
-    font-size: 0.85rem;
-    padding: 6px 12px;
-    transition: all 0.3s ease;
-  }
-  .social-share-section .product-share-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  }
-  .product-share-button,
-  .product-outline-button,
-  .product-submit-button,
-  .modal-close-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid transparent;
-    border-radius: 10px;
-    cursor: pointer;
-    font-weight: 600;
-    text-decoration: none;
-    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
-  }
-  .product-share-button { gap: 6px; padding: 6px 12px; font-size: 0.85rem; }
-  .product-share-button:hover,
-  .product-outline-button:hover,
-  .product-submit-button:hover,
-  .modal-close-button:hover { transform: translateY(-1px); }
-  .product-share-whatsapp { color: #20c997; border-color: #20c997; background: transparent; }
-  .product-share-facebook { color: #60a5fa; border-color: #60a5fa; background: transparent; }
-  .product-share-twitter { color: #67d9ff; border-color: #67d9ff; background: transparent; }
-  .product-share-button:hover { background: rgba(103, 217, 255, 0.12); }
-  .product-outline-button { padding: 0.55rem 0.85rem; color: #fff; border-color: #7c3aed; background: linear-gradient(135deg, #7c3aed, #4c1d95); }
-  .product-submit-button { width: 100%; padding: 0.75rem 1rem; color: #fff; border-color: #f68b1e; background: linear-gradient(135deg, #f68b1e, #f6521e); box-shadow: 0 8px 20px -8px rgba(246, 82, 30, 0.55); }
-  .modal-close-button { color: #f8fafc; border-color: #475569; background: #111827; }
-  .recommendation-card,
-  .review-card {
-    overflow: hidden;
-    border: 1px solid rgba(124, 58, 237, 0.22);
-    border-radius: 16px;
-    background: linear-gradient(160deg, #150e28, #1c1233);
-    color: #e2e8f0;
-  }
-  .product-status-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.25rem 0.6rem; font-size: 0.75rem; font-weight: 700; }
-  .product-status-success { color: #4ade80; background: rgba(34, 197, 94, 0.16); }
-  .product-form-control { display: block; width: 100%; border: 1px solid #334155; border-radius: 10px; background: #150e28; color: #f8fafc; padding: 0.7rem 0.8rem; }
-  .product-form-control:focus { border-color: #f68b1e; outline: 0; box-shadow: 0 0 0 3px rgba(246, 139, 30, 0.18); }
-
-  /* ── Thumbnails ── */
-  .mobile-thumbs-col { gap: 0.5rem; }
-  .thumb-img {
-    width: 60px; height: 60px;
-    object-fit: cover;
-    border-radius: 12px;
-    cursor: pointer;
-    border: 2px solid rgba(148, 163, 184, 0.25);
-    transition: all 0.3s ease;
-  }
-  .thumb-img:hover { border-color: #F68B1E; transform: scale(1.1); box-shadow: 0 4px 14px -4px rgba(246, 139, 30, 0.5); }
-
-  /* ── Main Image ── */
-  .main-img-container {
-    background: linear-gradient(160deg, rgba(124, 58, 237, 0.06), rgba(246, 139, 30, 0.04));
-  }
-  .main-img-container img {
-    width: 100%; height: auto;
-    min-height: 280px; max-height: 420px;
-    object-fit: cover;
-    transition: transform 0.3s ease, opacity 0.3s ease;
-  }
-  .main-img-container:hover img { transform: scale(1.03); }
-
-  /* ── Image Zoom Modal ── */
-  #image-zoom-modal {
-    position: fixed; inset: 0;
-    display: none;
-    align-items: center; justify-content: center;
-    padding: 24px;
-    background: rgba(10, 6, 20, 0.85);
-    z-index: 1050;
-  }
-  .image-zoom-inner {
-    position: relative;
-    width: 100%; max-width: 900px; max-height: 92vh;
-  }
-  #zoomed-image {
-    width: 100%; height: auto;
-    border-radius: 18px;
-    box-shadow: 0 28px 80px rgba(0,0,0,0.55);
-  }
-
-  /* ── Animated Price ── */
-  .animated-price { color: #f6521e; font-size: 1.8rem; }
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50%       { transform: scale(1.02); }
-  }
-  @keyframes slidein {
-    from { opacity: 0; transform: translateX(20px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-
-  /* ── Animate Card ── */
-  .animate-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  .animate-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 16px 36px -18px rgba(76, 29, 149, 0.4);
-  }
-
-  /* ── Legendary Buttons ── */
-  .btn-legendary {
-    border-radius: 999px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  }
-  .btn-legendary:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-  }
-
-  /* ── Flash Sale ── */
-  .product-detail-sale {
-    background: linear-gradient(135deg, #1a1035, #2b1a4a 55%, #7c3aed);
-    border-radius: 18px;
-    padding: 18px;
-    margin-bottom: 20px;
-    color: white;
-    box-shadow: 0 14px 34px -14px rgba(76, 29, 149, 0.55);
-  }
-  .sale-status-icon   { font-size: 24px; margin-bottom: 8px; }
-  .sale-ends-label    { font-size: 12px; opacity: 0.9; margin-bottom: 5px; }
-  .sale-timer-display { font-size: 20px; font-weight: bold; letter-spacing: 1px; margin-bottom: 12px; color: #ffb877; }
-  .sale-discount-info {
-    display: flex; justify-content: space-between; align-items: center;
-    border-top: 1px solid rgba(255,255,255,0.15);
-    padding-top: 12px; margin-top: 8px;
-  }
-  .sale-discount-percentage { font-size: 28px; font-weight: bold; color: #f68b1e; }
-  .sale-original-price { font-size: 14px; text-decoration: line-through; opacity: 0.7; }
-  .sale-current-price  { font-size: 22px; font-weight: bold; }
-
-  /* ── Theme Card ── */
-  .theme-card {
-    background: linear-gradient(165deg, #150e28, #1c1233);
-    border-color: rgba(124, 58, 237, 0.22) !important;
-    color: #e2e8f0;
-    transition: background-color 0.5s ease, color 0.5s ease;
-  }
-
-  .product-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 1rem;
-  }
-  .product-action-button,
-  .product-action-save {
-    min-height: 46px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    border-radius: 12px;
-    padding: 0.7rem 1rem;
-    font-size: 0.92rem;
-    line-height: 1;
-    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
-  }
-  .product-action-button { flex: 1; }
-  .product-action-save {
-    flex: 0 0 46px;
-    width: 46px;
-    padding: 0;
-    border: 1px solid #d64b5b;
-    background: transparent;
-    color: #d64b5b;
-  }
-  .product-action-save:hover,
-  .product-action-save.is-saved {
-    background: #d64b5b;
-    border-color: #d64b5b;
-    color: #fff;
-  }
-  .product-action-primary {
-    border: 1px solid #f68b1e;
-    background: linear-gradient(135deg, #f68b1e, #f6521e);
-    color: #fff;
-    box-shadow: 0 8px 20px -8px rgba(246, 82, 30, 0.55);
-  }
-  .product-action-primary:hover,
-  .product-action-primary:focus-visible {
-    border-color: #ffad52;
-    background: linear-gradient(135deg, #ffad52, #f6702e);
-    color: #fff;
-  }
-  .product-action-secondary {
-    border: 1px solid #7c3aed;
-    background: transparent;
-    color: #a78bfa;
-  }
-  .product-action-secondary:hover,
-  .product-action-secondary:focus-visible {
-    background: rgba(124, 58, 237, 0.14);
-    color: #c4b5fd;
-  }
-  .product-action-button:hover,
-  .product-action-save:hover { transform: translateY(-1px); }
-  .product-inline-prompt {
-    color: #94a3b8;
-    font-size: 0.95rem;
-  }
-  .product-inline-prompt strong { color: #e2e8f0; }
-  .product-inline-prompt a {
-    color: #f68b1e;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-  .product-inline-prompt a:hover { color: #ffad52; }
-
-  /* ════════════════════════════════
-     PRODUCT INFO CARD
-  ════════════════════════════════ */
-  .price-history-card {
-    border: 1px solid rgba(246, 139, 30, 0.25);
-    border-radius: 16px;
-    padding: 12px 14px;
-    background: linear-gradient(135deg, #1c1233, #2a1a1a);
-  }
-  .price-history-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .price-history-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 10px;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.05);
-    font-size: 0.9rem;
-    color: #e2e8f0;
-  }
-
-  .product-info-card {
-    border: 1.5px solid rgba(246, 139, 30, 0.22);
-    border-radius: 16px;
-    overflow: hidden;
-    background: linear-gradient(165deg, #150e28, #1c1233);
-    box-shadow: 0 10px 28px -16px rgba(76, 29, 149, 0.5);
-  }
-  .product-info-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, rgba(246, 139, 30, 0.1), rgba(124, 58, 237, 0.1));
-    border-bottom: 1.5px solid rgba(246, 139, 30, 0.18);
-  }
-  .product-info-title {
-    font-weight: 700;
-    font-size: 0.95rem;
-    color: #f68b1e;
-    letter-spacing: 0.3px;
-  }
-  .product-info-rows { padding: 4px 0; }
-  .product-info-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    transition: background 0.2s ease;
-  }
-  .product-info-row:hover { background: rgba(246, 139, 30, 0.06); }
-  .info-icon-wrap {
-    width: 28px; height: 28px;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(246, 139, 30, 0.14);
-    border-radius: 8px;
-    flex-shrink: 0;
-  }
-  .info-label {
-    font-size: 0.8rem;
-    color: #94a3b8;
-    font-weight: 500;
-    width: 70px;
-    flex-shrink: 0;
-  }
-  .info-value {
-    font-size: 0.88rem;
-    color: #e2e8f0;
-    font-weight: 600;
-    flex: 1;
-  }
-
-  /* ── Responsive ── */
-  @media (max-width: 767px) {
-    .mobile-thumbs-col { gap: 0.3rem; }
-    .thumb-img { width: 50px; height: 50px; }
-    .main-img-container img { min-height: 240px; max-height: 300px; }
-    .animate-card { padding: 1rem !important; }
-    h3 { font-size: 1.1rem; }
-    .rating-badge { min-width: 60px; padding: 6px 10px; font-size: 0.85rem; }
-    .product-detail-sale { padding: 12px !important; margin-bottom: 15px !important; }
-    .sale-timer-display { font-size: 16px !important; }
-    .sale-discount-percentage { font-size: 22px !important; }
-    .btn-legendary { padding: 0.6rem 1rem !important; font-size: 0.9rem !important; }
-    .product-actions { gap: 8px; }
-    .product-action-button, .product-action-save { min-height: 44px; padding: 0.65rem 0.75rem; font-size: 0.82rem; }
-    .product-action-save { flex-basis: 44px; width: 44px; }
-    .social-share-section .btn-sm { padding: 5px 10px !important; font-size: 0.75rem !important; }
-  }
-  @media (min-width: 768px) {
-    .thumb-img { width: 70px; height: 70px; }
-    .main-img-container img { min-height: 350px; max-height: 450px; }
-  }
-
-  /* ════════════════════════════════
-     LIGHT THEME OVERRIDES
-     (the .theme-card / .animate-card / .product-info-card
-     etc. above are styled dark-first to match the wallet
-     and profile "legendary" look; these bring back a clean
-     light surface when the site is in light mode)
-  ════════════════════════════════ */
-  html:not([data-theme="dark"]) .theme-card,
-  html:not([data-theme="dark"]) .recommendation-card,
-  html:not([data-theme="dark"]) .review-card {
-    background: #ffffff;
-    color: #1f2937;
-    border-color: rgba(246, 139, 30, 0.2) !important;
-  }
-  html:not([data-theme="dark"]) .product-form-control {
-    background: #ffffff;
-    color: #1f2937;
-    border-color: #e2e8f0;
-  }
-  html:not([data-theme="dark"]) .product-info-card {
-    background: #ffffff;
-    box-shadow: 0 2px 12px rgba(246,139,30,0.08);
-  }
-  html:not([data-theme="dark"]) .product-info-header {
-    background: linear-gradient(135deg, #fff7ee, #fff3e0);
-  }
-  html:not([data-theme="dark"]) .info-value { color: #222; }
-  html:not([data-theme="dark"]) .info-label { color: #888; }
-  html:not([data-theme="dark"]) .price-history-card {
-    background: linear-gradient(135deg, #fffaf2, #fff3e0);
-    border-color: #f3d0a9;
-  }
-  html:not([data-theme="dark"]) .price-history-item {
-    background: rgba(0,0,0,0.03);
-    color: #1f2937;
-  }
-  html:not([data-theme="dark"]) .main-img-container {
-    background: transparent;
-    border-color: #e2e8f0;
-  }
-
-  /* ════════════════════════════════
-     DARK THEME
-  ════════════════════════════════ */
-  [data-theme="dark"] .thumb-img          { border-color: rgba(148, 163, 184, 0.25); }
-  [data-theme="dark"] .bg-light           { background-color: #1c1233 !important; color: #e2e8f0; }
-  [data-theme="dark"] .form-label         { color: #ddd; }
-  [data-theme="dark"] strong              { color: #e0e0e0; }
-  [data-theme="dark"] .social-share-section .product-share-button { background-color: rgba(255,255,255,0.03); }
-  [data-theme="dark"] .social-share-section .product-share-button:hover { background-color: rgba(246, 139, 30, 0.12); border-color: #f68b1e; }
-  [data-theme="dark"] .main-img-container   { background-color: rgba(124, 58, 237, 0.05); border-color: rgba(124, 58, 237, 0.2); }
-  [data-theme="dark"] h3,
-  [data-theme="dark"] h4,
-  [data-theme="dark"] h5,
-  [data-theme="dark"] h6                   { color: #e0e0e0; }
-  [data-theme="dark"] .text-muted          { color: #aaa; }
-  [data-theme="dark"] .border,
-  [data-theme="dark"] .border-bottom       { border-color: rgba(255,255,255,0.08) !important; }
-  [data-theme="dark"] .alert-info          { background-color: rgba(56, 130, 246, 0.14); color: #93c5fd; border-color: rgba(56, 130, 246, 0.3); }
-  [data-theme="dark"] .product-inline-prompt { color: #94a3b8; }
-  [data-theme="dark"] .product-inline-prompt strong { color: #e2e8f0; }
-  [data-theme="dark"] .btn-outline-success { color: #20c997; border-color: #20c997; }
-  [data-theme="dark"] .btn-outline-success:hover { background-color: #20c997; color: #000; }
-  [data-theme="dark"] .btn-outline-primary { color: #7c3aed; border-color: #7c3aed; }
-  [data-theme="dark"] .btn-outline-primary:hover { background-color: #7c3aed; color: #fff; }
-  [data-theme="dark"] .btn-outline-info    { color: #0dcaf0; border-color: #0dcaf0; }
-  [data-theme="dark"] .btn-outline-info:hover { background-color: #0dcaf0; color: #000; }
-
-  .price-history-chart {
-    min-height: 240px;
-  }
-  .price-history-chart canvas {
-    width: 100% !important;
-    height: 240px !important;
-  }
-</style>
-
+{% if price_history %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const chartCanvas = document.getElementById('priceHistoryChart');
-    if (!chartCanvas) {
-      return;
-    }
-
-    const priceHistoryEntries = [
-      {% for entry in price_history_chart %}
-      { date: "{{ entry.recorded_at|date:'M d' }}", price: {{ entry.price|floatformat:2 }} }{% if not forloop.last %},{% endif %}
-      {% endfor %}
+  document.addEventListener('DOMContentLoaded', function () {
+    const canvas = document.getElementById('priceHistoryChart');
+    const entries = [
+      {% for entry in price_history_chart %}{ date: "{{ entry.recorded_at|date:'M d' }}", price: {{ entry.price|floatformat:2 }} }{% if not forloop.last %},{% endif %}{% endfor %}
     ];
-
-    if (!priceHistoryEntries.length) {
-      return;
-    }
-
-    new Chart(chartCanvas, {
+    if (!canvas || !entries.length || !window.Chart) return;
+    const naira = new Intl.NumberFormat('en-NG', { maximumFractionDigits: 0 });
+    new Chart(canvas, {
       type: 'line',
       data: {
-        labels: priceHistoryEntries.map(item => item.date),
-        datasets: [{
-          label: 'Price',
-          data: priceHistoryEntries.map(item => item.price),
-          borderColor: '#F68B1E',
-          backgroundColor: 'rgba(246,139,30,0.16)',
-          borderWidth: 2,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          tension: 0.35,
-          fill: true,
-        }],
+        labels: entries.map(e => e.date),
+        datasets: [{ data: entries.map(e => e.price), borderColor: '#d92d20', backgroundColor: 'rgba(217,45,32,.08)', borderWidth: 2, pointRadius: 3, tension: .3, fill: true }],
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                return '₦' + context.parsed.y.toFixed(2);
-              }
-            }
-          }
-        },
-        scales: {
-          x: {
-            grid: { display: false },
-          },
-          y: {
-            beginAtZero: false,
-            ticks: {
-              callback: function(value) {
-                return '₦' + value;
-              }
-            }
-          }
-        }
-      }
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => '₦' + naira.format(c.parsed.y) } } },
+        scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => '₦' + naira.format(v) } } },
+      },
     });
   });
 </script>
+{% endif %}
 <script src="{% static 'js/flash-sale-timer.js' %}"></script>
-
 {% endblock %}

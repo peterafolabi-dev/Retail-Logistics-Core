@@ -875,8 +875,8 @@ def add_to_cart(request, item_id):
     request.session['cart'] = cart
     _sync_abandoned_cart(request, cart)
 
-    messages.success(request, f"🛒 {product.name} added to your cart! (₦{price:.2f})")
-    return redirect('products:product-list')
+    messages.success(request, f"🛒 {product.name} added to your cart! (₦{price:,.0f})")
+    return _redirect_back(request, 'products:product-list')
 
 
 def _get_cart_products(request, cart):
@@ -1483,6 +1483,25 @@ def _product_shopping_insights(product, reviews, price_history):
     return {'reasons': reasons, 'outlook': outlook, 'review_summary': review_summary}
 
 
+def _parse_rating(value):
+    """Return a 1-5 star rating from form input, or None if it is missing or invalid."""
+    try:
+        rating = int(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+    return rating if 1 <= rating <= 5 else None
+
+
+def _redirect_back(request, fallback):
+    """Redirect to the same-site page the request came from, or to ``fallback``."""
+    from django.utils.http import url_has_allowed_host_and_scheme
+
+    referer = request.META.get('HTTP_REFERER')
+    if referer and url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        return redirect(referer)
+    return redirect(fallback)
+
+
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     product.description = (product.description or '').strip()
@@ -1504,9 +1523,9 @@ def product_detail(request, product_id):
 
     if request.method == 'POST':
         if request.user.is_authenticated:
-            rating = request.POST.get('rating', '').strip()
+            rating = _parse_rating(request.POST.get('rating'))
             review_text = request.POST.get('review_text', '').strip()
-            if rating and review_text:
+            if rating is not None and review_text:
                 verified_purchase = False
                 completed_orders = Order.objects.filter(user=request.user, status='delivered', payment_status='paid', is_paid=True)
                 if OrderItem.objects.filter(order__in=completed_orders, product=product).exists():
@@ -1515,7 +1534,7 @@ def product_detail(request, product_id):
                     user=request.user,
                     product=product,
                     defaults={
-                        'rating': int(rating),
+                        'rating': rating,
                         'review_text': review_text,
                         'verified_purchase': verified_purchase,
                     }
@@ -1523,15 +1542,15 @@ def product_detail(request, product_id):
                 _score_review_for_fraud(review_obj)
                 messages.success(request, "💬 Thank you for your review!")
                 return redirect('products:product-detail', product_id=product.id)
-            elif request.POST.get('name') and request.POST.get('text') and request.POST.get('rating'):
-                comment_obj = Comment.objects.create(product=product, name=request.POST.get('name'), text=request.POST.get('text'), rating=request.POST.get('rating'))
+            elif request.POST.get('name') and request.POST.get('text') and _parse_rating(request.POST.get('rating')) is not None:
+                comment_obj = Comment.objects.create(product=product, name=request.POST.get('name'), text=request.POST.get('text'), rating=_parse_rating(request.POST.get('rating')))
                 _score_comment_for_fraud(comment_obj)
                 messages.success(request, "💬 Thank you for your review!")
                 return redirect('products:product-detail', product_id=product.id)
             else:
                 messages.error(request, "⚠️ Please provide both a rating and your review.")
-        elif request.POST.get('name') and request.POST.get('text') and request.POST.get('rating'):
-            comment_obj = Comment.objects.create(product=product, name=request.POST.get('name'), text=request.POST.get('text'), rating=request.POST.get('rating'))
+        elif request.POST.get('name') and request.POST.get('text') and _parse_rating(request.POST.get('rating')) is not None:
+            comment_obj = Comment.objects.create(product=product, name=request.POST.get('name'), text=request.POST.get('text'), rating=_parse_rating(request.POST.get('rating')))
             _score_comment_for_fraud(comment_obj)
             messages.success(request, "💬 Thank you for your review!")
             return redirect('products:product-detail', product_id=product.id)
@@ -1571,7 +1590,8 @@ def submit_review(request, product_id):
         rating = request.POST.get('rating', '').strip()
         review_text = request.POST.get('review_text', '').strip()
 
-        if not rating or not review_text:
+        rating = _parse_rating(rating)
+        if rating is None or not review_text:
             messages.error(request, "⚠️ Please provide both a rating and your review.")
             return redirect('products:product-detail', product_id=product.id)
 
@@ -1582,7 +1602,7 @@ def submit_review(request, product_id):
             user=request.user,
             product=product,
             defaults={
-                'rating': int(rating),
+                'rating': rating,
                 'review_text': review_text,
                 'verified_purchase': verified_purchase,
             }
@@ -1599,7 +1619,9 @@ def buy_now(request, product_id):
         messages.error(request, f"⚠️ {product.name} is out of stock.")
         return redirect('products:product-detail', product_id=product.id)
 
-    cart = {str(product.id): 1}
+    # Keep whatever is already in the cart; just make sure this item is in it.
+    cart = request.session.get('cart', {})
+    cart.setdefault(str(product.id), 1)
     request.session['cart'] = cart
     _sync_abandoned_cart(request, cart)
     messages.success(request, f"🛍️ {product.name} added for checkout!")

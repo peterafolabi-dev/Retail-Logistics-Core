@@ -4,7 +4,14 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>RedCart | Shop Smart, Live Better</title>
+    <title>{% block title %}RedCart | Shop Smart, Live Better{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Shop phones, laptops, fashion, home appliances and more at RedCart. Prices in naira with delivery across Nigeria.{% endblock %}">
+    <script>
+      try { document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light'); } catch (e) {}
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
@@ -719,14 +726,11 @@
       [data-theme="dark"] .original-price-text { color: #aaaaaa !important; }
     </style>
     <link href="{% static 'css/tailwind.output.css' %}" rel="stylesheet">
+    <link href="{% static 'css/storefront.css' %}" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
   </head>
 
   <body class="rc-page-loading">
-    <!-- Loader -->
-    <div id="loader">
-      <div class="spinner-border" role="status"></div>
-    </div>
-
     <!-- Global Toast Stack -->
     <div class="toast-stack" id="toast-stack"></div>
 
@@ -737,62 +741,101 @@
     </script>
     {% endif %}
 
-    <!-- Global cyber navigation -->
-    <header class="rc-global-nav" id="global-navigation">
-      <div class="rc-nav-inner">
-        <a class="rc-brand-mark" href="{% url 'products:landing' %}" aria-label="RedCart home">
-          <span class="rc-brand-orbit"><i></i></span>
-          <span class="rc-brand-word">RED<span>CART</span></span>
+    <div class="sf-topbar">
+      <div class="sf-container">
+        <span><i class="bi bi-truck"></i> Free delivery across Nigeria in 2–5 business days</span>
+        <span><i class="bi bi-shield-check"></i> <a href="{% url 'products:buyer-protection' %}">Buyer protection</a> on every order</span>
+        <span><i class="bi bi-headset"></i> <a href="{% url 'products:contact' %}">Help &amp; support</a></span>
+      </div>
+    </div>
+
+    <header class="sf-header" id="global-navigation">
+      <div class="sf-container sf-header-main">
+        <button class="sf-action sf-menu-btn" id="nav-menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav-drawer"><i class="bi bi-list"></i></button>
+
+        <a class="sf-logo" href="{% if user.is_authenticated %}{% url 'products:product-list' %}{% else %}{% url 'products:landing' %}{% endif %}" aria-label="RedCart home">
+          <span class="sf-logo-mark"><i class="bi bi-bag-fill"></i></span>
+          <span class="sf-logo-text">Red<b>Cart</b></span>
         </a>
 
-        <nav class="rc-nav-capsule" aria-label="Primary navigation">
-          {% if not user.is_authenticated %}<a class="rc-nav-link" href="{% url 'products:landing' %}">Home</a>{% endif %}
-          <a class="rc-nav-link" href="{% url 'products:product-list' %}">Shop</a>
-          <a class="rc-nav-link" href="{% url 'products:blog' %}">Blog</a>
-          <a class="rc-nav-link" href="{% url 'products:about' %}">About</a>
-          {% if user.is_authenticated %}<a class="rc-nav-link" href="{% url 'products:security-intelligence' %}">Intel</a>{% endif %}
-        </nav>
+        <div class="sf-search" role="search">
+          <form method="get" action="{% url 'products:product-list' %}" id="navbar-search-form">
+            <input type="search" name="search" id="navbar-search-input" placeholder="Search products, brands and categories" value="{{ request.GET.search|default:request.GET.q }}" autocomplete="off" aria-label="Search products">
+            <button type="submit"><i class="bi bi-search"></i><span class="sf-hide-mobile">Search</span></button>
+          </form>
+          <div class="recent-searches-dropdown" id="recent-searches-dropdown"><div class="recent-searches-header"><span>Recent searches</span><button type="button" onclick="clearAllSearches()">Clear all</button></div><div id="recent-searches-list"></div></div>
+        </div>
 
-        <div class="rc-nav-actions" style="gap: 0.75rem;">
-          <a class="rc-nav-action" href="{% url 'products:wishlist' %}" title="Wishlist"><i class="bi bi-heart"></i><span>Wishlist</span></a>
-          <a class="rc-nav-action rc-cart-action" href="{% url 'products:view-cart' %}" title="Cart" style="position: relative;"><i class="bi bi-cart3"></i><span>Cart</span><em id="nav-cart-badge">{{ cart_item_count }}</em></a>
+        <div class="sf-actions">
           {% if user.is_authenticated %}
-            <a class="rc-nav-action" href="{% url 'products:profile' %}">Profile</a>
-            <a class="rc-nav-action" href="{% url 'products:logout' %}">Logout</a>
+            <div class="sf-account" id="account-menu">
+              <button class="sf-action" type="button" id="account-menu-toggle" aria-haspopup="true" aria-expanded="false">
+                <i class="bi bi-person"></i><span class="sf-label">Hi, {{ user.first_name|default:user.username|truncatechars:14 }}</span>
+              </button>
+              <div class="sf-account-menu" role="menu">
+                <a href="{% url 'products:account-dashboard' %}" role="menuitem"><i class="bi bi-speedometer2"></i> My account</a>
+                <a href="{% url 'products:profile' %}" role="menuitem"><i class="bi bi-box-seam"></i> Orders &amp; profile</a>
+                <a href="{% url 'products:wallet' %}" role="menuitem"><i class="bi bi-wallet2"></i> Wallet</a>
+                <a href="{% url 'products:addresses' %}" role="menuitem"><i class="bi bi-geo-alt"></i> Addresses</a>
+                <a href="{% url 'products:notification-center' %}" role="menuitem"><i class="bi bi-bell"></i> Notifications</a>
+                <a href="{% url 'products:my-tickets' %}" role="menuitem"><i class="bi bi-life-preserver"></i> Support tickets</a>
+                <hr>
+                <a href="{% url 'products:logout' %}" class="sf-danger" role="menuitem"><i class="bi bi-box-arrow-right"></i> Sign out</a>
+              </div>
+            </div>
           {% else %}
-            <a class="rc-nav-action rc-nav-login" href="{% url 'products:login' %}">Login</a>
-            <a class="rc-nav-register" href="{% url 'products:register' %}">Register</a>
+            <a class="sf-action" href="{% url 'products:login' %}"><i class="bi bi-person"></i><span class="sf-label">Sign in</span></a>
           {% endif %}
-          <button class="rc-nav-icon" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme"><i class="bi bi-brightness-high-fill" id="theme-icon"></i></button>
-          <button class="rc-nav-menu" id="nav-menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false"><i class="bi bi-list"></i></button>
+          <a class="sf-action sf-hide-mobile" href="{% url 'products:wishlist' %}" title="Wishlist"><i class="bi bi-heart"></i><span class="sf-label">Wishlist</span></a>
+          <a class="sf-action" href="{% url 'products:view-cart' %}" title="Cart"><i class="bi bi-cart3"></i><em class="sf-badge" id="nav-cart-badge">{{ cart_item_count|default:0 }}</em><span class="sf-label">Cart</span></a>
+          <button class="sf-action" id="theme-toggle" type="button" title="Toggle dark mode" aria-label="Toggle dark mode"><i class="bi bi-moon" id="theme-icon"></i></button>
         </div>
       </div>
 
-      <div class="rc-nav-search">
-        <form method="get" action="{% url 'products:product-list' %}" id="navbar-search-form">
-          <i class="bi bi-terminal"></i>
-          <input type="search" name="search" id="navbar-search-input" placeholder="Search the RedCart index..." value="{{ request.GET.search }}" autocomplete="off">
-          <button type="submit">EXECUTE</button>
-        </form>
-        <div class="recent-searches-dropdown" id="recent-searches-dropdown"><div class="recent-searches-header"><span>Recent Searches</span><button onclick="clearAllSearches()">Clear All</button></div><div id="recent-searches-list"></div></div>
-      </div>
-
-      <aside class="rc-mobile-drawer" id="mobile-nav-drawer" aria-hidden="true">
-        <div class="rc-drawer-top"><span>RED/CART_OS</span><button id="nav-menu-close" type="button" aria-label="Close navigation"><i class="bi bi-x-lg"></i></button></div>
-        <div class="rc-drawer-status"><span class="rc-telemetry-dot"></span> SYSTEM TELEMETRY // ACTIVE</div>
-        <div class="rc-drawer-links">
-          {% if not user.is_authenticated %}<a href="{% url 'products:landing' %}">01 / Home</a>{% endif %}
-          <a href="{% url 'products:product-list' %}">02 / Shop</a>
-          <a href="{% url 'products:blog' %}">03 / Blog</a>
-          <a href="{% url 'products:about' %}">04 / About</a>
-          {% if user.is_authenticated %}<a href="{% url 'products:security-intelligence' %}">INTEL / Intelligence</a>{% endif %}
-          <a href="{% url 'products:wishlist' %}">05 / Wishlist</a>
-          <a href="{% url 'products:view-cart' %}">06 / Cart <em>{{ cart_item_count }}</em></a>
-          {% if user.is_authenticated %}<a href="{% url 'products:profile' %}">07 / Profile</a><a href="{% url 'products:logout' %}" class="rc-drawer-danger">Terminate session</a>{% else %}<a href="{% url 'products:login' %}">07 / Login</a><a href="{% url 'products:register' %}">08 / Register</a>{% endif %}
+      <nav class="sf-catnav" aria-label="Shop by category">
+        <div class="sf-container">
+          <a href="{% url 'products:product-list' %}" class="{% if request.resolver_match.url_name == 'product-list' and not request.GET.category %}is-active{% endif %}">All products</a>
+          <a href="{% url 'products:category-page' 'phones' %}">Phones</a>
+          <a href="{% url 'products:category-page' 'laptops' %}">Laptops</a>
+          <a href="{% url 'products:category-page' 'electronics' %}">Electronics</a>
+          <a href="{% url 'products:category-page' 'gaming' %}">Gaming</a>
+          <a href="{% url 'products:category-page' 'watches' %}">Watches</a>
+          <a href="{% url 'products:category-page' 'sneakers' %}">Sneakers</a>
+          <a href="{% url 'products:category-page' 'fashion' %}">Fashion</a>
+          <a href="{% url 'products:category-page' 'accessories' %}">Accessories</a>
+          <a href="{% url 'products:category-page' 'home-appliances' %}">Appliances</a>
+          <a href="{% url 'products:category-page' 'home-kitchen' %}">Home &amp; Kitchen</a>
+          <a href="{% url 'products:category-page' 'fitness' %}">Fitness</a>
+          <a href="{% url 'products:category-page' 'other' %}">Beauty &amp; more</a>
         </div>
-      </aside>
+      </nav>
     </header>
-    <div class="rc-nav-offset" aria-hidden="true"></div>
+
+    <aside class="sf-drawer" id="mobile-nav-drawer" aria-hidden="true" aria-label="Menu">
+      <div class="sf-drawer-head">
+        <span class="sf-logo-text">Red<b>Cart</b></span>
+        <button id="nav-menu-close" type="button" aria-label="Close menu"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <h6>Shop</h6>
+      <a href="{% url 'products:product-list' %}">All products</a>
+      <a href="{% url 'products:wishlist' %}">Wishlist</a>
+      <a href="{% url 'products:view-cart' %}">Cart ({{ cart_item_count|default:0 }})</a>
+      <h6>Account</h6>
+      {% if user.is_authenticated %}
+        <a href="{% url 'products:account-dashboard' %}">My account</a>
+        <a href="{% url 'products:profile' %}">Orders &amp; profile</a>
+        <a href="{% url 'products:logout' %}">Sign out</a>
+      {% else %}
+        <a href="{% url 'products:login' %}">Sign in</a>
+        <a href="{% url 'products:register' %}">Create account</a>
+      {% endif %}
+      <h6>Help</h6>
+      <a href="{% url 'products:faq' %}">FAQs</a>
+      <a href="{% url 'products:contact' %}">Contact us</a>
+      <a href="{% url 'products:about' %}">About RedCart</a>
+      <a href="{% url 'products:blog' %}">Blog</a>
+    </aside>
+    <div class="sf-drawer-backdrop" id="nav-drawer-backdrop"></div>
 
     <!-- AI Chat Widget -->
     <div class="ai-chat-widget">
@@ -845,91 +888,76 @@
     <!-- Scroll to top -->
     <button id="scrollTopBtn" title="Go to top"><i class="bi bi-arrow-up"></i></button>
 
-    <!-- Footer -->
-    <footer class="footer rc-page-footer">
-      <div class="rc-footer-inner">
-        <div class="rc-footer-intro">
+    <footer class="sf-footer">
+      <div class="sf-footer-news">
+        <div class="sf-container">
           <div>
-            <p class="rc-footer-kicker"><span aria-hidden="true"></span> RedCart field notes</p>
-            <h2>Good finds deserve a better last stop.</h2>
+            <h2>Get deals in your inbox</h2>
+            <p>New arrivals and flash sales, no spam. Unsubscribe any time.</p>
           </div>
-          <p class="rc-footer-intro-copy">A considered marketplace for the objects that make everyday life more interesting.</p>
+          <form id="newsletter-form" method="post" action="{% url 'products:newsletter-signup' %}">
+            {% csrf_token %}
+            <input type="email" name="email" id="newsletter-email" placeholder="Enter your email address" required aria-label="Email address">
+            <button type="submit" id="newsletter-btn" class="sf-btn sf-btn-primary">Subscribe</button>
+          </form>
         </div>
-        <div class="rc-footer-grid">
+      </div>
 
-          <!-- Top categories -->
-          <div class="rc-footer-column">
-            <h5><i class="bi bi-tags"></i> Top Categories</h5>
-            <ul class="rc-footer-categories">
-              <li><a href="{% url 'products:category-page' 'phones' %}"><i class="bi bi-phone"></i> Phones</a></li>
-              <li><a href="{% url 'products:category-page' 'laptops' %}"><i class="bi bi-laptop"></i> Laptops</a></li>
-              <li><a href="{% url 'products:category-page' 'gaming' %}"><i class="bi bi-controller"></i> Gaming</a></li>
-              <li><a href="{% url 'products:category-page' 'watches' %}"><i class="bi bi-watch"></i> Watches</a></li>
-              <li><a href="{% url 'products:category-page' 'sneakers' %}"><i class="bi bi-handbag"></i> Sneakers</a></li>
-              <li><a href="{% url 'products:category-page' 'electronics' %}"><i class="bi bi-plug"></i> Electronics</a></li>
-              <li><a href="{% url 'products:category-page' 'home-appliances' %}"><i class="bi bi-house-gear"></i> Home Appliances</a></li>
-              <li><a href="{% url 'products:category-page' 'fitness' %}"><i class="bi bi-activity"></i> Fitness</a></li>
-              <li><a href="{% url 'products:category-page' 'accessories' %}"><i class="bi bi-bag"></i> Accessories</a></li>
-              <li><a href="{% url 'products:category-page' 'fashion' %}"><i class="bi bi-bag-heart"></i> Fashion</a></li>
-              <li><a href="{% url 'products:category-page' 'home' %}"><i class="bi bi-house"></i> Home</a></li>
-              <li><a href="{% url 'products:category-page' 'beauty' %}"><i class="bi bi-stars"></i> Beauty</a></li>
-              <li><a href="{% url 'products:category-page' 'other' %}"><i class="bi bi-grid"></i> Other</a></li>
-            </ul>
+      <div class="sf-container sf-footer-grid">
+        <div class="sf-footer-brand">
+          <span class="sf-logo"><span class="sf-logo-mark"><i class="bi bi-bag-fill"></i></span><span class="sf-logo-text">Red<b>Cart</b></span></span>
+          <p>Phones, laptops, fashion and home essentials, priced in naira and delivered across Nigeria.</p>
+          <div class="sf-social">
+            <a href="https://whatsapp.com/channel/0029Vb8ou1k0wajuuzWo5d1Y" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp channel"><i class="bi bi-whatsapp"></i></a>
           </div>
-
-          <div class="rc-footer-column">
-            <h5><i class="bi bi-grid-3x3-gap-fill"></i> Explore</h5>
-            <ul>
-              <li><a href="{% url 'products:about' %}">About Us</a></li>
-              <li><a href="{% url 'products:blog' %}">Blog & News</a></li>
-              <li><a href="{% url 'products:faq' %}">FAQs</a></li>
-              <li><a href="{% url 'products:contact' %}">Contact Us</a></li>
-            </ul>
-          </div>
-
-          <div class="rc-footer-column">
-            <h5><i class="bi bi-shield-check"></i> Support</h5>
-            <ul>
-              <li><a href="{% url 'products:about' %}">About</a></li>
-              <li><a href="{% url 'products:contact' %}">Help Center</a></li>
-              <li><a href="{% url 'products:faq' %}">FAQs</a></li>
-              <li><a href="{% url 'products:privacy-policy' %}">Privacy Policy</a></li>
-              <li><a href="{% url 'products:terms-of-service' %}">Terms of Service</a></li>
-              <li><a href="{% url 'products:cookie-policy' %}">Cookie Policy</a></li>
-              <li><a href="{% url 'products:buyer-protection' %}">Buyer Protection</a></li>
-            </ul>
-          </div>
-
-          <div class="rc-footer-column">
-            <h5><i class="bi bi-envelope-paper"></i> The Dispatch</h5>
-            <p class="small">Fresh arrivals, sharp prices, and genuinely useful updates. No noise.</p>
-            <form class="newsletter-input" id="newsletter-form" method="post" action="{% url 'products:newsletter-signup' %}">
-              {% csrf_token %}
-              <input type="email" name="email" id="newsletter-email" placeholder="Your email address" required>
-              <button type="submit" id="newsletter-btn" aria-label="Subscribe to the newsletter"><i class="bi bi-send"></i></button>
-            </form>
-            <p class="small mt-2">Already subscribed? <a href="{% url 'products:newsletter-unsubscribe' %}">Unsubscribe</a>.</p>
-            <div class="social-links mt-4">
-              <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
-              <a href="#" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
-              <a href="#" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
-              <a href="https://whatsapp.com/channel/0029Vb8ou1k0wajuuzWo5d1Y" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp channel"><i class="bi bi-whatsapp"></i></a>
-            </div>
-          </div>
-
         </div>
-        <div class="footer-bottom rc-footer-bottom">
-          <div class="rc-footer-bottom-grid">
-            <div class="rc-footer-copyright">
-              <p><strong>REDCART</strong> &copy; 2026. Curated with intent.</p>
-            </div>
-            <div class="rc-footer-legal">
-              <a href="{% url 'products:terms-of-service' %}">Terms of Service</a> &nbsp;|&nbsp;
-              <a href="{% url 'products:privacy-policy' %}">Privacy Policy</a> &nbsp;|&nbsp;
-              <a href="{% url 'products:cookie-policy' %}">Cookie Policy</a> &nbsp;|&nbsp;
-              <a href="{% url 'products:buyer-protection' %}">Buyer Protection</a>
-            </div>
-          </div>
+        <div>
+          <h3>Shop</h3>
+          <ul>
+            <li><a href="{% url 'products:category-page' 'phones' %}">Phones</a></li>
+            <li><a href="{% url 'products:category-page' 'laptops' %}">Laptops</a></li>
+            <li><a href="{% url 'products:category-page' 'electronics' %}">Electronics</a></li>
+            <li><a href="{% url 'products:category-page' 'fashion' %}">Fashion</a></li>
+            <li><a href="{% url 'products:category-page' 'home-appliances' %}">Appliances</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Customer service</h3>
+          <ul>
+            <li><a href="{% url 'products:contact' %}">Contact us</a></li>
+            <li><a href="{% url 'products:faq' %}">FAQs</a></li>
+            <li><a href="{% url 'products:buyer-protection' %}">Buyer protection</a></li>
+            {% if user.is_authenticated %}<li><a href="{% url 'products:my-tickets' %}">Support tickets</a></li>{% endif %}
+          </ul>
+        </div>
+        <div>
+          <h3>My account</h3>
+          <ul>
+            {% if user.is_authenticated %}
+              <li><a href="{% url 'products:account-dashboard' %}">Account overview</a></li>
+              <li><a href="{% url 'products:profile' %}">Orders</a></li>
+            {% else %}
+              <li><a href="{% url 'products:login' %}">Sign in</a></li>
+              <li><a href="{% url 'products:register' %}">Create account</a></li>
+            {% endif %}
+            <li><a href="{% url 'products:wishlist' %}">Wishlist</a></li>
+            <li><a href="{% url 'products:view-cart' %}">Cart</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>About</h3>
+          <ul>
+            <li><a href="{% url 'products:about' %}">About RedCart</a></li>
+            <li><a href="{% url 'products:blog' %}">Blog</a></li>
+            <li><a href="{% url 'products:reviews' %}">Customer reviews</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="sf-footer-bottom">
+        <div class="sf-container">
+          <span>&copy; {% now "Y" %} RedCart. All rights reserved. &middot; <a href="{% url 'products:privacy-policy' %}">Privacy</a> &middot; <a href="{% url 'products:terms-of-service' %}">Terms</a> &middot; <a href="{% url 'products:cookie-policy' %}">Cookies</a> &middot; <a href="{% url 'products:newsletter-unsubscribe' %}">Unsubscribe</a></span>
+          <div class="sf-paymethods" aria-label="Payment methods"><span>Paystack</span><span>Visa</span><span>Mastercard</span><span>Verve</span><span>Bank transfer</span></div>
         </div>
       </div>
     </footer>
@@ -1052,7 +1080,28 @@
 
       navMenuToggle?.addEventListener('click', () => setNavDrawer(true));
       navMenuClose?.addEventListener('click', () => setNavDrawer(false));
+      document.getElementById('nav-drawer-backdrop')?.addEventListener('click', () => setNavDrawer(false));
       navDrawer?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => setNavDrawer(false)));
+
+      // ============ ACCOUNT MENU ============
+      const accountMenu = document.getElementById('account-menu');
+      const accountToggle = document.getElementById('account-menu-toggle');
+      accountToggle?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = accountMenu.classList.toggle('is-open');
+        accountToggle.setAttribute('aria-expanded', String(open));
+      });
+      document.addEventListener('click', (e) => {
+        if (accountMenu && !accountMenu.contains(e.target)) {
+          accountMenu.classList.remove('is-open');
+          accountToggle?.setAttribute('aria-expanded', 'false');
+        }
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        setNavDrawer(false);
+        accountMenu?.classList.remove('is-open');
+      });
 
       // ============ THEME TOGGLE ============
       const themeToggle = document.getElementById('theme-toggle');
@@ -1061,13 +1110,8 @@
       function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
-        if (theme === 'dark') {
-          themeIcon.className = 'bi bi-moon-fill';
-          themeIcon.style.color = '#ffd700';
-        } else {
-          themeIcon.className = 'bi bi-brightness-high-fill';
-          themeIcon.style.color = '#fff';
-        }
+        // Show the icon for the mode a click switches to.
+        themeIcon.className = theme === 'dark' ? 'bi bi-sun' : 'bi bi-moon';
       }
 
       applyTheme(localStorage.getItem('theme') || 'light');
@@ -1133,15 +1177,24 @@
           list.innerHTML = '<div class="no-recent-searches">No recent searches</div>';
           return;
         }
-        list.innerHTML = searches.map(s => `
-          <div class="recent-search-item" onclick="applySearch('${escapeHtml(s)}')">
+        list.innerHTML = searches.map((s, i) => `
+          <div class="recent-search-item" data-index="${i}">
             <i class="bi bi-clock-history"></i>
             <span>${escapeHtml(s)}</span>
-            <button class="remove-search" onclick="event.stopPropagation(); removeRecentSearch('${escapeHtml(s)}')">
+            <button type="button" class="remove-search" aria-label="Remove search">
               <i class="bi bi-x"></i>
             </button>
           </div>
         `).join('');
+        // Bind handlers instead of inline onclick so quotes in a search term can't break out of the attribute.
+        list.querySelectorAll('.recent-search-item').forEach(item => {
+          const term = searches[Number(item.dataset.index)];
+          item.addEventListener('click', () => applySearch(term));
+          item.querySelector('.remove-search').addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeRecentSearch(term);
+          });
+        });
       }
 
       function applySearch(term) {

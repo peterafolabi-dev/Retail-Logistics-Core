@@ -13,12 +13,11 @@ DEBUG = config('DEBUG', default='False').strip().lower() in {'1', 'true', 'yes',
 
 SECRET_KEY = os.environ.get('SECRET_KEY') or config('SECRET_KEY', default='')
 if not SECRET_KEY:
-    if DEBUG or IS_TESTING:
-        # Local development and the test runner only; production must set SECRET_KEY.
-        SECRET_KEY = 'django-insecure-local-development-key'
-    else:
+    if os.environ.get('RENDER'):
         from django.core.exceptions import ImproperlyConfigured
-        raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG is off.')
+        raise ImproperlyConfigured('SECRET_KEY must be set in the Render environment.')
+    # Local development and the test runner only; deployments must set SECRET_KEY.
+    SECRET_KEY = 'django-insecure-local-development-key'
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='retail-logistics-core.onrender.com,retail-logistics-core-t0xz.onrender.com,localhost,127.0.0.1').split(',')
 

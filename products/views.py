@@ -33,6 +33,25 @@ from django.core.cache import cache
 from .models import Notification, UserNotificationSettings, PushNotificationSubscription, SystemAlert, NotificationLog
 from functools import wraps
 from urllib.parse import urlencode
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.contrib.auth.views import redirect_to_login
+
+
+def cart_login_required(view_func):
+    """Shopping cart and checkout are for signed-in customers only.
+
+    Guests are sent to the login page and returned to the same URL afterwards,
+    so an "Add to cart" click completes once they have signed in.
+    """
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return view_func(request, *args, **kwargs)
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json':
+            return JsonResponse({'success': False, 'error': 'Please sign in to continue.', 'login_url': reverse('products:login')}, status=401)
+        messages.info(request, 'Please sign in to add items to your cart and check out.')
+        return redirect_to_login(request.get_full_path(), reverse('products:login'))
+    return wrapper
 
 logger = logging.getLogger(__name__)
 
@@ -711,8 +730,11 @@ def login_enhanced(request):
         if user is not None:
             login(request, user)
             messages.success(request, f"Welcome back, {user.first_name or user.username}!")
-            next_url = request.GET.get('next') or 'products:product-list'
-            return redirect(next_url)
+            next_url = request.GET.get('next')
+            # Only follow same-site paths; an unchecked ?next= is an open redirect.
+            if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+                return redirect(next_url)
+            return redirect('products:product-list')
         else:
             messages.error(request, "Invalid email/username or password.")
 
@@ -866,6 +888,7 @@ def account_dashboard(request):
     })
 
 
+@cart_login_required
 def add_to_cart(request, item_id):
     product = get_object_or_404(Product, id=item_id)
     if product.is_out_of_stock:
@@ -943,6 +966,7 @@ def _get_coupon_values(request, subtotal):
     return coupon_code, coupon_discount
 
 
+@cart_login_required
 def view_cart(request):
     cart = request.session.get('cart', {})
     products, total = _get_cart_products(request, cart)
@@ -959,6 +983,7 @@ def view_cart(request):
     })
 
 
+@cart_login_required
 def delete_from_cart(request, product_id):
     cart = request.session.get('cart', {})
     product_id = str(product_id)
@@ -975,6 +1000,7 @@ def delete_from_cart(request, product_id):
 
 
 @require_POST
+@cart_login_required
 def update_cart(request):
     try:
         payload = json.loads(request.body or "{}")
@@ -1019,6 +1045,7 @@ def recalculate_cart(request):
     return subtotal, discount, max(subtotal - discount, Decimal('0.00'))
 
 
+@cart_login_required
 def checkout(request):
     cart = request.session.get('cart', {})
     products, total = _get_cart_products(request, cart)
@@ -1062,6 +1089,7 @@ def checkout(request):
 
 
 @require_http_methods(["POST"])
+@cart_login_required
 def apply_coupon(request):
     try:
         payload = json.loads(request.body.decode('utf-8') or '{}')
@@ -1107,6 +1135,7 @@ def apply_coupon(request):
 
 
 @require_http_methods(["POST"])
+@cart_login_required
 def remove_coupon(request):
     request.session.pop('coupon_code', None)
     request.session.modified = True
@@ -1238,6 +1267,7 @@ def product_autocomplete(request):
     })
 
 
+@cart_login_required
 def confirm_payment(request):
     if request.method == 'POST':
         if not request.user.is_authenticated:
@@ -1509,11 +1539,17 @@ def _parse_rating(value):
 
 
 def _redirect_back(request, fallback):
-    """Redirect to the same-site page the request came from, or to ``fallback``."""
-    from django.utils.http import url_has_allowed_host_and_scheme
+    """Redirect to the same-site page the request came from, or to ``fallback``.
 
+    Auth pages are skipped so a post-login "add to cart" doesn't bounce back to the login form.
+    """
     referer = request.META.get('HTTP_REFERER')
-    if referer and url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+    auth_paths = (reverse('products:login'), reverse('products:register'))
+    if (
+        referer
+        and url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}, require_https=request.is_secure())
+        and not any(path in referer for path in auth_paths)
+    ):
         return redirect(referer)
     return redirect(fallback)
 
@@ -1629,6 +1665,7 @@ def submit_review(request, product_id):
     return redirect('products:product-detail', product_id=product.id)
 
 
+@cart_login_required
 def buy_now(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     if product.is_out_of_stock:

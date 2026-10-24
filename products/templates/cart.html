@@ -556,14 +556,6 @@
         {% endfor %}
 
         <div class="rc-prompts" aria-label="Shopping offers">
-          <div class="rc-prompt">
-            <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
-            <span class="rc-stock">Only 3 left in stock</span>
-          </div>
-          <div class="rc-prompt">
-            <i class="bi bi-eye-fill" aria-hidden="true"></i>
-            <span class="rc-viewers"><span id="rc-viewer-count">12</span> people viewing this now</span>
-          </div>
           <button type="button" class="rc-prompt rc-prompt-action" id="rc-referral">
             <i class="bi bi-gift-fill" aria-hidden="true"></i>
             <span><strong>Referral program</strong><br>Invite a friend and earn rewards</span>
@@ -914,14 +906,6 @@
     if (!promptMessage) return;
     promptMessage.textContent = text;
     promptMessage.className = 'rc-msg rc-wheel-result ' + (ok ? 'rc-msg-ok' : 'rc-msg-err');
-  }
-
-  var viewerCount = document.getElementById('rc-viewer-count');
-  if (viewerCount) {
-    setInterval(function () {
-      var current = parseInt(viewerCount.textContent, 10) || 12;
-      viewerCount.textContent = Math.max(4, current + (Math.random() > 0.5 ? 1 : -1));
-    }, 12000);
   }
 
   var referralBtn = document.getElementById('rc-referral');

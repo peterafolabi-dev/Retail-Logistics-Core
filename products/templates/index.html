@@ -1,1067 +1,170 @@
 {% extends 'base.html' %}
-{% load static %}
-{% load humanize %}
+{% load static humanize store_extras %}
 
-{% block title %}Shop - Browse Products by Category - RedCart{% endblock %}
+{% block title %}{% if query %}Results for "{{ query }}"{% elif selected_category %}{{ selected_category_label }}{% else %}Shop all products{% endif %} | RedCart{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/flash-sale-timer.css' %}">
-<style>
-  /* ── SHOP SHELL ── */
-  .shop-container {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 32px 20px;
-    background: #f4f5f7;
-    min-height: 100vh;
-  }
-  [data-theme="dark"] .shop-container {
-    background: #0a0a0f;
-  }
+<div class="sf-container sf-page">
+  <nav class="sf-breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'products:landing' %}">Home</a> <i class="bi bi-chevron-right"></i>
+    {% if selected_category %}
+      <a href="{% url 'products:product-list' %}">Shop</a> <i class="bi bi-chevron-right"></i>
+      <span>{{ selected_category_label }}</span>
+    {% else %}
+      <span>Shop</span>
+    {% endif %}
+  </nav>
 
-  /* ── HERO ── */
-  .hero-section {
-    display: grid;
-    grid-template-columns: minmax(0, 1.9fr) minmax(280px, 1fr);
-    gap: 28px;
-    padding: 36px 32px;
-    margin-bottom: 32px;
-    border-radius: 24px;
-    background: linear-gradient(135deg, rgba(102,126,234,0.12), rgba(255,255,255,0.95));
-    box-shadow: 0 12px 40px rgba(102,126,234,0.10);
-  }
-  [data-theme="dark"] .hero-section {
-    background: linear-gradient(135deg, rgba(102,126,234,0.18), rgba(15,15,25,0.97));
-    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-  }
+  <div class="sf-shop">
+    <aside class="sf-panel sf-filters" id="shop-filters" aria-label="Filters">
+      <form method="get" action="{% url 'products:product-list' %}">
+        {% if query %}<input type="hidden" name="search" value="{{ query }}">{% endif %}
+        <input type="hidden" name="sort" value="{{ selected_sort }}">
 
-  .hero-eyebrow {
-    display: inline-flex;
-    padding: 8px 16px;
-    border-radius: 999px;
-    background: rgba(102,126,234,0.14);
-    color: #1d2b56 !important;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    margin-bottom: 14px;
-  }
-  [data-theme="dark"] .hero-eyebrow {
-    color: #c8d4ff !important;
-    background: rgba(102,126,234,0.25);
-  }
+        <section>
+          <h3>Category</h3>
+          <ul class="sf-catlist">
+            <li><a href="?{% query_transform category='' page='' %}" class="{% if not selected_category %}is-active{% endif %}"><span>All categories</span></a></li>
+            {% for code, label, count in available_categories %}
+              <li><a href="?{% query_transform category=code page='' %}" class="{% if selected_category == code %}is-active{% endif %}"><span>{{ label }}</span><span>{{ count }}</span></a></li>
+            {% endfor %}
+          </ul>
+          {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+        </section>
 
-  .hero-section h1 {
-    font-size: 2.6rem;
-    line-height: 1.08;
-    margin-bottom: 14px;
-    color: var(--text-color);
-    font-weight: 800;
-  }
+        <section>
+          <h3>Price (₦)</h3>
+          <div class="sf-price-inputs">
+            <input class="sf-input" type="number" name="min_price" value="{{ min_price }}" min="0" step="1000" placeholder="Min" aria-label="Minimum price">
+            <input class="sf-input" type="number" name="max_price" value="{{ max_price }}" min="0" step="1000" placeholder="Max" aria-label="Maximum price">
+          </div>
+          <button type="submit" class="sf-btn sf-btn-dark sf-btn-block sf-btn-sm" style="margin-top:.6rem">Apply</button>
+        </section>
 
-  .hero-section p {
-    font-size: 0.97rem;
-    color: var(--text-color);
-    max-width: 560px;
-    margin-bottom: 22px;
-  }
+        {% if has_filters %}
+        <section>
+          <a href="{% url 'products:product-list' %}" class="sf-btn sf-btn-outline sf-btn-block sf-btn-sm">Clear all filters</a>
+        </section>
+        {% endif %}
+      </form>
+    </aside>
 
-  .hero-actions    { display: flex; flex-wrap: wrap; gap: 12px; }
-  .hero-btn        { padding: 12px 22px; border-radius: 999px; font-weight: 700; text-decoration: none; transition: transform 0.2s ease; }
-  .hero-btn:hover  { transform: translateY(-2px); }
-  .hero-btn-primary { background: #667eea; color: #fff !important; }
-  .hero-btn-outline {
-    background: #fff;
-    color: #334155 !important;
-    border: 1px solid rgba(102,126,234,0.24);
-  }
-  [data-theme="dark"] .hero-btn-outline {
-    background: #1e1e2e;
-    color: #c8d4ff !important;
-    border-color: rgba(102,126,234,0.4);
-  }
-
-  .hero-highlights  { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
-
-  .highlight-card {
-    padding: 18px 16px;
-    border-radius: 18px;
-    background: #fff;
-    border: 1px solid rgba(102,126,234,0.10);
-    box-shadow: 0 8px 20px rgba(102,126,234,0.07);
-  }
-  [data-theme="dark"] .highlight-card {
-    background: #1a1a2e;
-    border-color: rgba(102,126,234,0.2);
-    box-shadow: none;
-  }
-
-  .highlight-card strong {
-    display: block;
-    font-size: 1.5rem;
-    margin-bottom: 6px;
-    color: #1f2d63 !important;
-  }
-  [data-theme="dark"] .highlight-card strong { color: #c8d4ff !important; }
-
-  .highlight-card span { color: #556386 !important; font-size: 0.88rem; }
-  [data-theme="dark"] .highlight-card span { color: #aabbdd !important; }
-
-  /* ── RECENTLY VIEWED ── */
-  .recently-viewed-wrapper {
-    background: #fff;
-    border-radius: 20px;
-    padding: 16px 20px;
-    margin-bottom: 30px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  }
-  [data-theme="dark"] .recently-viewed-wrapper {
-    background: #1a1a24;
-    border: 1px solid #2a2a35;
-    box-shadow: none;
-  }
-
-  .recently-viewed-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-  }
-  .recently-viewed-title {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #667eea !important;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .clear-recent-btn {
-    font-size: 0.75rem;
-    color: #999;
-    background: none;
-    border: none;
-    cursor: pointer;
-  }
-  [data-theme="dark"] .clear-recent-btn { color: #777; }
-  .clear-recent-btn:hover { color: #dc3545; }
-
-  .recent-products {
-    display: flex;
-    gap: 15px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-  }
-  .recent-products::-webkit-scrollbar { height: 4px; }
-  .recent-products::-webkit-scrollbar-track { background: #eaeaea; border-radius: 10px; }
-  [data-theme="dark"] .recent-products::-webkit-scrollbar-track { background: #2a2a35; }
-  .recent-products::-webkit-scrollbar-thumb { background: #667eea; border-radius: 10px; }
-
-  .recent-product-item {
-    flex-shrink: 0;
-    width: 100px;
-    text-align: center;
-    text-decoration: none;
-    transition: transform 0.2s ease;
-  }
-  .recent-product-item:hover { transform: translateY(-3px); }
-
-  .recent-product-img {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    border-radius: 12px;
-    background: #f5f5f5;
-    margin-bottom: 6px;
-  }
-  [data-theme="dark"] .recent-product-img { background: #252530; }
-
-  .recent-product-name { font-size: 0.7rem; color: #333 !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  [data-theme="dark"] .recent-product-name { color: #e0e0e0 !important; }
-
-  .recent-product-price { font-size: 0.7rem; color: #667eea !important; font-weight: 600; }
-  [data-theme="dark"] .recent-product-price { color: #ff9999 !important; }
-
-  /* ── FILTER BAR ── */
-  .filter-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 18px;
-    flex-wrap: wrap;
-  }
-  .search-form {
-    display: flex;
-    flex: 1 1 360px;
-    gap: 10px;
-    min-width: 280px;
-  }
-  .search-input {
-    flex: 1;
-    min-width: 0;
-    padding: 12px 18px;
-    border-radius: 999px;
-    border: 1px solid rgba(102,126,234,0.18);
-    background: #fff;
-    color: #1f2937;
-    outline: none;
-  }
-  .search-input:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 4px rgba(102,126,234,0.12);
-  }
-  .filter-summary { color: #667eea !important; font-weight: 700; min-width: 200px; font-size: 0.92rem; }
-  [data-theme="dark"] .filter-summary { color: #99aaff !important; }
-
-  .shop-filter-form {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: end;
-    gap: 12px;
-    margin-bottom: 28px;
-    padding: 16px;
-    border: 1px solid rgba(102,126,234,0.18);
-    border-radius: 14px;
-    background: rgba(255,255,255,0.72);
-  }
-  .shop-filter-field {
-    display: flex;
-    flex: 1 1 150px;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 0;
-    color: #4f5d84;
-    font-size: 0.72rem;
-    font-weight: 700;
-  }
-  .shop-filter-price { flex-basis: 120px; }
-  .shop-filter-field input,
-  .shop-filter-field select {
-    width: 100%;
-    min-height: 40px;
-    padding: 9px 11px;
-    border: 1px solid rgba(102,126,234,0.22);
-    border-radius: 8px;
-    background: #fff;
-    color: #1f2937;
-    font: inherit;
-    font-size: 0.84rem;
-    font-weight: 500;
-    outline: none;
-  }
-  .shop-filter-field input:focus,
-  .shop-filter-field select:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.14); }
-  .shop-filter-submit,
-  .shop-filter-clear {
-    display: inline-flex;
-    flex: 1 1 150px;
-    min-height: 40px;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    padding: 9px 14px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-  .shop-filter-submit { border: 1px solid #667eea; background: #667eea; color: #fff; cursor: pointer; }
-  .shop-filter-submit:hover { background: #5a6edc; }
-  .shop-filter-clear { border: 1px solid rgba(102,126,234,0.22); color: #667eea; background: transparent; }
-  .shop-filter-clear:hover { background: rgba(102,126,234,0.1); }
-  [data-theme="dark"] .shop-filter-form { border-color: #2a2a35; background: #15151f; }
-  [data-theme="dark"] .shop-filter-field { color: #aabbdd; }
-  [data-theme="dark"] .shop-filter-field input,
-  [data-theme="dark"] .shop-filter-field select { border-color: #3a3a45; background: #1f1f2b; color: #f0f0f0; }
-  [data-theme="dark"] .shop-filter-clear { border-color: #3a3a45; color: #99aaff; }
-
-  @media (max-width: 640px) {
-    .shop-filter-field,
-    .shop-filter-price { flex-basis: calc(50% - 6px); }
-    .shop-filter-submit,
-    .shop-filter-clear { flex: 1 1 calc(50% - 6px); }
-  }
-
-  /* ── CATEGORY CHIPS ── */
-  .category-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 28px; }
-  .category-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    border-radius: 999px;
-    background: #fff;
-    color: #333 !important;
-    font-weight: 600;
-    font-size: 0.88rem;
-    text-decoration: none;
-    transition: all 0.22s ease;
-    border: 1px solid rgba(102,126,234,0.25);
-  }
-  [data-theme="dark"] .category-chip {
-    background: #1a1a24;
-    color: #e0e0e0 !important;
-    border-color: #3a3a45;
-  }
-  .category-chip svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; }
-  .category-chip:hover {
-    background: #667eea;
-    color: #fff !important;
-    border-color: #667eea;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102,126,234,0.25);
-  }
-
-  /* ── LATEST ROW ── */
-  .latest-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
-    gap: 16px;
-    margin-bottom: 36px;
-  }
-  .latest-card {
-    background: var(--card-bg);
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.05);
-    overflow: hidden;
-    transition: transform 0.22s ease, box-shadow 0.22s ease;
-  }
-  [data-theme="dark"] .latest-card { box-shadow: none; }
-  .latest-card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.14); }
-
-  .latest-image {
-    width: 100%;
-    height: 200px;
-    object-fit: contain;
-    display: block;
-    background: var(--bg-color);
-    padding: 10px;
-    box-sizing: border-box;
-  }
-  .latest-body  { padding: 16px; }
-  .latest-meta  { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .latest-meta span:last-child { font-size: 0.8rem; color: #888 !important; }
-  [data-theme="dark"] .latest-meta span:last-child { color: #aaa !important; }
-
-  .latest-description { color: #777 !important; font-size: 0.85rem; line-height: 1.5; margin-bottom: 14px; }
-  [data-theme="dark"] .latest-description { color: #bbbbbb !important; }
-
-  .latest-card .latest-body div[style] { color: var(--text-color) !important; }
-
-  .latest-cta {
-    display: inline-block;
-    padding: 9px 16px;
-    border-radius: 6px;
-    background: var(--main-color);
-    color: #fff !important;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 0.85rem;
-  }
-  .latest-cta:hover { background: #a82c2c; color: #fff !important; }
-
-  .product-badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 4px;
-    background: rgba(207, 61, 61, 0.12);
-    color: var(--main-color) !important;
-    font-size: 0.78rem;
-    font-weight: 700;
-  }
-  [data-theme="dark"] .product-badge { background: rgba(255, 112, 112, 0.16); color: #ff9b9b !important; }
-
-  .shop-section-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin: 2.5rem 0 1rem;
-  }
-  .shop-section-heading h2 { margin: 0; color: var(--text-color); font-size: 1.25rem; font-weight: 700; }
-  .shop-section-heading p { margin: 0; color: var(--text-color-secondary); font-size: .88rem; }
-
-  /* ── SEARCH INFO ── */
-  .search-info {
-    text-align: center;
-    margin-bottom: 20px;
-    padding: 14px;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-    font-size: 0.93rem;
-    color: #333 !important;
-  }
-  [data-theme="dark"] .search-info {
-    background: #1a1a24;
-    color: #e0e0e0 !important;
-    box-shadow: none;
-    border: 1px solid #2a2a35;
-  }
-  .search-info a { color: #667eea !important; text-decoration: none; font-weight: 600; }
-
-  /* ── CATEGORY SECTION ── */
-  .category-section {
-    background: #fff;
-    border-radius: 12px;
-    padding: 24px 20px 28px;
-    margin-bottom: 28px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    border: 1px solid #eaeaea;
-  }
-  [data-theme="dark"] .category-section {
-    background: #1a1a24;
-    border-color: #2a2a35;
-    box-shadow: none;
-  }
-
-  .category-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    padding-bottom: 14px;
-    border-bottom: 2px solid #f0f0f0;
-  }
-  [data-theme="dark"] .category-header { border-color: #2a2a35; }
-
-  .category-title {
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: #222 !important;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0;
-  }
-  [data-theme="dark"] .category-title { color: #f0f0f0 !important; }
-
-  .category-title-bar {
-    width: 4px;
-    height: 22px;
-    border-radius: 4px;
-    background: #f68b1e;
-    display: inline-block;
-    flex-shrink: 0;
-  }
-
-  .see-all-link {
-    color: #667eea !important;
-    font-size: 0.85rem;
-    font-weight: 700;
-    text-decoration: none;
-    border: 1px solid #667eea;
-    padding: 5px 14px;
-    border-radius: 999px;
-    transition: all 0.2s;
-    white-space: nowrap;
-    cursor: pointer;
-  }
-  .see-all-link:hover { background: #667eea; color: #fff !important; }
-
-  /* ── PRODUCT GRID ── */
-  .products-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-  @media (max-width: 1100px) { .products-grid { grid-template-columns: repeat(4, 1fr); } }
-  @media (max-width: 860px)  { .products-grid { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 580px)  { .products-grid { grid-template-columns: repeat(2, 1fr); } }
-
-  /* ── PRODUCT CARD ── */
-  .product-card {
-    background: #fff;
-    border-radius: 6px;
-    border: 1px solid #e8e8e8;
-    overflow: hidden;
-    transition: box-shadow 0.22s ease, transform 0.22s ease;
-    cursor: pointer;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-  }
-  [data-theme="dark"] .product-card {
-    background: #1a1a24;
-    border-color: #2a2a35;
-  }
-  .product-card:hover {
-    box-shadow: 0 4px 20px rgba(0,0,0,0.13);
-    transform: translateY(-3px);
-    border-color: #d0d0d0;
-  }
-  [data-theme="dark"] .product-card:hover {
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    border-color: #444;
-  }
-
-  .product-img-wrap {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    border-bottom: 1px solid #f0f0f0;
-    position: relative;
-  }
-  [data-theme="dark"] .product-img-wrap {
-    background: #252530;
-    border-color: #333;
-  }
-
-  .product-image {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    padding: 12px;
-    box-sizing: border-box;
-    transition: transform 0.3s ease;
-  }
-  .product-card:hover .product-image { transform: scale(1.06); }
-
-  .sale-corner-badge {
-    position: absolute; top: 8px; left: 8px;
-    background: #f90; color: #fff !important;
-    font-size: 0.7rem; font-weight: 800;
-    padding: 3px 8px; border-radius: 3px; z-index: 2;
-  }
-
-  .oos-overlay {
-    position: absolute; inset: 0;
-    background: rgba(255,255,255,0.78);
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; color: #999 !important; font-size: 0.82rem; letter-spacing: 0.05em;
-  }
-  [data-theme="dark"] .oos-overlay { background: rgba(15,15,25,0.78); color: #777 !important; }
-
-  .wishlist-icon-btn {
-    position: absolute; top: 8px; right: 8px;
-    width: 30px; height: 30px; border-radius: 50%;
-    background: #fff; border: 1px solid #e0e0e0;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; z-index: 3; transition: all 0.2s;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-  }
-  [data-theme="dark"] .wishlist-icon-btn {
-    background: #252530;
-    border-color: #444;
-  }
-  .wishlist-icon-btn:hover, .wishlist-icon-btn.active { border-color: #e53935; background: #fff5f5; }
-  [data-theme="dark"] .wishlist-icon-btn:hover,
-  [data-theme="dark"] .wishlist-icon-btn.active { background: #2a1a1a; border-color: #e53935; }
-  .wishlist-icon-btn i { font-size: 0.85rem; }
-
-  /* ── PRODUCT INFO ── */
-  .product-info { padding: 10px 10px 12px; display: flex; flex-direction: column; flex: 1; }
-
-  .product-name {
-    font-size: 0.82rem;
-    color: #333 !important;
-    font-weight: 500;
-    margin-bottom: 6px;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    min-height: 2.3em;
-  }
-  [data-theme="dark"] .product-name { color: #f0f0f0 !important; }
-
-  .price-block { margin-bottom: 8px; }
-
-  .product-price { font-size: 1rem; font-weight: 800; color: #222 !important; }
-  [data-theme="dark"] .product-price { color: #ffffff !important; }
-
-  .original-price { font-size: 0.75rem; color: #999 !important; text-decoration: line-through; margin-left: 4px; }
-  [data-theme="dark"] .original-price { color: #777 !important; }
-
-  .discount-pct { display: inline-block; font-size: 0.72rem; font-weight: 700; color: #f68b1e !important; margin-left: 4px; }
-
-  .btn-add-cart {
-    display: block; width: 100%; padding: 7px 0;
-    background: #667eea; color: #fff !important; text-align: center;
-    border-radius: 4px; font-size: 0.8rem; font-weight: 700;
-    text-decoration: none; border: none; cursor: pointer;
-    transition: background 0.2s ease; margin-top: auto;
-  }
-  .btn-add-cart:hover { background: #5a6edc; color: #fff !important; }
-  .btn-add-cart.oos  { background: #ccc; cursor: not-allowed; pointer-events: none; }
-  [data-theme="dark"] .btn-add-cart.oos { background: #444; color: #888 !important; }
-
-  .btn-view-small {
-    display: block;
-    text-align: center;
-    font-size: 0.75rem;
-    color: #667eea !important;
-    text-decoration: none;
-    margin-top: 5px;
-    font-weight: 600;
-  }
-  .btn-view-small:hover { text-decoration: underline; }
-
-  /* ── FLASH SALE BAR ── */
-  .flash-sale-banner {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 4px 8px;
-    background: linear-gradient(90deg,#f90,#ff4500);
-    font-size: 0.72rem; color: #fff !important; font-weight: 700;
-  }
-
-  /* ── NO PRODUCTS ── */
-  .no-products {
-    text-align: center;
-    padding: 60px 40px;
-    background: #fff;
-    border-radius: 16px;
-    margin: 40px 0;
-    border: 1px solid #eee;
-  }
-  [data-theme="dark"] .no-products {
-    background: #1a1a24;
-    border-color: #2a2a35;
-  }
-  .no-products svg { width: 80px; height: 80px; margin-bottom: 20px; opacity: 0.5; }
-  .no-products h3 { font-size: 1.5rem; margin-bottom: 12px; color: #333 !important; }
-  [data-theme="dark"] .no-products h3 { color: #f0f0f0 !important; }
-  .no-products p { color: #666 !important; margin-bottom: 20px; }
-  [data-theme="dark"] .no-products p { color: #cccccc !important; }
-
-  .clear-filters-btn {
-    display: inline-block;
-    padding: 10px 24px;
-    background: #667eea;
-    color: #fff !important;
-    border-radius: 999px;
-    text-decoration: none;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .clear-filters-btn:hover { background: #5a6edc; }
-
-  /* ── STAR RATINGS ── */
-  .star-rating { color: #f68b1e !important; font-size: 0.78rem; }
-  .star-rating .empty { color: #ddd !important; }
-  [data-theme="dark"] .star-rating .empty { color: #555 !important; }
-  .review-count { color: #888 !important; font-size: 0.72rem; margin-left: 3px; }
-  [data-theme="dark"] .review-count { color: #aaa !important; }
-
-  /* ── RESPONSIVE ── */
-  @media (max-width: 992px) {
-    .hero-section { grid-template-columns: 1fr; padding: 24px 18px; }
-    .hero-highlights { grid-template-columns: repeat(3, 1fr); }
-    .hero-section h1 { font-size: 2rem; }
-  }
-  @media (max-width: 600px) {
-    .hero-highlights { grid-template-columns: 1fr; }
-    .category-section { padding: 16px 12px 20px; }
-  }
-
-  /* ── ENTRANCE ANIMATION ── */
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .product-card { opacity: 1; animation: fadeInUp 0.4s ease forwards; }
-  .products-grid .product-card:nth-child(1)   { animation-delay: 0.04s; }
-  .products-grid .product-card:nth-child(2)   { animation-delay: 0.08s; }
-  .products-grid .product-card:nth-child(3)   { animation-delay: 0.12s; }
-  .products-grid .product-card:nth-child(4)   { animation-delay: 0.16s; }
-  .products-grid .product-card:nth-child(5)   { animation-delay: 0.20s; }
-  .products-grid .product-card:nth-child(n+6) { animation-delay: 0.24s; }
-</style>
-<link rel="stylesheet" href="{% static 'css/tailwind.output.css' %}">
-
-<div class="shop-container rc-page-enter !mx-auto !min-h-0 !max-w-7xl !bg-background !px-5 !py-10 text-foreground sm:!px-8">
-
-  <!-- RECENTLY VIEWED -->
-  <div id="recently-viewed-wrapper" class="recently-viewed-wrapper" style="display: none;">
-    <div class="recently-viewed-header">
-      <div class="recently-viewed-title">
-        <i class="bi bi-clock-history"></i> RECENTLY VIEWED
+    <div>
+      <div class="sf-toolbar">
+        <div>
+          <h1>{% if query %}Results for “{{ query }}”{% elif selected_category %}{{ selected_category_label }}{% else %}All products{% endif %}</h1>
+          <p>{{ page_obj.paginator.count }} item{{ page_obj.paginator.count|pluralize }}{% if page_obj.paginator.num_pages > 1 %} · Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}{% endif %}</p>
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <button type="button" class="sf-btn sf-btn-outline sf-btn-sm sf-filter-toggle" aria-controls="shop-filters" aria-expanded="false" id="filter-toggle"><i class="bi bi-sliders"></i> Filters</button>
+          <form method="get" action="{% url 'products:product-list' %}">
+            {% if query %}<input type="hidden" name="search" value="{{ query }}">{% endif %}
+            {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+            {% if min_price %}<input type="hidden" name="min_price" value="{{ min_price }}">{% endif %}
+            {% if max_price %}<input type="hidden" name="max_price" value="{{ max_price }}">{% endif %}
+            <label for="sort-select">Sort by</label>
+            <select class="sf-select" name="sort" id="sort-select" onchange="this.form.submit()">
+              <option value="newest"{% if selected_sort == 'newest' %} selected{% endif %}>Newest</option>
+              <option value="low-high"{% if selected_sort == 'low-high' %} selected{% endif %}>Price: low to high</option>
+              <option value="high-low"{% if selected_sort == 'high-low' %} selected{% endif %}>Price: high to low</option>
+              <option value="name"{% if selected_sort == 'name' %} selected{% endif %}>Name A–Z</option>
+            </select>
+            <noscript><button type="submit" class="sf-btn sf-btn-outline sf-btn-sm">Go</button></noscript>
+          </form>
+        </div>
       </div>
-      <button class="clear-recent-btn" onclick="clearRecentlyViewed()">Clear All</button>
-    </div>
-    <div id="recently-viewed-products" class="recent-products"></div>
-  </div>
 
-  <!-- HERO -->
-  <section class="hero-section !mb-10 !grid !grid-cols-1 !gap-8 !rounded-lg !border !border-border !bg-card !p-7 !shadow-sm lg:!grid-cols-[1.6fr_1fr] lg:!p-10">
-    <div class="hero-copy rc-hero-copy">
-      <span class="hero-eyebrow !mb-4 !rounded-md !bg-muted !px-3 !py-1.5 !text-xs !font-semibold !tracking-[0.12em] !text-primary">Premium shop experience</span>
-      <h1 class="!mb-4 !max-w-2xl !font-sans !text-4xl !font-bold !leading-tight !tracking-tight !text-foreground sm:!text-5xl">Shop smarter with curated categories and instant search.</h1>
-      <p class="!mb-7 !max-w-xl !text-base !leading-7 !text-muted-foreground">Explore top products and flash savings across all categories.</p>
-      <div class="hero-actions">
-        <a href="#category-{{ latest_products.0.category|default:'Uncategorized'|slugify }}" class="hero-btn hero-btn-primary !rounded-md !bg-primary !px-4 !py-2.5 !text-sm !font-semibold !text-primary-foreground !shadow-none">Shop Now</a>
+      {% if has_filters %}
+      <div class="sf-chips">
+        {% if query %}<a class="sf-chip" href="?{% query_transform search='' q='' page='' %}">“{{ query }}” <i class="bi bi-x"></i></a>{% endif %}
+        {% if selected_category %}<a class="sf-chip" href="?{% query_transform category='' page='' %}">{{ selected_category_label }} <i class="bi bi-x"></i></a>{% endif %}
+        {% if min_price %}<a class="sf-chip" href="?{% query_transform min_price='' page='' %}">From ₦{{ min_price|intcomma }} <i class="bi bi-x"></i></a>{% endif %}
+        {% if max_price %}<a class="sf-chip" href="?{% query_transform max_price='' page='' %}">Up to ₦{{ max_price|intcomma }} <i class="bi bi-x"></i></a>{% endif %}
       </div>
-    </div>
-    <div class="hero-highlights rc-hero-highlights">
-      <div class="highlight-card rc-stat !rounded-md !border !border-border !bg-background !p-4 !shadow-none"><strong class="!text-primary">{{ total_products }}+</strong><span>Products in stock</span></div>
-      <div class="highlight-card rc-stat !rounded-md !border !border-border !bg-background !p-4 !shadow-none"><strong class="!text-primary">24/7</strong><span>Shopping assistance</span></div>
-      <div class="highlight-card rc-stat !rounded-md !border !border-border !bg-background !p-4 !shadow-none"><strong class="!text-primary">Fast</strong><span>Live search &amp; filters</span></div>
-    </div>
-  </section>
-
-  <!-- FILTER BAR -->
-  <div class="filter-bar">
-    <div class="filter-summary">
-      {% if query or selected_category or min_price or max_price or selected_sort != 'newest' %}
-        Showing filtered results{% if query %} for "{{ query }}"{% endif %}.
-      {% else %}
-        Filter by category, price, or sort to find your perfect product.
       {% endif %}
+
+      {% if products %}
+        <div class="sf-grid">
+          {% for product in products %}
+            {% include 'partials/product_tile.html' %}
+          {% endfor %}
+        </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="sf-pagination" aria-label="Pagination">
+          {% if page_obj.has_previous %}
+            <a href="?{% query_transform page=page_obj.previous_page_number %}" aria-label="Previous page"><i class="bi bi-chevron-left"></i></a>
+          {% endif %}
+          {% for num in page_obj.paginator.page_range %}
+            {% if num == page_obj.number %}
+              <span class="is-current" aria-current="page">{{ num }}</span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' or num == 1 or num == page_obj.paginator.num_pages %}
+              <a href="?{% query_transform page=num %}">{{ num }}</a>
+            {% endif %}
+          {% endfor %}
+          {% if page_obj.has_next %}
+            <a href="?{% query_transform page=page_obj.next_page_number %}" aria-label="Next page"><i class="bi bi-chevron-right"></i></a>
+          {% endif %}
+        </nav>
+        {% endif %}
+      {% else %}
+        <div class="sf-panel sf-empty">
+          <i class="bi bi-search"></i>
+          <h2>No products found</h2>
+          <p>{% if query %}We couldn't find anything matching “{{ query }}”.{% else %}Nothing matches these filters.{% endif %} Try a different search or clear the filters.</p>
+          <a href="{% url 'products:product-list' %}" class="sf-btn sf-btn-primary">Browse all products</a>
+        </div>
+      {% endif %}
+
+      <section id="recently-viewed-wrapper" hidden>
+        <div class="sf-section-head">
+          <h2>Recently viewed</h2>
+          <a href="#" onclick="clearRecentlyViewed(); return false;">Clear</a>
+        </div>
+        <div class="sf-recent" id="recently-viewed-products"></div>
+      </section>
     </div>
   </div>
-
-  <form method="get" action="{% url 'products:product-list' %}" class="shop-filter-form" aria-label="Filter and sort products">
-    <label class="shop-filter-field">
-      <span>Category</span>
-      <select name="category">
-        <option value="">All categories</option>
-        {% for category_code, category_name in available_categories %}
-          <option value="{{ category_code }}"{% if selected_category == category_code %} selected{% endif %}>{{ category_name }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label class="shop-filter-field shop-filter-price">
-      <span>Min price</span>
-      <input type="number" name="min_price" value="{{ min_price }}" min="0" step="0.01" placeholder="0">
-    </label>
-    <label class="shop-filter-field shop-filter-price">
-      <span>Max price</span>
-      <input type="number" name="max_price" value="{{ max_price }}" min="0" step="0.01" placeholder="Any">
-    </label>
-    <label class="shop-filter-field">
-      <span>Sort</span>
-      <select name="sort">
-        <option value="newest"{% if selected_sort == 'newest' %} selected{% endif %}>Newest</option>
-        <option value="low-high"{% if selected_sort == 'low-high' %} selected{% endif %}>Price: low to high</option>
-        <option value="high-low"{% if selected_sort == 'high-low' %} selected{% endif %}>Price: high to low</option>
-        <option value="name"{% if selected_sort == 'name' %} selected{% endif %}>Name</option>
-      </select>
-    </label>
-    <button type="submit" class="shop-filter-submit">Apply filters</button>
-    {% if query or selected_category or min_price or max_price or selected_sort != 'newest' %}
-      <a href="{% url 'products:product-list' %}" class="shop-filter-clear">Clear</a>
-    {% endif %}
-  </form>
-
-  <!-- CATEGORY CHIPS -->
-  <div class="category-nav rc-category-nav !justify-start !gap-2">
-    <a href="{% url 'products:product-list' %}" class="category-chip !rounded-md !border-border !bg-card !px-3 !py-2 !text-sm !text-foreground hover:!border-primary hover:!bg-muted hover:!text-foreground">
-      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-      All
-    </a>
-    {% for category_code, category_name in available_categories %}
-      {% with slug=category_code|slugify %}
-        <a href="{% url 'products:category-page' slug %}" class="category-chip !rounded-md !border-border !bg-card !px-3 !py-2 !text-sm !text-foreground hover:!border-primary hover:!bg-muted hover:!text-foreground">
-          {% if category_code == 'Electronics' %}
-            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="6" width="20" height="12" rx="2"></rect><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-          {% elif category_code == 'Clothing' %}
-            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2v4M12 2l-2 4h4l-2-4zM18 10v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V10l6-4 6 4z"></path></svg>
-          {% elif category_code == 'Home' %}
-            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-          {% elif category_code == 'Sports' %}
-            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="2" x2="12" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line></svg>
-          {% elif category_code == 'Books' %}
-            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 4h16v16H4z"></path><line x1="8" y1="9" x2="16" y2="9"></line><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="12" y2="17"></line></svg>
-          {% elif category_code == 'Toys' %}
-            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="7" width="20" height="14" rx="2"></rect><line x1="16" y1="3" x2="16" y2="7"></line><line x1="8" y1="3" x2="8" y2="7"></line></svg>
-          {% else %}
-            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.06.07A12 12 0 0 0 12 17.2a12 12 0 0 0 6.2-2.2l.07-.07z"></path></svg>
-          {% endif %}
-          {{ category_name|default:'Uncategorized' }}
-        </a>
-      {% endwith %}
-    {% endfor %}
-  </div>
-
-  <!-- LATEST PRODUCTS -->
-  {% if latest_products %}
-  <div class="shop-section-heading">
-    <h2>Latest arrivals</h2>
-    <p>Freshly added to the catalog</p>
-  </div>
-  <div class="latest-row">
-    {% for product in latest_products %}
-      <div class="latest-card rc-latest-card">
-        <img src="{{ product.image_src|default:'https://placehold.co/400x220/f9f9f9/aaa?text=No+Image' }}"
-             alt="{{ product.name }}" class="latest-image"
-             onerror="this.src='https://placehold.co/400x220/f9f9f9/aaa?text=No+Image'">
-        <div class="latest-body">
-          <div class="latest-meta">
-            <span class="product-badge">New Arrival</span>
-            <span style="font-size:0.8rem;color:#888;">{{ product.category }}</span>
-          </div>
-          <div style="font-size:1rem;font-weight:800;margin-bottom:8px;color:#222;">{{ product.name|truncatechars:32 }}</div>
-          <p class="latest-description">{{ product.description|default:"Grab this latest release before it's gone."|truncatechars:80 }}</p>
-          <a href="{% url 'products:product-detail' product.id %}" class="latest-cta">View Now →</a>
-        </div>
-      </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  <!-- SEARCH INFO -->
-  {% if query %}
-  <div class="search-info">
-    Showing results for "<strong>{{ query }}</strong>"
-    <a href="{% url 'products:product-list' %}">Clear search</a>
-  </div>
-  {% endif %}
-
-  <!-- PRODUCTS BY CATEGORY -->
-  {% for category_code, category_data in products_by_category.items %}
-    {% if category_data.products %}
-    <div class="category-section rc-category-section !rounded-lg !border !border-border !bg-transparent !p-0 !shadow-none" id="category-{{ category_code|default:'Uncategorized'|slugify }}">
-
-      <div class="category-header">
-        <h2 class="category-title !font-sans !text-xl !font-bold !tracking-tight !text-foreground">
-          <span class="category-title-bar"></span>
-          {{ category_data.label|default:'Uncategorized' }}
-        </h2>
-        <a href="{% url 'products:category-page' category_code|slugify %}" class="see-all-link !rounded-md !border-border !px-3 !py-1.5 !text-primary hover:!bg-muted hover:!text-primary">See All →</a>
-      </div>
-
-      <div class="products-grid rc-product-grid">
-        {% for product in category_data.products %}
-        <div class="product-card rc-product-card !rounded-lg !border-border !bg-card !shadow-sm hover:!border-primary/40 hover:!shadow-md {% if product.has_active_sale %}has-sale{% endif %}"
-             data-category="{{ category_code|default:'Uncategorized'|slugify }}"
-             data-name="{{ product.name|lower }}">
-
-          <div class="product-img-wrap rc-product-media !border-border !bg-muted">
-            <button type="button"
-                    class="wishlist-icon-btn {% if product.id in wishlisted_ids %}active{% endif %}"
-                    data-product-id="{{ product.id }}" title="Save to wishlist">
-              <i class="bi {% if product.id in wishlisted_ids %}bi-heart-fill text-danger{% else %}bi-heart{% endif %}"></i>
-            </button>
-
-            {% if product.has_active_sale %}
-            <span class="sale-corner-badge">-{{ product.discount_percentage|floatformat:0 }}%</span>
-            {% endif %}
-
-            <img src="{{ product.image_src|default:'https://placehold.co/300x300/f9f9f9/aaa?text=No+Image' }}"
-                 alt="{{ product.name }}"
-                 class="product-image rc-product-image"
-                 onerror="this.src='https://placehold.co/300x300/f9f9f9/aaa?text=No+Image'">
-
-            {% if product.is_out_of_stock %}
-            <div class="oos-overlay">OUT OF STOCK</div>
-            {% endif %}
-          </div>
-
-          {% if product.has_active_sale %}
-          <div class="flash-sale-banner">
-            <span>⚡ Flash Sale</span>
-            <span class="flash-sale-timer"
-                  data-product-id="{{ product.id }}"
-                  data-sale-ends-at="{{ product.sale_ends_at|date:'c' }}">--:--:--</span>
-          </div>
-          {% endif %}
-
-          <div class="product-info !p-4">
-            <div class="product-name !text-sm !font-medium !text-foreground">{{ product.name }}</div>
-
-            <div class="price-block">
-              {% if product.has_active_sale %}
-                <span class="product-price !text-base !font-bold !text-foreground">₦{{ product.sale_price|floatformat:2|intcomma }}</span>
-                <span class="original-price">₦{{ product.price|floatformat:2|intcomma }}</span>
-                <span class="discount-pct">-{{ product.discount_percentage|floatformat:0 }}%</span>
-              {% else %}
-                <span class="product-price !text-base !font-bold !text-foreground">₦{{ product.price|floatformat:2|intcomma }}</span>
-              {% endif %}
-            </div>
-
-            <!-- STAR RATINGS -->
-            <div class="flex items-center gap-1 mb-1">
-              {% if product.review_count %}
-                <span class="star-rating">
-                  {% for i in "12345" %}
-                    {% if forloop.counter <= product.average_review_rating %}★{% else %}<span class="empty">☆</span>{% endif %}
-                  {% endfor %}
-                </span>
-                <span class="review-count">({{ product.review_count }})</span>
-              {% else %}
-                <span style="font-size:0.72rem;color:#bbb;">No reviews yet</span>
-              {% endif %}
-            </div>
-
-            {% if product.is_out_of_stock %}
-              <span class="btn-add-cart oos">Out of Stock</span>
-            {% else %}
-              <a href="{% url 'products:add-to-cart' product.id %}" class="btn-add-cart !rounded-md !bg-primary !py-2 !text-sm hover:!bg-primary">Add to Cart</a>
-            {% endif %}
-
-            <a href="{% url 'products:product-detail' product.id %}" class="btn-view-small">View details</a>
-          </div>
-
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-  {% endfor %}
-
-  <!-- EMPTY STATE -->
-  <div id="filter-no-products" class="no-products" style="display:none;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <circle cx="12" cy="12" r="10"></circle>
-      <line x1="12" y1="8" x2="12" y2="12"></line>
-      <line x1="12" y1="16" x2="12.01" y2="16"></line>
-    </svg>
-    <h3>No products match your filters</h3>
-    <p>Try adjusting your search criteria or browse all categories</p>
-    <button class="clear-filters-btn" onclick="clearAllFilters()">Clear All Filters</button>
-  </div>
-
-  {% if query and products_by_category.values|length == 0 %}
-  <div class="no-products">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <circle cx="11" cy="11" r="8"></circle>
-      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-    </svg>
-    <h3>No products found</h3>
-    <p>We couldn't find any products matching "<strong>{{ query }}</strong>"</p>
-  </div>
-  {% endif %}
-
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const cards         = Array.from(document.querySelectorAll('.product-card'));
-    const noProducts    = document.getElementById('filter-no-products');
-    const filterSummary = document.querySelector('.filter-summary');
-
-    const normalize = v => (v || '').toString().trim().toLowerCase();
-    let activeCategory = '';
-
-    const updateSummary = (count, cat) => {
-      let text = `${count} product${count === 1 ? '' : 's'} found`;
-      if (cat && cat !== 'all') text += ` in "${cat.replace(/-/g, ' ')}"`;
-      if (filterSummary) filterSummary.textContent = text;
-    };
-
-    const applyFilters = () => {
-      let visible = 0;
-      cards.forEach(card => {
-        const category = normalize(card.dataset.category);
-        const show = (!activeCategory || activeCategory === 'all' || category === activeCategory);
-        card.style.display = show ? '' : 'none';
-        if (show) visible++;
-      });
-      if (noProducts) noProducts.style.display = (visible === 0 && activeCategory) ? '' : 'none';
-      updateSummary(visible, activeCategory);
-    };
-
-    applyFilters();
-
-    const searchInput = document.getElementById('search-input');
-    const autocompleteList = document.getElementById('autocomplete-results');
-
-    if (searchInput && autocompleteList) {
-      let autocompleteTimer;
-      searchInput.addEventListener('input', () => {
-        clearTimeout(autocompleteTimer);
-        const query = searchInput.value.trim();
-        if (!query) { autocompleteList.innerHTML = ''; return; }
-        autocompleteTimer = setTimeout(async () => {
-          try {
-            const response = await fetch(`/products/api/autocomplete/?q=${encodeURIComponent(query)}`);
-            const result = await response.json();
-            if (result.success && Array.isArray(result.results)) {
-              autocompleteList.innerHTML = result.results.map(item => `<option value="${item.name}"></option>`).join('');
-            }
-          } catch (error) { console.warn('Autocomplete failed:', error); }
-        }, 220);
-      });
-    }
-
-    // Wishlist toggle
-    document.querySelectorAll('.wishlist-icon-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const productId = btn.dataset.productId;
-        try {
-          const response = await fetch(`/products/wishlist/toggle/${productId}/`, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCookie('csrftoken') }
-          });
-          const data = await response.json();
-          if (data.success) {
-            const icon = btn.querySelector('i');
-            if (data.action === 'added') {
-              icon.className = 'bi bi-heart-fill text-danger';
-              btn.classList.add('active');
-            } else {
-              icon.className = 'bi bi-heart';
-              btn.classList.remove('active');
-            }
-          }
-        } catch(e) { console.error('Wishlist error:', e); }
-      });
-    });
+  document.getElementById('filter-toggle')?.addEventListener('click', (e) => {
+    const panel = document.getElementById('shop-filters');
+    const open = panel.classList.toggle('is-open');
+    e.currentTarget.setAttribute('aria-expanded', String(open));
   });
 
-  function clearAllFilters() {
-    const cards = document.querySelectorAll('.product-card');
-    cards.forEach(card => card.style.display = '');
-    document.getElementById('filter-no-products').style.display = 'none';
-    if (document.querySelector('.filter-summary')) {
-      document.querySelector('.filter-summary').textContent = `${cards.length} products found`;
-    }
-  }
-
   async function displayRecentlyViewed() {
-    const recentlyViewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+    const wrapper = document.getElementById('recently-viewed-wrapper');
     const container = document.getElementById('recently-viewed-products');
-    const wrapper   = document.getElementById('recently-viewed-wrapper');
-    if (!container || recentlyViewed.length === 0) { if (wrapper) wrapper.style.display = 'none'; return; }
+    let ids = [];
+    try { ids = JSON.parse(localStorage.getItem('recentlyViewed') || '[]'); } catch (e) {}
+    if (!ids.length) { wrapper.hidden = true; return; }
     try {
-      const response = await fetch('/products/api/recently-viewed/', {
+      const response = await fetch('{% url "products:api-recently-viewed" %}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-        body: JSON.stringify({ ids: recentlyViewed })
+        body: JSON.stringify({ ids })
       });
       const data = await response.json();
-      if (data.success && data.recently_viewed && data.recently_viewed.length > 0) {
-        container.innerHTML = data.recently_viewed.map(product => `
-          <a href="/products/product/${product.id}/" class="recent-product-item">
-            <img src="${product.image_src}" class="recent-product-img" alt="${product.name}">
-            <div class="recent-product-name">${product.name.length > 15 ? product.name.substring(0, 12) + '...' : product.name}</div>
-            <div class="recent-product-price">&#8358;${parseFloat(product.price).toFixed(2)}</div>
-          </a>
-        `).join('');
-        wrapper.style.display = 'block';
-      } else { wrapper.style.display = 'none'; }
-    } catch(e) { if (wrapper) wrapper.style.display = 'none'; }
+      if (!data.success || !data.recently_viewed?.length) { wrapper.hidden = true; return; }
+      const naira = new Intl.NumberFormat('en-NG', { maximumFractionDigits: 0 });
+      container.innerHTML = data.recently_viewed.map(p => `
+        <a href="/products/product/${Number(p.id)}/">
+          <img src="${escapeHtml(p.image_src)}" alt="${escapeHtml(p.name)}" loading="lazy">
+          <div>${escapeHtml(p.name)}</div>
+          <strong>₦${naira.format(parseFloat(p.price) || 0)}</strong>
+        </a>`).join('');
+      wrapper.hidden = false;
+    } catch (e) { wrapper.hidden = true; }
   }
 
   function clearRecentlyViewed() {
-    localStorage.removeItem('recentlyViewed');
+    try { localStorage.removeItem('recentlyViewed'); } catch (e) {}
     displayRecentlyViewed();
-    if (window.showToast) window.showToast('Recently viewed cleared', 'info');
-  }
-
-  function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-      const cookies = document.cookie.split(';');
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
-    }
-    return cookieValue;
   }
 
   document.addEventListener('DOMContentLoaded', displayRecentlyViewed);
 </script>
-
 <script src="{% static 'js/flash-sale-timer.js' %}"></script>
 {% endblock content %}

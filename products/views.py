@@ -373,6 +373,9 @@ def paystack_callback(request):
     return paystack_verify(request)
 
 
+SHOP_PAGE_SIZE = 24
+
+
 def index(request):
     query = (request.GET.get('q') or request.GET.get('search') or '').strip()
     category = request.GET.get('category', '').strip()
@@ -393,9 +396,17 @@ def index(request):
     )
 
     if query:
-        all_products = all_products.filter(name__icontains=query)
+        all_products = all_products.filter(
+            Q(name__icontains=query) | Q(category__icontains=query) | Q(description__icontains=query)
+        )
 
-    if category and category in category_values:
+    # Counts reflect the search but not the category filter, so the sidebar stays useful.
+    category_counts = dict(
+        all_products.values_list('category').annotate(total=Count('id')).values_list('category', 'total')
+    )
+    if category and category not in category_values:
+        category = ''
+    if category:
         all_products = all_products.filter(category=category)
 
     try:
@@ -418,26 +429,10 @@ def index(request):
     }
     if sort not in sort_options:
         sort = 'newest'
-    all_products = all_products.order_by(sort_options[sort], '-id')
+    all_products = all_products.order_by(sort_options[sort], '-id').prefetch_related('reviews')
 
-    products_by_category = {}
-
-    HOMEPAGE_LIMIT = 10
-
-    for product in all_products:
-        code = product.category or 'Uncategorized'
-
-        if query and query.lower() not in product.name.lower():
-            continue
-
-        if code not in products_by_category:
-            products_by_category[code] = {'label': code, 'products': [], 'total': 0}
-        products_by_category[code]['total'] += 1
-
-        if len(products_by_category[code]['products']) < HOMEPAGE_LIMIT:
-            products_by_category[code]['products'].append(product)
-
-    latest_products = list(all_products.order_by('-id')[:8])
+    paginator = Paginator(all_products, SHOP_PAGE_SIZE)
+    page_obj = paginator.get_page(request.GET.get('page'))
 
     wishlisted_ids = []
     if request.user.is_authenticated:
@@ -446,14 +441,20 @@ def index(request):
         )
 
     context = {
-        'products_by_category': products_by_category,
+        'products': page_obj.object_list,
+        'page_obj': page_obj,
         'query': query,
         'selected_category': category,
+        'selected_category_label': category_labels.get(category, category),
         'min_price': min_price,
         'max_price': max_price,
         'selected_sort': sort,
-        'available_categories': available_categories,
-        'latest_products': latest_products,
+        'available_categories': [
+            (value, label, category_counts.get(value, 0))
+            for value, label in available_categories
+            if category_counts.get(value)
+        ],
+        'has_filters': bool(query or category or min_price or max_price),
         'wishlisted_ids': wishlisted_ids,
         'total_products': Product.objects.count(),
     }

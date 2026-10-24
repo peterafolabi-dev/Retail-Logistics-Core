@@ -1,0 +1,46 @@
+{% load humanize %}
+{# Product grid tile. Expects `product`; optional `wishlisted_ids`. #}
+<article class="ptile">
+  <a href="{% url 'products:product-detail' product.id %}" class="ptile-media" aria-label="{{ product.name }}">
+    {% if product.has_active_sale %}
+      <span class="ptile-tag">-{{ product.discount_percentage|floatformat:0 }}%</span>
+    {% endif %}
+    <img src="{{ product.image_src }}" alt="{{ product.name }}" loading="lazy"
+         onerror="this.onerror=null;this.src='https://placehold.co/500x500/f3f4f6/9ca3af?text=No+Image'">
+    {% if product.is_out_of_stock %}
+      <span class="ptile-oos">Out of stock</span>
+    {% endif %}
+  </a>
+  <button type="button" class="ptile-wish wishlist-icon-btn {% if product.id in wishlisted_ids %}active{% endif %}"
+          data-product-id="{{ product.id }}"
+          aria-label="{% if product.id in wishlisted_ids %}Remove from wishlist{% else %}Save to wishlist{% endif %}">
+    <i class="bi {% if product.id in wishlisted_ids %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+  </button>
+
+  <div class="ptile-body">
+    <span class="ptile-cat">{{ product.get_category_display }}</span>
+    <a href="{% url 'products:product-detail' product.id %}" class="ptile-name">{{ product.name }}</a>
+    <div class="ptile-rating">
+      {% if product.review_count %}
+        <span class="sf-stars" aria-label="Rated {{ product.average_review_rating }} out of 5">{% for i in "12345" %}{% if forloop.counter <= product.average_review_rating %}★{% else %}<span class="is-empty">★</span>{% endif %}{% endfor %}</span>
+        <span>({{ product.review_count }})</span>
+      {% endif %}
+    </div>
+    <div class="ptile-price">
+      {% if product.has_active_sale %}
+        <span class="sf-price">₦{{ product.sale_price|floatformat:0|intcomma }}</span>
+        <span class="sf-price-old">₦{{ product.price|floatformat:0|intcomma }}</span>
+      {% else %}
+        <span class="sf-price">₦{{ product.price|floatformat:0|intcomma }}</span>
+      {% endif %}
+    </div>
+    {% if product.has_active_sale %}
+      <span class="ptile-timer"><i class="bi bi-lightning-charge-fill"></i> Ends in <span class="flash-sale-timer" data-product-id="{{ product.id }}" data-sale-ends-at="{{ product.sale_ends_at|date:'c' }}">--:--:--</span></span>
+    {% endif %}
+    {% if product.is_out_of_stock %}
+      <span class="sf-btn sf-btn-outline sf-btn-block is-disabled">Out of stock</span>
+    {% else %}
+      <a href="{% url 'products:add-to-cart' product.id %}" class="sf-btn sf-btn-primary sf-btn-block"><i class="bi bi-cart-plus"></i> Add to cart</a>
+    {% endif %}
+  </div>
+</article>

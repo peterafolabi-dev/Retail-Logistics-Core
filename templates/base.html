@@ -1567,8 +1567,9 @@
 
       // ============ WISHLIST ============
       async function handleWishlistClick(event) {
-        const button = event.target.closest('.btn-wishlist');
+        const button = event.target.closest('.btn-wishlist, .wishlist-icon-btn');
         if (!button) return;
+        event.preventDefault();
         const productId = button.dataset.productId;
         if (!productId) return;
         const url = '{% url "products:toggle-wishlist" 0 %}'.replace('/0/', `/${productId}/`);
@@ -1584,9 +1585,14 @@
           return;
         }
         const liked = data.action === 'added';
-        const isProductAction = button.classList.contains('product-action-save');
-        button.classList.toggle(isProductAction ? 'is-saved' : 'btn-danger', liked);
-        button.classList.toggle(isProductAction ? 'is-unsaved' : 'btn-outline-danger', !liked);
+        if (button.classList.contains('wishlist-icon-btn')) {
+          button.classList.toggle('active', liked);
+          button.setAttribute('aria-label', liked ? 'Remove from wishlist' : 'Save to wishlist');
+        } else {
+          const isProductAction = button.classList.contains('product-action-save');
+          button.classList.toggle(isProductAction ? 'is-saved' : 'btn-danger', liked);
+          button.classList.toggle(isProductAction ? 'is-unsaved' : 'btn-outline-danger', !liked);
+        }
         const icon = button.querySelector('i');
         if (icon) {
           icon.classList.toggle('bi-heart-fill', liked);

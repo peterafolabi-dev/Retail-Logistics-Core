@@ -578,10 +578,10 @@ def recent_order_activity_api(request):
 
 
 def landing_page(request):
-    featured_products = Product.objects.all().order_by('-id')[:6]
-
     if request.user.is_authenticated:
         return redirect('products:product-list')
+
+    featured_products = Product.objects.order_by('-id').prefetch_related('reviews')[:10]
 
     if request.method == 'POST':
         first_name = request.POST.get('first_name', '').strip()
@@ -624,7 +624,23 @@ def landing_page(request):
         messages.success(request, f"✅ Account created! Welcome, {username}. Please log in.")
         return redirect('products:login')
 
-    return render(request, 'landing.html', {'featured_products': featured_products})
+    now = timezone.now()
+    deal_products = (
+        Product.objects.filter(sale_price__isnull=False, sale_ends_at__gt=now, sale_price__lt=F('price'))
+        .order_by('sale_ends_at')
+        .prefetch_related('reviews')[:5]
+    )
+    top_rated = (
+        Product.objects.annotate(avg_rating=Avg('reviews__rating'), num_reviews=Count('reviews'))
+        .filter(num_reviews__gt=0)
+        .order_by('-avg_rating', '-num_reviews')
+        .prefetch_related('reviews')[:5]
+    )
+    return render(request, 'landing.html', {
+        'featured_products': featured_products,
+        'deal_products': deal_products,
+        'top_rated': top_rated,
+    })
 
 
 def login_page(request):

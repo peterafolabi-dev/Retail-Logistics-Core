@@ -364,7 +364,7 @@ body {
 .sf-description { color: var(--sf-text-2) !important; line-height: 1.7; max-width: 75ch; }
 .sf-description p { margin: 0 0 1rem; color: var(--sf-text-2) !important; }
 .sf-description h3 { font-size: 1rem; font-weight: 700; margin: 1.25rem 0 .5rem; color: var(--sf-text) !important; }
-.sf-description ul { padding-left: 1.2rem; margin: 0 0 1rem; }
+.sf-description ul, .sf-insights ul { list-style: disc; padding-left: 1.2rem; margin: 0 0 1rem; }
 .sf-description li { margin-bottom: .35rem; color: var(--sf-text-2) !important; }
 .sf-specs { width: 100%; border-collapse: collapse; font-size: .9rem; max-width: 640px; }
 .sf-specs th, .sf-specs td { padding: .65rem .75rem; border-bottom: 1px solid var(--sf-border); text-align: left; }
@@ -393,7 +393,8 @@ body {
 .sf-zoom button { position: absolute; top: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: #fff; font-size: 1.1rem; cursor: pointer; }
 
 /* ── Footer ──────────────────────────────────────────────────────────────── */
-.sf-footer { margin-top: 3rem; background: #111827; color: #d1d5db; font-size: .9rem; }
+.sf-footer { display: block; margin-top: 3rem; background: #111827; color: #d1d5db; font-size: .9rem; }
+.sf-footer > div { width: 100%; }
 .sf-footer-news { border-bottom: 1px solid #1f2937; }
 .sf-footer-news .sf-container { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding-top: 1.75rem; padding-bottom: 1.75rem; }
 .sf-footer-news h2 { margin: 0; font-size: 1.15rem; color: #fff !important; }
@@ -418,6 +419,13 @@ body {
 .sf-paymethods { display: flex; flex-wrap: wrap; gap: .4rem; }
 .sf-paymethods span { padding: .2rem .5rem; border: 1px solid #374151; border-radius: 4px; font-weight: 600; color: #d1d5db !important; }
 @media (max-width: 899px) { .sf-footer-brand { grid-column: 1 / -1; } }
+
+#scrollTopBtn {
+  left: auto; right: 24px; bottom: 96px; width: 44px; height: 44px; padding: 0;
+  font-size: 1.1rem; background: var(--sf-surface); color: var(--sf-text);
+  border: 1px solid var(--sf-border); box-shadow: var(--sf-shadow-lg);
+}
+#scrollTopBtn i { color: var(--sf-text) !important; }
 
 /* Hide the old full-screen loader everywhere. */
 #loader { display: none !important; }

@@ -556,7 +556,7 @@
         {% endfor %}
 
         <div class="rc-prompts" aria-label="Shopping offers">
-          <button type="button" class="rc-prompt rc-prompt-action" id="rc-referral">
+          <button type="button" class="rc-prompt rc-prompt-action" id="rc-referral" data-link="{{ referral_link }}">
             <i class="bi bi-gift-fill" aria-hidden="true"></i>
             <span><strong>Invite a friend</strong><br>Earn ₦{{ referral_reward|floatformat:0 }} when they place their first order</span>
           </button>
@@ -911,7 +911,7 @@
   var referralBtn = document.getElementById('rc-referral');
   if (referralBtn) {
     referralBtn.addEventListener('click', function () {
-      var link = '{{ referral_link|escapejs }}';
+      var link = referralBtn.dataset.link;
       var shareText = 'Join me on RedCart — sign up with my link:';
       function showLink(prefix) {
         promptMessage.innerHTML = '';

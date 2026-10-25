@@ -31,7 +31,7 @@ class ProductModelTests(TestCase):
         p.price = 12.5
         p.save()
 
-        history = PriceHistory.objects.filter(product=p).order_by('recorded_at')
+        history = PriceHistory.objects.filter(product=p).order_by('recorded_at', 'id')
         self.assertEqual(history.count(), 2)
         self.assertEqual(history.first().price, 10.0)
         self.assertEqual(history.last().price, 12.5)
@@ -583,5 +583,7 @@ class ReferralProgramTests(TestCase):
 
     def test_cart_invite_button_uses_personal_link(self):
         self.client.login(username='ada', password='pass12345')
+        product = Product.objects.create(name='Widget', price=20.0, stock=10, image_url='http://a.png')
+        self.client.get(reverse('products:add-to-cart', args=[product.id]))
         response = self.client.get(reverse('products:view-cart'))
         self.assertContains(response, self.referrals.referral_code_for(self.referrer))

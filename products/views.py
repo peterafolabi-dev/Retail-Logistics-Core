@@ -23,6 +23,7 @@ from .ai_descriptions import generate_description
 from .utils import get_product_recommendations_ai, get_ai_chat_response, update_stock
 from . import fraud_detection
 from . import login_rewards
+from . import referrals
 from django.conf import settings
 from decouple import config
 
@@ -633,6 +634,7 @@ def landing_page(request):
         user.first_name = first_name
         user.last_name = last_name
         user.save()
+        referrals.record_referral(request, user)
 
         try:
             from .utils import send_welcome_email
@@ -800,10 +802,42 @@ def register_enhanced(request):
         user.first_name = first_name
         user.last_name = last_name
         user.save()
+        referrals.record_referral(request, user)
         messages.success(request, f"✅ Account created! Welcome, {username}. Please log in.")
         return redirect('products:login')
 
-    return render(request, 'auth/register_enhanced.html', {'auth_ticker_items': ticker_items})
+    referrer = referrals.referrer_from_code(request.session.get(referrals.SESSION_KEY, ''))
+    return render(request, 'auth/register_enhanced.html', {'auth_ticker_items': ticker_items, 'referrer': referrer})
+
+
+def referral_landing(request, code):
+    """Entry point for a shared referral link: remember who invited the visitor, then send them to sign up."""
+    referrer = referrals.referrer_from_code(code)
+    if request.user.is_authenticated:
+        if referrer and referrer != request.user:
+            messages.info(request, "You already have an account, so this invite link doesn't apply.")
+        return redirect('products:product-list')
+    if referrer is None:
+        messages.warning(request, 'That invite link is not valid, but you can still create an account.')
+        return redirect('products:register')
+    request.session[referrals.SESSION_KEY] = code
+    messages.info(request, f"{referrer.first_name or referrer.username} invited you to RedCart. Create your account to get started.")
+    return redirect('products:register')
+
+
+@login_required(login_url='products:login')
+def referral_program(request):
+    from .models import Referral
+
+    made = Referral.objects.filter(referrer=request.user).select_related('referred_user').order_by('-created_at')
+    return render(request, 'account/referrals.html', {
+        'referral_link': referrals.referral_url_for(request, request.user),
+        'reward_amount': referrals.reward_amount(),
+        'referrals': made,
+        'joined_count': made.count(),
+        'rewarded_count': sum(1 for r in made if r.reward_paid),
+        'earned_total': sum(1 for r in made if r.reward_paid) * referrals.reward_amount(),
+    })
 
 
 def logout_page(request):
@@ -818,9 +852,7 @@ def user_profile(request):
     wallet, _ = Wallet.objects.get_or_create(user=user)
     orders = Order.objects.filter(user=user).order_by('-created_at')
     loyalty_points = sum(int(order.total // 500) for order in orders if order.is_paid)
-    referral_link = request.build_absolute_uri(reverse('products:landing'))
-    if user.username:
-        referral_link += f'?ref={user.username}'
+    referral_link = referrals.referral_url_for(request, user)
 
     messages.info(request, f"Welcome to your profile! You have {orders.count()} orders.")
     return render(request, 'profile.html', {
@@ -980,6 +1012,8 @@ def view_cart(request):
         'coupon_discount': coupon_discount,
         'coupon_code': coupon_code,
         'total_after_coupon': total_after_coupon,
+        'referral_link': referrals.referral_url_for(request, request.user),
+        'referral_reward': referrals.reward_amount(),
     })
 
 

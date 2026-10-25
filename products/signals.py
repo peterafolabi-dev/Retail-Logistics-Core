@@ -22,6 +22,28 @@ def generate_product_description(sender, instance, created, raw=False, **kwargs)
         logger.exception('Could not generate description for new product %s', instance.pk)
 
 
+@receiver(post_save, sender='products.Order')
+def reward_referrer_on_first_paid_order(sender, instance, raw=False, **kwargs):
+    if raw or not instance.is_paid:
+        return
+    try:
+        from products.referrals import pay_referral_reward
+        pay_referral_reward(instance)
+    except Exception:
+        logger.exception('Could not pay referral reward for order %s', instance.pk)
+
+
+try:
+    from allauth.account.signals import user_signed_up
+
+    @receiver(user_signed_up)
+    def record_social_signup_referral(sender, request, user, **kwargs):
+        from products.referrals import record_referral
+        record_referral(request, user)
+except ImportError:  # allauth not installed
+    pass
+
+
 @receiver(post_migrate)
 def create_default_site(sender, **kwargs):
     """Create the default Site object after migrations."""

@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from . import utils
 from .ai_descriptions import generate_description
-from .models import Product, Comment, Order, OrderItem, Review, PriceHistory, UserAddress
+from .models import Product, Comment, Order, OrderItem, Review, PriceHistory, UserAddress, Wallet
 
 
 class ProductModelTests(TestCase):
@@ -533,3 +533,55 @@ class OrderModelTests(TestCase):
         self.order.refresh_from_db()
         self.assertEqual(self.order.escrow_status, 'released')
         self.assertIsNotNone(self.order.escrow_release_date)
+
+
+class ReferralProgramTests(TestCase):
+    def setUp(self):
+        from . import referrals
+        self.referrals = referrals
+        self.referrer = User.objects.create_user(username='ada', password='pass12345', first_name='Ada')
+
+    def _signup_via_link(self, username='friend'):
+        code = self.referrals.referral_code_for(self.referrer)
+        landing = self.client.get(reverse('products:referral', args=[code]))
+        self.assertRedirects(landing, reverse('products:register'), fetch_redirect_response=False)
+        page = self.client.get(reverse('products:register'))
+        self.assertContains(page, 'You were invited by')
+        self.client.post(reverse('products:register'), {
+            'username': username, 'email': f'{username}@example.com',
+            'password': 'longpassword1', 'password_confirm': 'longpassword1',
+        })
+        return User.objects.get(username=username)
+
+    def test_signup_through_link_records_referral(self):
+        friend = self._signup_via_link()
+        self.assertEqual(friend.referral_record.referrer, self.referrer)
+        self.assertFalse(friend.referral_record.reward_paid)
+
+    def test_first_paid_order_pays_referrer_once(self):
+        friend = self._signup_via_link()
+        Order.objects.create(user=friend, status='processing', payment_status='unpaid', is_paid=False)
+        self.assertFalse(Wallet.objects.filter(user=self.referrer, balance__gt=0).exists())
+
+        Order.objects.create(user=friend, status='processing', payment_status='paid', is_paid=True)
+        Order.objects.create(user=friend, status='processing', payment_status='paid', is_paid=True)
+        wallet = Wallet.objects.get(user=self.referrer)
+        self.assertEqual(wallet.balance, 1000.0)
+        self.assertEqual(wallet.transactions.filter(transaction_type='reward').count(), 1)
+
+    def test_tampered_code_is_rejected(self):
+        code = self.referrals.referral_code_for(self.referrer)
+        forged = code.split('-')[0] + '-deadbeef'
+        response = self.client.get(reverse('products:referral', args=[forged]))
+        self.assertRedirects(response, reverse('products:register'), fetch_redirect_response=False)
+        self.assertNotIn(self.referrals.SESSION_KEY, self.client.session)
+
+    def test_referrals_page_shows_personal_link(self):
+        self.client.login(username='ada', password='pass12345')
+        response = self.client.get(reverse('products:referrals'))
+        self.assertContains(response, self.referrals.referral_code_for(self.referrer))
+
+    def test_cart_invite_button_uses_personal_link(self):
+        self.client.login(username='ada', password='pass12345')
+        response = self.client.get(reverse('products:view-cart'))
+        self.assertContains(response, self.referrals.referral_code_for(self.referrer))

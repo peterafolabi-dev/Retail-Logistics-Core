@@ -37,6 +37,12 @@
             {% endfor %}
           {% endif %}
 
+          {% if referrer %}
+            <div class="alert alert-success rounded-3" role="status">
+              <i class="bi bi-gift"></i> You were invited by <strong>{{ referrer.first_name|default:referrer.username }}</strong>. Create your account to join them on RedCart.
+            </div>
+          {% endif %}
+
           <form method="post" novalidate>
             {% csrf_token %}
 

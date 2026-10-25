@@ -558,7 +558,7 @@
         <div class="rc-prompts" aria-label="Shopping offers">
           <button type="button" class="rc-prompt rc-prompt-action" id="rc-referral">
             <i class="bi bi-gift-fill" aria-hidden="true"></i>
-            <span><strong>Referral program</strong><br>Invite a friend and earn rewards</span>
+            <span><strong>Invite a friend</strong><br>Earn ₦{{ referral_reward|floatformat:0 }} when they place their first order</span>
           </button>
           <button type="button" class="rc-prompt rc-prompt-action" id="rc-wheel">
             <i class="bi bi-disc-fill" aria-hidden="true"></i>
@@ -911,13 +911,31 @@
   var referralBtn = document.getElementById('rc-referral');
   if (referralBtn) {
     referralBtn.addEventListener('click', function () {
-      var link = window.location.origin + '{% url "products:product-list" %}';
-      if (navigator.clipboard && window.isSecureContext) {
+      var link = '{{ referral_link|escapejs }}';
+      var shareText = 'Join me on RedCart — sign up with my link:';
+      function showLink(prefix) {
+        promptMessage.innerHTML = '';
+        promptMessage.className = 'rc-msg rc-wheel-result rc-msg-ok';
+        promptMessage.appendChild(document.createTextNode(prefix + ' '));
+        var a = document.createElement('a');
+        a.href = '{% url "products:referrals" %}';
+        a.textContent = 'See your invites';
+        promptMessage.appendChild(a);
+        var code = document.createElement('div');
+        code.textContent = link;
+        code.style.cssText = 'margin-top:.35rem;font-family:monospace;word-break:break-all;user-select:all';
+        promptMessage.appendChild(code);
+      }
+      if (navigator.share) {
+        navigator.share({ title: 'RedCart', text: shareText, url: link })
+          .then(function () { showLink('Thanks for sharing!'); })
+          .catch(function () { showLink('Your invite link:'); });
+      } else if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(link)
-          .then(function () { promptMsg('Your referral link has been copied. Share it with a friend!', true); })
-          .catch(function () { promptMsg('Share RedCart with a friend to earn rewards.', true); });
+          .then(function () { showLink('Invite link copied — paste it to a friend.'); })
+          .catch(function () { showLink('Your invite link:'); });
       } else {
-        promptMsg('Share RedCart with a friend to earn rewards.', true);
+        showLink('Your invite link:');
       }
     });
   }

@@ -1,107 +1,252 @@
 {% extends 'base.html' %}
-{% block title %}Contact Us - RedCart{% endblock %}
+{% block title %}Contact us | RedCart{% endblock %}
+{% block meta_description %}Get help with orders, delivery, returns, payments and more from the RedCart support team.{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-  <div class="row">
-    <div class="col-md-8 mx-auto">
-      <div class="card border-0 shadow-lg rounded-4 p-5 theme-card">
-        <h2 class="fw-bold mb-1 text-center text-gradient">📧 Contact Us</h2>
-        <p class="text-center text-muted mb-4">We'd love to hear from you. Send us a message!</p>
+<div class="sf-container sf-page">
+  <nav class="sf-breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'products:landing' %}">Home</a> <i class="bi bi-chevron-right"></i>
+    <span>Contact us</span>
+  </nav>
 
-        {% if messages %}
-          {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-3" role="alert">
-              {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-          {% endfor %}
-        {% endif %}
+  <header class="ct-hero">
+    <h1>How can we help?</h1>
+    <p>Most questions are answered fastest with the options below. Can't find what you need? Send us a message and we'll reply within 24 hours.</p>
+  </header>
 
-        <form method="post" novalidate>
-          {% csrf_token %}
+  <div class="ct-quick">
+    <a class="sf-panel ct-tile" href="{% if user.is_authenticated %}{% url 'products:profile' %}{% else %}{% url 'products:login' %}?next={% url 'products:profile' %}{% endif %}">
+      <i class="bi bi-truck"></i><strong>Track an order</strong><span>See status and tracking number</span>
+    </a>
+    <a class="sf-panel ct-tile" href="?topic=returns#contact-form">
+      <i class="bi bi-arrow-counterclockwise"></i><strong>Returns &amp; refunds</strong><span>Damaged, wrong or not as described</span>
+    </a>
+    <a class="sf-panel ct-tile" href="?topic=payment#contact-form">
+      <i class="bi bi-credit-card"></i><strong>Payment issues</strong><span>Charged but no order, wallet, coupons</span>
+    </a>
+    <a class="sf-panel ct-tile ct-tile-alert" href="?topic=scam#contact-form">
+      <i class="bi bi-shield-exclamation"></i><strong>Report a scam</strong><span>Someone pretending to be RedCart</span>
+    </a>
+  </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Full Name</label>
-            <input 
-              type="text" 
-              name="name" 
-              class="form-control form-control-lg rounded-pill px-4"
-              placeholder="Your name"
-              required
-            >
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Email Address</label>
-            <input 
-              type="email" 
-              name="email" 
-              class="form-control form-control-lg rounded-pill px-4"
-              placeholder="your@email.com"
-              required
-            >
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Subject</label>
-            <input 
-              type="text" 
-              name="subject" 
-              class="form-control form-control-lg rounded-pill px-4"
-              placeholder="How can we help?"
-              required
-            >
-          </div>
-
-          <div class="mb-4">
-            <label class="form-label fw-semibold">Message</label>
-            <textarea 
-              name="message" 
-              class="form-control rounded-3 px-4 py-3"
-              placeholder="Tell us more about your inquiry..."
-              rows="6"
-              required
-            ></textarea>
-          </div>
-
-          <button type="submit" class="btn btn-danger btn-lg w-100 rounded-pill fw-bold py-3">
-            📬 Send Message
-          </button>
-        </form>
-
-        <div class="alert alert-info rounded-3 mb-4" role="alert">
-          <strong>Buyer protection reminder:</strong> if an order arrives late, damaged, or not as described, contact us immediately and we will help review the issue.
-          <a href="{% url 'products:buyer-protection' %}" class="fw-bold ms-1">View our buyer protection policy</a>.
-        </div>
-
-        <hr class="my-4">
-
-        <div class="row text-center">
-          <div class="col-md-4 mb-3">
-            <h5 class="fw-bold">💬 Live chat</h5>
-            <p class="text-muted">Use the chat button at the bottom right — available 24/7.</p>
-            {% if whatsapp_chat_url %}<p class="text-muted"><a href="{{ whatsapp_chat_url }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-whatsapp"></i> WhatsApp {{ whatsapp_number_display }}</a></p>{% endif %}
-          </div>
-          <div class="col-md-4 mb-3">
-            <h5 class="fw-bold">📧 Email</h5>
-            <p class="text-muted">{% if support_email %}<a href="mailto:{{ support_email }}">{{ support_email }}</a>{% else %}Use the form on this page.{% endif %}</p>
-          </div>
-          <div class="col-md-4 mb-3">
-            <h5 class="fw-bold">🕒 Hours</h5>
-            <p class="text-muted">Mon-Fri: 9AM-6PM</p>
-          </div>
-        </div>
+  {% if sent %}
+    <div class="sf-panel ct-success" role="status">
+      <i class="bi bi-check-circle-fill"></i>
+      <div>
+        <h2>Message sent — thank you!</h2>
+        <p>We've emailed you a confirmation with your reference number. Our team usually replies within 24 hours. Remember: we'll never ask for your PIN, OTP or password.</p>
       </div>
     </div>
+  {% endif %}
+
+  <div class="ct-layout">
+    <form method="post" class="sf-panel ct-form" id="contact-form" novalidate>
+      {% csrf_token %}
+      <h2>Send us a message</h2>
+
+      {% if errors %}
+        <div class="addr-alert" role="alert"><i class="bi bi-exclamation-circle"></i> Please fix the highlighted fields below.</div>
+      {% endif %}
+
+      {# Honeypot for spam bots — hidden from people and screen readers. #}
+      <div class="ct-hp" aria-hidden="true"><label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+
+      <fieldset class="ct-field{% if errors.topic %} has-error{% endif %}">
+        <legend>What is this about?</legend>
+        <div class="ct-topics">
+          {% for value, label in topics %}
+            <label class="addr-type"><input type="radio" name="topic" value="{{ value }}" {% if form.topic == value %}checked{% endif %} required><span>{{ label }}</span></label>
+          {% endfor %}
+        </div>
+        {% if errors.topic %}<p class="addr-err">{{ errors.topic }}</p>{% endif %}
+      </fieldset>
+
+      <div class="ct-grid">
+        <div class="ct-field{% if errors.name %} has-error{% endif %}">
+          <label for="ct-name">Your name</label>
+          <input class="sf-input" id="ct-name" name="name" autocomplete="name" value="{{ form.name|default:'' }}" required {% if errors.name %}aria-invalid="true"{% endif %}>
+          {% if errors.name %}<p class="addr-err">{{ errors.name }}</p>{% endif %}
+        </div>
+        <div class="ct-field{% if errors.email %} has-error{% endif %}">
+          <label for="ct-email">Email address</label>
+          <input class="sf-input" id="ct-email" name="email" type="email" autocomplete="email" value="{{ form.email|default:'' }}" required {% if errors.email %}aria-invalid="true"{% endif %}>
+          {% if errors.email %}<p class="addr-err">{{ errors.email }}</p>{% else %}<p class="addr-hint">We'll reply to this address.</p>{% endif %}
+        </div>
+      </div>
+
+      <div class="ct-grid">
+        <div class="ct-field{% if errors.subject %} has-error{% endif %}">
+          <label for="ct-subject">Subject</label>
+          <input class="sf-input" id="ct-subject" name="subject" maxlength="150" placeholder="e.g. My order hasn't arrived" value="{{ form.subject|default:'' }}" required {% if errors.subject %}aria-invalid="true"{% endif %}>
+          {% if errors.subject %}<p class="addr-err">{{ errors.subject }}</p>{% endif %}
+        </div>
+        <div class="ct-field{% if errors.order_number %} has-error{% endif %}">
+          <label for="ct-order">Order number <span class="addr-opt">(if you have one)</span></label>
+          <input class="sf-input" id="ct-order" name="order_number" maxlength="40" placeholder="e.g. 1042" value="{{ form.order_number|default:'' }}">
+          {% if errors.order_number %}<p class="addr-err">{{ errors.order_number }}</p>{% endif %}
+        </div>
+      </div>
+
+      <div class="ct-field{% if errors.message %} has-error{% endif %}">
+        <label for="ct-message">Message</label>
+        <textarea class="sf-input" id="ct-message" name="message" rows="6" maxlength="5000" placeholder="Tell us what happened and how we can help. For scams, include the phone number, link or account that contacted you." required {% if errors.message %}aria-invalid="true"{% endif %}>{{ form.message|default:'' }}</textarea>
+        {% if errors.message %}<p class="addr-err">{{ errors.message }}</p>{% endif %}
+      </div>
+
+      <div class="ct-submit">
+        <button type="submit" class="sf-btn sf-btn-primary"><i class="bi bi-send"></i> Send message</button>
+        <p class="addr-hint">Never include card numbers, PINs or passwords in your message.</p>
+      </div>
+    </form>
+
+    <aside class="ct-side" aria-label="Other ways to reach us">
+      <div class="sf-panel ct-channel">
+        <h2>Other ways to reach us</h2>
+        <button type="button" class="ct-option" onclick="document.getElementById('ai-chat-toggle')?.click()">
+          <i class="bi bi-chat-dots"></i>
+          <span><strong>Live chat</strong><small>Instant answers, 24/7</small></span>
+          <i class="bi bi-chevron-right ct-arrow"></i>
+        </button>
+        {% if whatsapp_chat_url %}
+          <a class="ct-option" href="{{ whatsapp_chat_url }}" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-whatsapp ct-wa"></i>
+            <span><strong>WhatsApp</strong><small>{{ whatsapp_number_display }}</small></span>
+            <i class="bi bi-chevron-right ct-arrow"></i>
+          </a>
+        {% endif %}
+        {% if support_email %}
+          <a class="ct-option" href="mailto:{{ support_email }}">
+            <i class="bi bi-envelope"></i>
+            <span><strong>Email</strong><small>{{ support_email }}</small></span>
+            <i class="bi bi-chevron-right ct-arrow"></i>
+          </a>
+        {% endif %}
+        {% if user.is_authenticated %}
+          <a class="ct-option" href="{% url 'products:my-tickets' %}">
+            <i class="bi bi-life-preserver"></i>
+            <span><strong>Support tickets</strong><small>Track your open requests</small></span>
+            <i class="bi bi-chevron-right ct-arrow"></i>
+          </a>
+        {% endif %}
+      </div>
+
+      <div class="sf-panel ct-channel">
+        <h2>Support hours</h2>
+        <dl class="ct-hours">
+          <dt>Live chat</dt><dd>24/7</dd>
+          <dt>Email &amp; messages</dt><dd>Mon–Fri, 9am–6pm WAT</dd>
+          <dt>Typical reply</dt><dd>Within 24 hours</dd>
+        </dl>
+      </div>
+
+      {% if social_links %}
+      <div class="sf-panel ct-channel">
+        <h2>Follow us</h2>
+        <div class="ct-social">
+          {% for s in social_links %}<a href="{{ s.url }}" target="_blank" rel="noopener noreferrer" aria-label="RedCart on {{ s.label }}"><i class="bi {{ s.icon }}"></i></a>{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="rc-safety-note" role="note" style="margin:0">
+        <i class="bi bi-shield-exclamation" aria-hidden="true"></i>
+        <div><strong>We'll never ask for your PIN, OTP or password.</strong> Only trust messages from the channels on this page. <a href="{% url 'products:stay-safe' %}">Stay safe</a></div>
+      </div>
+    </aside>
   </div>
+
+  {% if faqs %}
+  <section class="sf-panel sf-detail">
+    <h2>Common questions</h2>
+    <div class="ct-faq">
+      {% for faq in faqs %}
+        <details>
+          <summary>{{ faq.question }}</summary>
+          <p>{{ faq.answer|linebreaksbr }}</p>
+        </details>
+      {% endfor %}
+    </div>
+    <a href="{% url 'products:faq' %}" class="sf-btn sf-btn-outline sf-btn-sm" style="margin-top:1rem">See all FAQs</a>
+  </section>
+  {% endif %}
+
+  <p class="ct-protect"><i class="bi bi-shield-check"></i> Order late, damaged or not as described? You're covered by <a href="{% url 'products:buyer-protection' %}">RedCart Buyer Protection</a> — tell us within the policy window and we'll help put it right.</p>
 </div>
 
 <style>
-  .text-gradient {
-    background: linear-gradient(45deg, #ff6b6b, #ff9900);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
+  .ct-hero { padding: 1.5rem 0 1.25rem; }
+  .ct-hero h1 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); font-weight: 800; letter-spacing: -.02em; margin: 0 0 .5rem; color: var(--sf-text) !important; }
+  .ct-hero p { max-width: 60ch; margin: 0; color: var(--sf-muted) !important; font-size: 1.02rem; }
+  .ct-quick { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); margin-bottom: 1.5rem; }
+  @media (min-width: 900px) { .ct-quick { grid-template-columns: repeat(4, 1fr); } }
+  .ct-tile { display: flex; flex-direction: column; gap: .25rem; padding: 1.1rem; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+  .ct-tile:hover { border-color: var(--sf-brand); box-shadow: var(--sf-shadow-lg); }
+  .ct-tile i { font-size: 1.4rem; color: var(--sf-brand) !important; margin-bottom: .35rem; }
+  .ct-tile strong { color: var(--sf-text) !important; font-size: .95rem; }
+  .ct-tile span { color: var(--sf-muted) !important; font-size: .82rem; line-height: 1.4; }
+  .ct-tile-alert i { color: var(--sf-warning) !important; }
+
+  .ct-success { display: flex; gap: 1rem; align-items: flex-start; padding: 1.25rem; margin-bottom: 1.5rem; border-color: var(--sf-success); background: var(--sf-success-soft); }
+  .ct-success > i { font-size: 1.75rem; color: var(--sf-success) !important; }
+  .ct-success h2 { font-size: 1.1rem; margin: 0 0 .25rem; color: var(--sf-text) !important; }
+  .ct-success p { margin: 0; color: var(--sf-text-2) !important; }
+
+  .ct-layout { display: grid; gap: 24px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 992px) { .ct-layout { grid-template-columns: minmax(0, 1fr) 340px; } }
+  .ct-form { padding: 1.5rem; scroll-margin-top: 140px; }
+  @media (min-width: 768px) { .ct-form { padding: 2rem; } }
+  .ct-form h2 { font-size: 1.3rem; font-weight: 700; margin: 0 0 1.25rem; color: var(--sf-text) !important; }
+  .ct-grid { display: grid; gap: 0 1rem; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .ct-grid { grid-template-columns: 1fr 1fr; } }
+  .ct-field { margin: 0 0 1rem; border: 0; padding: 0; min-width: 0; }
+  .ct-field label, .ct-field legend { display: block; float: none; width: auto; font-size: .875rem; font-weight: 600; margin-bottom: .4rem; padding: 0; color: var(--sf-text-2) !important; }
+  .ct-field .sf-input { min-height: 46px; }
+  .ct-field textarea.sf-input { min-height: 140px; resize: vertical; line-height: 1.5; }
+  .ct-field.has-error .sf-input { border-color: var(--sf-brand) !important; }
+  .ct-topics { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .ct-topics .addr-type span { padding: .45rem .85rem; font-size: .85rem; }
+  .ct-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+  .ct-submit { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; padding-top: 1rem; border-top: 1px solid var(--sf-border); }
+  .ct-submit .sf-btn { min-height: 48px; padding: 0 1.5rem; }
+  .ct-submit .addr-hint { margin: 0; }
+
+  .ct-side { display: grid; gap: 1rem; }
+  .ct-channel { padding: 1.25rem; }
+  .ct-channel h2 { font-size: .95rem; font-weight: 700; margin: 0 0 .75rem; color: var(--sf-text) !important; }
+  .ct-option { display: flex; align-items: center; gap: .85rem; padding: .75rem; margin: 0 -.75rem; width: calc(100% + 1.5rem); border: 0; border-radius: var(--sf-radius-sm); background: transparent; text-align: left; text-decoration: none; cursor: pointer; font: inherit; }
+  .ct-option:hover { background: var(--sf-surface-2); }
+  .ct-option > i:first-child { font-size: 1.3rem; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--sf-brand-soft); color: var(--sf-brand) !important; flex-shrink: 0; }
+  .ct-option > i.ct-wa { background: rgba(37, 211, 102, .12); color: #128c4b !important; }
+  .ct-option span { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .ct-option strong { color: var(--sf-text) !important; font-size: .92rem; }
+  .ct-option small { color: var(--sf-muted) !important; font-size: .82rem; overflow: hidden; text-overflow: ellipsis; }
+  .ct-arrow { color: var(--sf-muted) !important; }
+  .ct-hours { display: grid; grid-template-columns: auto 1fr; gap: .45rem 1rem; margin: 0; font-size: .88rem; }
+  .ct-hours dt { color: var(--sf-muted) !important; font-weight: 500; }
+  .ct-hours dd { margin: 0; text-align: right; color: var(--sf-text) !important; font-weight: 600; }
+  .ct-social { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .ct-social a { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--sf-border); color: var(--sf-text-2) !important; text-decoration: none; }
+  .ct-social a:hover { border-color: var(--sf-brand); color: var(--sf-brand) !important; }
+
+  .ct-faq details { border-top: 1px solid var(--sf-border); }
+  .ct-faq details:last-child { border-bottom: 1px solid var(--sf-border); }
+  .ct-faq summary { padding: .9rem 0; cursor: pointer; font-weight: 600; color: var(--sf-text) !important; list-style: none; display: flex; justify-content: space-between; gap: 1rem; }
+  .ct-faq summary::-webkit-details-marker { display: none; }
+  .ct-faq summary::after { content: '+'; font-size: 1.2rem; color: var(--sf-muted); }
+  .ct-faq details[open] summary::after { content: '–'; }
+  .ct-faq p { margin: 0 0 1rem; color: var(--sf-text-2) !important; line-height: 1.6; }
+  .ct-protect { margin: 1.5rem 0 0; font-size: .88rem; color: var(--sf-muted) !important; }
+  .ct-protect i { color: var(--sf-success) !important; }
+  .ct-protect a { color: var(--sf-brand) !important; font-weight: 600; }
+
+  /* Shared form bits (same look as the address form) */
+  .addr-type input { position: absolute; opacity: 0; pointer-events: none; }
+  .addr-type span { display: inline-flex; align-items: center; gap: .4rem; padding: .55rem 1rem; border: 1px solid var(--sf-border); border-radius: 999px; cursor: pointer; font-size: .9rem; color: var(--sf-text-2) !important; background: var(--sf-surface); }
+  .addr-type input:checked + span { border-color: var(--sf-brand); background: var(--sf-brand-soft); color: var(--sf-brand) !important; font-weight: 600; }
+  .addr-type input:focus-visible + span { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
+  .addr-opt { font-weight: 400; color: var(--sf-muted) !important; }
+  .addr-hint { font-size: .8rem; color: var(--sf-muted) !important; margin: .35rem 0 0; }
+  .addr-err { font-size: .8rem; color: var(--sf-brand) !important; margin: .35rem 0 0; }
+  .addr-alert { display: flex; gap: .5rem; align-items: center; padding: .75rem 1rem; margin-bottom: 1.25rem; border-radius: var(--sf-radius-sm); background: var(--sf-brand-soft); color: var(--sf-brand) !important; font-size: .9rem; }
 </style>
 {% endblock %}

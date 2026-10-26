@@ -67,9 +67,9 @@
     <ol class="sf-description" style="padding-left:1.2rem">
       <li>Don't send money or share any codes.</li>
       <li>If you shared card details, call your bank right away to block the card.</li>
-      <li>Report it to us through the <a href="{% url 'products:contact' %}">Contact us</a> page with screenshots, the phone number or link used, and your order number if you have one.</li>
+      <li>Report it to us through the <a href="{% url 'products:contact' %}?topic=scam#contact-form">Contact us</a> page with screenshots, the phone number or link used, and your order number if you have one.</li>
     </ol>
-    <a href="{% url 'products:contact' %}" class="sf-btn sf-btn-primary" style="margin-top:.5rem"><i class="bi bi-flag"></i> Report a scam</a>
+    <a href="{% url 'products:contact' %}?topic=scam#contact-form" class="sf-btn sf-btn-primary" style="margin-top:.5rem"><i class="bi bi-flag"></i> Report a scam</a>
   </section>
 </div>
 {% endblock %}

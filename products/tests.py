@@ -737,3 +737,51 @@ class EmailDeliveryTests(TestCase):
         self.assertNotContains(page, 'bi-instagram')
         self.assertContains(page, 'https://wa.me/2348031234567')
         self.assertContains(page, '+234 803 123 4567')
+
+
+class ContactPageTests(TestCase):
+    def _post(self, **overrides):
+        data = {'name': 'Ngozi', 'email': 'ngozi@example.com', 'topic': 'order', 'order_number': '1042',
+                'subject': 'Order not arrived', 'message': 'My order from last week has not arrived yet.'}
+        data.update(overrides)
+        return self.client.post(reverse('products:contact'), data)
+
+    def test_valid_message_is_saved_and_both_emails_sent_safely(self):
+        from django.core import mail
+        from .models import ContactFormSubmission
+        response = self._post(name='<b>Evil</b>', message='Click <a href="http://phish.example">here</a> now please')
+        self.assertRedirects(response, f"{reverse('products:contact')}?sent=1", fetch_redirect_response=False)
+        submission = ContactFormSubmission.objects.get()
+        self.assertEqual(submission.subject, '[Order or delivery] Order not arrived (Order 1042)')
+        self.assertEqual(len(mail.outbox), 2)
+        team, receipt = mail.outbox
+        self.assertEqual(team.reply_to, ['ngozi@example.com'])
+        self.assertIn('phish.example', team.body)  # team sees the full message as plain text
+        receipt_html = receipt.alternatives[0][0]
+        self.assertEqual(receipt.to, ['ngozi@example.com'])
+        self.assertNotIn('phish.example', receipt_html)  # customer receipt never echoes the message
+        self.assertNotIn('<b>Evil</b>', receipt_html)    # and the name is HTML-escaped
+        self.assertIn('&lt;b&gt;Evil&lt;/b&gt;', receipt_html)
+
+    def test_invalid_form_keeps_input_and_shows_errors(self):
+        response = self._post(email='nope', topic='', message='short')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(set(response.context['errors']), {'email', 'topic', 'message'})
+        self.assertContains(response, 'value="Order not arrived"')
+
+    def test_honeypot_and_rate_limit(self):
+        from django.core import mail
+        from django.core.cache import cache
+        from .models import ContactFormSubmission
+        cache.clear()
+        self._post(website='http://spam.example')
+        self.assertFalse(ContactFormSubmission.objects.exists())
+        for _ in range(6):
+            self._post()
+        self.assertEqual(ContactFormSubmission.objects.count(), 5)
+        cache.clear()
+
+    def test_topic_is_preselected_from_link_and_page_renders(self):
+        response = self.client.get(reverse('products:contact'), {'topic': 'scam'})
+        self.assertContains(response, 'value="scam" checked')
+        self.assertContains(response, 'How can we help?')

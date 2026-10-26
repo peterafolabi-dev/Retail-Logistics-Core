@@ -1,0 +1,11 @@
+{% autoescape off %}Hi {{ submission.name }},
+
+Thanks for contacting RedCart. We've received your message about "{{ topic }}" and will reply to this email address, usually within 24 hours.
+
+Your reference number is #{{ submission.pk }}.
+
+Stay safe: RedCart will never ask for your card PIN, OTP or password, and we never ask you to pay into a personal account. Learn more: {{ site_url }}/products/stay-safe/
+
+The RedCart team
+{{ site_url }}
+{% endautoescape %}

@@ -1,0 +1,14 @@
+{% autoescape off %}New message from the RedCart contact form
+
+From:    {{ submission.name }} <{{ submission.email }}>
+Topic:   {{ topic }}{% if order_number %}
+Order:   {{ order_number }}{% endif %}
+Subject: {{ subject }}
+Sent:    {{ submission.created_at|date:"D j M Y, H:i" }} (UTC)
+
+{{ submission.message }}
+
+---
+Reply to this email to answer {{ submission.name }} directly.
+View in admin: {{ site_url }}/admin/products/contactformsubmission/{{ submission.pk }}/change/
+{% endautoescape %}

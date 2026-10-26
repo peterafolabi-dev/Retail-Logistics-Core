@@ -19,4 +19,5 @@ def cart_context(request):
     return {
         'cart_item_count': total_quantity,
         'whatsapp_channel_url': getattr(settings, 'WHATSAPP_CHANNEL_URL', ''),
+        'support_email': getattr(settings, 'DEFAULT_FROM_EMAIL', ''),
     }

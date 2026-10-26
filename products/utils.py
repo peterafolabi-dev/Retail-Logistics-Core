@@ -53,6 +53,9 @@ def send_email(user, email_type, context=None, recipient_email=None):
 
         context['user'] = user
         context['site_name'] = 'RedCart'
+        # Links in emails must point at our real domain, never a placeholder.
+        context.setdefault('site_url', (getattr(settings, 'SITE_URL', '') or '').rstrip('/'))
+        context.setdefault('support_email', getattr(settings, 'DEFAULT_FROM_EMAIL', ''))
 
         html_message = render_to_string(f'emails/{email_type}.html', context)
         plain_message = strip_tags(html_message)

@@ -1,44 +1,14 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: Arial, sans-serif; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(45deg, #d92d20, #d92d20); color: white; padding: 20px; border-radius: 5px; }
-        .section { margin: 20px 0; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
-        .button { display: inline-block; background: #ff4747; color: #fff; text-decoration: none; padding: 12px 20px; border-radius: 8px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>📬 Thanks for subscribing to {{ site_name }}!</h1>
-        </div>
-
-        <div class="section">
-            <p>Hello,</p>
-            <p>Thanks for joining our newsletter list. You’ll now receive the latest offers, product drops, and special discounts straight to your inbox.</p>
-        </div>
-
-        <div class="section">
-            <h3>What to expect</h3>
-            <ul>
-                <li>Exclusive deals and flash sales</li>
-                <li>New product announcements</li>
-                <li>Shopping tips and guides</li>
-                <li>Seasonal promotions and giveaways</li>
-            </ul>
-        </div>
-
-        <div class="section">
-            <p>If you ever want to unsubscribe, <a href="{{ unsubscribe_url }}">click here</a> to stop receiving newsletter messages.</p>
-        </div>
-
-        <div class="footer">
-            <p>Welcome aboard! We’re excited to keep you in the loop.</p>
-            <p>— The {{ site_name }} team</p>
-        </div>
-    </div>
-</body>
-</html>
+{% extends 'emails/base_email.html' %}
+{% block title %}You're subscribed to RedCart{% endblock %}
+{% block preheader %}Thanks for subscribing — deals and new arrivals are coming your way.{% endblock %}
+{% block heading %}You're on the list!{% endblock %}
+{% block content %}
+<p style="margin:0 0 14px;">Thanks for subscribing to RedCart emails. Here's what you'll get:</p>
+<ul style="margin:0 0 14px;padding-left:20px;">
+  <li>Flash sales and limited-time deals</li>
+  <li>New arrivals in phones, laptops, fashion and home</li>
+  <li>Only useful updates — no spam</li>
+</ul>
+{% endblock %}
+{% block cta_row %}<tr><td style="padding:4px 28px 20px;"><a href="{{ site_url }}/products/shop/" style="display:inline-block;padding:13px 22px;border-radius:8px;background:#d92d20;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;">Start shopping</a></td></tr>{% endblock %}
+{% block footer_extra %}You subscribed with {{ email }}. <a href="{{ unsubscribe_url }}" style="color:#6b7280;">Unsubscribe</a> at any time.<br>{% endblock %}

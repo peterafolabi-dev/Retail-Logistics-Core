@@ -40,124 +40,98 @@ def email_is_configured():
     return True  # console / locmem / file backends used in development and tests
 
 
+DEFAULT_EMAIL_SUBJECTS = {
+    'order_confirmation': 'Your RedCart order is confirmed',
+    'order_shipped': 'Your RedCart order is on its way',
+    'order_delivered': 'Your RedCart order has been delivered',
+    'welcome': 'Welcome to RedCart',
+    'contact_reply': 'Reply from RedCart support',
+    'newsletter': "You're subscribed to RedCart",
+}
+
+
+def _email_context(context):
+    context.setdefault('site_name', 'RedCart')
+    # Links in emails must point at our real domain, never a placeholder.
+    context.setdefault('site_url', (getattr(settings, 'SITE_URL', '') or '').rstrip('/'))
+    context.setdefault('support_email', getattr(settings, 'SUPPORT_EMAIL', ''))
+    return context
+
+
+def _plain_text(html_message):
+    """Readable plain-text alternative: strip tags and collapse the blank lines tables leave behind."""
+    text = strip_tags(html_message)
+    lines = [line.strip() for line in text.splitlines()]
+    return re.sub(r'\n{3,}', '\n\n', '\n'.join(lines)).strip()
+
+
+def _subject_for(email_type, context):
+    """Admin-editable subject from EmailTemplate when present, else a sensible default."""
+    template = EmailTemplate.objects.filter(email_type=email_type, is_active=True).first()
+    subject = template.subject if template else DEFAULT_EMAIL_SUBJECTS.get(email_type, 'A message from RedCart')
+    order = context.get('order')
+    if order is not None and getattr(order, 'id', None) and '#' not in subject:
+        subject = f'{subject} (#{order.id})'
+    return subject
+
+
 def send_email(user, email_type, context=None, recipient_email=None):
     """
-    Send email using templates
+    Render emails/<email_type>.html and send it.
 
     Args:
-        user: User object
-        email_type: Type of email (e.g., 'order_confirmation')
+        user: User object (may be None when recipient_email is given)
+        email_type: Template name, e.g. 'order_confirmation'
         context: Dictionary with template context
         recipient_email: Override recipient email (default: user.email)
     """
-    if context is None:
-        context = {}
-
+    context = _email_context(context or {})
+    recipient = recipient_email or (user.email if user else '')
+    subject = ''
     try:
-        template = EmailTemplate.objects.filter(email_type=email_type, is_active=True).first()
-        if not template:
-            logger.warning(f"Email template not found: {email_type}")
+        if not recipient:
+            logger.warning('Skipping %s email: no recipient address.', email_type)
             return False
-
-        recipient = recipient_email or user.email
-
         context['user'] = user
-        context['site_name'] = 'RedCart'
-        # Links in emails must point at our real domain, never a placeholder.
-        context.setdefault('site_url', (getattr(settings, 'SITE_URL', '') or '').rstrip('/'))
-        context.setdefault('support_email', getattr(settings, 'SUPPORT_EMAIL', ''))
-
+        subject = _subject_for(email_type, context)
         html_message = render_to_string(f'emails/{email_type}.html', context)
-        plain_message = strip_tags(html_message)
 
         send_mail(
-            subject=template.subject,
-            message=plain_message,
+            subject=subject,
+            message=_plain_text(html_message),
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[recipient],
             html_message=html_message,
             fail_silently=False,
         )
-
         if user is not None:
-            EmailLog.objects.create(
-                user=user,
-                email_type=email_type,
-                recipient=recipient,
-                subject=template.subject,
-                status='sent'
-            )
-
-        logger.info(f"Email sent: {email_type} to {recipient}")
+            EmailLog.objects.create(user=user, email_type=email_type, recipient=recipient, subject=subject, status='sent')
+        logger.info('Email sent: %s to %s', email_type, recipient)
         return True
-
-    except Exception as e:
-        logger.error(f"Error sending email {email_type}: {str(e)}")
-
+    except Exception:
+        logger.exception('Error sending %s email to %s', email_type, recipient)
         if user is not None:
-            EmailLog.objects.create(
-                user=user,
-                email_type=email_type,
-                recipient=recipient_email or user.email,
-                subject='',
-                status='failed'
-            )
+            EmailLog.objects.create(user=user, email_type=email_type, recipient=recipient, subject=subject, status='failed')
         return False
 
 
 def send_newsletter_confirmation_email(email):
-    """Send a confirmation email to a new newsletter subscriber."""
-    try:
-        from django.core.mail import send_mail
-        from django.conf import settings
-
-        # Try to use template first, if it doesn't exist, use simple HTML
-        template = None
-        try:
-            template = EmailTemplate.objects.filter(email_type='newsletter', is_active=True).first()
-        except:
-            pass
-
-        unsubscribe_url = f"{settings.SITE_URL.rstrip('/')}/products/newsletter/unsubscribe/?email={quote(email)}"
-
-        if template:
-            context = {
-                'email': email,
-                'site_name': 'RedCart',
-                'unsubscribe_url': unsubscribe_url,
-            }
-            html_message = render_to_string('emails/newsletter.html', context)
-            plain_message = strip_tags(html_message)
-            subject = template.subject
-        else:
-            # Fallback HTML if template doesn't exist
-            html_message = f'''
-            <h2>Welcome to RedCart Newsletter!</h2>
-            <p>Hi {email},</p>
-            <p>Thank you for subscribing to our newsletter. You'll now receive updates about new products, special offers, and exclusive deals.</p>
-            <hr>
-            <p><a href="{unsubscribe_url}">Unsubscribe from newsletter</a></p>
-            '''
-            plain_message = f'Welcome to RedCart Newsletter!\n\nThank you for subscribing. Unsubscribe: {unsubscribe_url}'
-            subject = '📧 Welcome to RedCart Newsletter'
-
-        send_mail(
-            subject=subject,
-            message=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-            html_message=html_message,
-            fail_silently=False,
-        )
-
-        logger.info(f"Newsletter confirmation email sent to {email}")
-        print(f'NEWSLETTER EMAIL SENT: {email} via {settings.EMAIL_HOST}')
-        return True
-    except Exception as e:
-        error_msg = f"Error sending newsletter confirmation email to {email}: {str(e)}"
-        logger.error(error_msg)
-        print(f'NEWSLETTER EMAIL ERROR: {error_msg}')  # Also print to console
-        raise  # Re-raise so view can handle it
+    """Send the branded "you're subscribed" email. Raises on delivery failure so the view can report it."""
+    context = _email_context({
+        'email': email,
+        'unsubscribe_url': f"{(settings.SITE_URL or '').rstrip('/')}/products/newsletter/unsubscribe/?email={quote(email)}",
+    })
+    html_message = render_to_string('emails/newsletter.html', context)
+    send_mail(
+        subject=_subject_for('newsletter', context),
+        message=_plain_text(html_message),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[email],
+        html_message=html_message,
+        fail_silently=False,
+    )
+    logger.info('Newsletter confirmation email sent to %s', email)
+    return True
 
 
 def send_order_confirmation_email(order):

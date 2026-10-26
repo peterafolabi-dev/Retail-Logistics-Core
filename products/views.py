@@ -757,7 +757,11 @@ class CustomPasswordResetView(PasswordResetView):
     html_email_template_name = 'emails/password_reset.html'
     subject_template_name = 'auth/password_reset_subject.txt'
     from_email = None  # settings.DEFAULT_FROM_EMAIL (the Brevo-verified sender)
-    extra_email_context = {'site_name': 'RedCart'}
+    extra_email_context = {
+        'site_name': 'RedCart',
+        'site_url': (settings.SITE_URL or '').rstrip('/'),
+        'support_email': settings.SUPPORT_EMAIL,
+    }
 
     def form_valid(self, form):
         from .utils import email_is_configured

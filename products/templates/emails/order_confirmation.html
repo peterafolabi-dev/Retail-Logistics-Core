@@ -1,247 +1,35 @@
+{% extends 'emails/base_email.html' %}
 {% load humanize %}
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
-        }
-        
-        .container {
-            max-width: 600px;
-            margin: 20px auto;
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #d92d20 0%, #b42318 100%);
-            color: white;
-            padding: 40px 30px;
-            text-align: center;
-        }
-        
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-        
-        .header p {
-            font-size: 16px;
-            opacity: 0.95;
-        }
-        
-        .body {
-            padding: 40px 30px;
-        }
-        
-        .order-info {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-        
-        .order-info h3 {
-            color: #d92d20;
-            margin-bottom: 15px;
-            font-size: 16px;
-        }
-        
-        .order-info p {
-            color: #666;
-            font-size: 14px;
-            margin: 8px 0;
-        }
-        
-        .order-info strong {
-            color: #333;
-        }
-        
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        
-        .table th {
-            background: linear-gradient(135deg, rgba(217, 45, 32, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-            color: #d92d20;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            border-bottom: 2px solid #eee;
-        }
-        
-        .table td {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .table tbody tr:hover {
-            background: #f9f9f9;
-        }
-        
-        .table tbody tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .total-section {
-            background: linear-gradient(135deg, rgba(217, 45, 32, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-            border-left: 4px solid #d92d20;
-            padding: 20px;
-            margin: 30px 0;
-            border-radius: 8px;
-            text-align: right;
-        }
-        
-        .total-section h3 {
-            color: #d92d20;
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-        
-        .total-amount {
-            font-size: 24px;
-            font-weight: 700;
-            color: #d92d20;
-        }
-        
-        .next-steps {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 30px 0;
-        }
-        
-        .next-steps h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 16px;
-        }
-        
-        .next-steps p {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-        
-        .footer {
-            background: #f5f5f5;
-            padding: 30px;
-            text-align: center;
-            border-top: 1px solid #eee;
-            font-size: 13px;
-            color: #999;
-        }
-        
-        .footer p {
-            margin: 5px 0;
-        }
-        
-        .footer a {
-            color: #d92d20;
-            text-decoration: none;
-        }
-        
-        .button {
-            display: inline-block;
-            background: linear-gradient(135deg, #d92d20 0%, #b42318 100%);
-            color: white;
-            padding: 12px 30px;
-            text-decoration: none;
-            border-radius: 25px;
-            margin-top: 20px;
-            font-weight: 600;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>✅ Order Confirmed!</h1>
-            <p>Thank you for your purchase, {{ user.first_name|default:user.username }}</p>
-        </div>
+{% block title %}Order #{{ order.id }} confirmed{% endblock %}
+{% block preheader %}We've received your order #{{ order.id }} and we're getting it ready.{% endblock %}
+{% block heading %}Thanks for your order!{% endblock %}
+{% block content %}
+<p style="margin:0 0 6px;">Hi {{ user.first_name|default:user.username }}, we've received your order and we're getting it ready.</p>
+<p style="margin:0;color:#6b7280;font-size:14px;">Order <strong style="color:#111827;">#{{ order.id }}</strong> · {{ order.created_at|date:"j M Y" }}</p>
 
-        <div class="body">
-            <p>We're thrilled to have your order! Here are your order details:</p>
-
-            <div class="order-info">
-                <h3>📋 Order Details</h3>
-                <p><strong>Order Number:</strong> <span style="color: #d92d20; font-weight: 700;">#{{ order.id }}</span></p>
-                <p><strong>Order Date:</strong> {{ order.created_at|date:"M d, Y (g:i A)" }}</p>
-                <p><strong>Status:</strong> <span style="background: #e3f2fd; color: #d92d20; padding: 4px 8px; border-radius: 20px; font-weight: 600;">{{ order.get_status_display }}</span></p>
-            </div>
-
-            <div class="order-info">
-                <h3>🛍️ Items Ordered</h3>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Qty</th>
-                            <th>Price</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in items %}
-                        <tr>
-                            <td>{{ item.product.name }}</td>
-                            <td style="text-align: center;">{{ item.quantity }}</td>
-                            <td>₦{{ item.price|floatformat:2|intcomma }}</td>
-                            <td style="font-weight: 600;">₦{{ item.total_price|floatformat:2|intcomma }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="total-section">
-                <h3>Order Total</h3>
-                {% if order.insurance_opted and order.insurance_cost > 0 %}
-                <p style="margin-bottom: 6px;"><strong>Insurance:</strong> ₦{{ order.insurance_cost|floatformat:2|intcomma }}</p>
-                {% endif %}
-                <div class="total-amount">₦{{ total|floatformat:2|intcomma }}</div>
-            </div>
-
-            <div class="next-steps">
-                <h3>📦 What's Next?</h3>
-                <p>Your order is being processed right now. You'll receive a shipping confirmation with tracking information within <strong>24 hours</strong>.</p>
-                <p>Track your order anytime by visiting your account dashboard.</p>
-            </div>
-
-            <center>
-                <a href="{{ site_url }}/products/profile/" class="button">Track Your Order</a>
-            </center>
-
-            <div style="margin-top: 24px; padding: 14px 16px; border: 1px solid #fedf89; border-radius: 8px; background: #fffaeb; font-size: 13px; line-height: 1.6; color: #374151;">
-                <strong>🛡️ Stay safe from scams.</strong> RedCart will never ask for your card PIN, OTP or password by phone, SMS, WhatsApp or email.
-                Never pay a "release" or "delivery" fee to anyone who contacts you about this order. If you chose Cash on Delivery, pay the rider only the amount shown in your order.
-                <a href="{{ site_url }}/products/stay-safe/" style="color: #d92d20; font-weight: 600;">Learn how to spot scams</a>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>Thank you for shopping at <strong>RedCart</strong>!</p>
-            <p>Questions? <a href="mailto:afolabiprosper329@gmail.com">Contact our support team</a></p>
-            <p>© 2026 RedCart. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;">
+  {% for item in items %}
+  <tr>
+    <td style="padding:12px 14px;{% if not forloop.first %}border-top:1px solid #e5e7eb;{% endif %}">
+      <strong style="color:#111827;">{{ item.product.name }}</strong><br>
+      <span style="color:#6b7280;">Qty {{ item.quantity }} × ₦{{ item.price|floatformat:0|intcomma }}</span>
+    </td>
+    <td align="right" style="padding:12px 14px;white-space:nowrap;font-weight:700;{% if not forloop.first %}border-top:1px solid #e5e7eb;{% endif %}">₦{{ item.total_price|floatformat:0|intcomma }}</td>
+  </tr>
+  {% endfor %}
+  {% if order.insurance_opted and order.insurance_cost > 0 %}
+  <tr><td style="padding:10px 14px;border-top:1px solid #e5e7eb;color:#6b7280;">Delivery insurance</td><td align="right" style="padding:10px 14px;border-top:1px solid #e5e7eb;">₦{{ order.insurance_cost|floatformat:0|intcomma }}</td></tr>
+  {% endif %}
+  {% if order.discount %}
+  <tr><td style="padding:10px 14px;border-top:1px solid #e5e7eb;color:#6b7280;">Discount</td><td align="right" style="padding:10px 14px;border-top:1px solid #e5e7eb;color:#067647;">−₦{{ order.discount|floatformat:0|intcomma }}</td></tr>
+  {% endif %}
+  <tr><td style="padding:10px 14px;border-top:1px solid #e5e7eb;color:#6b7280;">Delivery</td><td align="right" style="padding:10px 14px;border-top:1px solid #e5e7eb;color:#067647;">{% if order.shipping_cost %}₦{{ order.shipping_cost|floatformat:0|intcomma }}{% else %}Free{% endif %}</td></tr>
+  <tr><td style="padding:14px;border-top:2px solid #111827;font-weight:700;">Total</td><td align="right" style="padding:14px;border-top:2px solid #111827;font-weight:800;font-size:17px;">₦{{ total|default:order.total|floatformat:0|intcomma }}</td></tr>
+</table>
+{% if order.shipping_address %}
+<p style="margin:0 0 6px;font-size:14px;"><strong>Delivering to</strong><br>
+{{ order.shipping_address.full_name }}, {{ order.shipping_address.street_address }}, {{ order.shipping_address.city }}, {{ order.shipping_address.state }}</p>
+{% endif %}
+<p style="margin:0 0 14px;font-size:14px;color:#6b7280;">Estimated delivery: <strong style="color:#111827;">{{ order.estimated_delivery_date|date:"D j M" }}</strong>. We'll email you when it ships.</p>
+{% endblock %}
+{% block cta_row %}<tr><td style="padding:4px 28px 20px;"><a href="{{ site_url }}/products/orders/{{ order.id }}/track/" style="display:inline-block;padding:13px 22px;border-radius:8px;background:#d92d20;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;">Track your order</a></td></tr>{% endblock %}

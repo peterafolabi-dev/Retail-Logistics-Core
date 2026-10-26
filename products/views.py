@@ -863,7 +863,7 @@ def logout_page(request):
 def user_profile(request):
     user = request.user
     wallet, _ = Wallet.objects.get_or_create(user=user)
-    orders = Order.objects.filter(user=user).order_by('-created_at')
+    orders = Order.objects.filter(user=user).order_by('-created_at').prefetch_related('items__product')
     loyalty_points = sum(int(order.total // 500) for order in orders if order.is_paid)
     referral_link = referrals.referral_url_for(request, user)
 

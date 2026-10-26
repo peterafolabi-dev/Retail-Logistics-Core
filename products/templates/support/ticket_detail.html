@@ -16,7 +16,7 @@
             <h4 class="text-muted">{{ ticket.title }}</h4>
           </div>
           <div class="text-end">
-            <span class="badge" style="background-color: {% if ticket.priority == 'urgent' %}#ff4747{% elif ticket.priority == 'high' %}#ff9900{% elif ticket.priority == 'medium' %}#f8c471{% else %}#6ab04c{% endif %}; padding: 8px 15px; font-size: 12px;">
+            <span class="badge" style="background-color: {% if ticket.priority == 'urgent' %}#ff4747{% elif ticket.priority == 'high' %}#d92d20{% elif ticket.priority == 'medium' %}#f8c471{% else %}#6ab04c{% endif %}; padding: 8px 15px; font-size: 12px;">
               {{ ticket.get_priority_display }} Priority
             </span>
             <br>

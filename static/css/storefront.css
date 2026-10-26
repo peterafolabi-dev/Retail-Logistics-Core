@@ -452,5 +452,43 @@ body {
 .rc-safety-note a { color: var(--sf-brand) !important; font-weight: 600; white-space: nowrap; }
 [data-theme="dark"] .rc-safety-note { border-color: rgba(253, 176, 34, .35); }
 
+/* ── Legacy page harmoniser ──────────────────────────────────────────────
+   Older pages (wallet, FAQ, tickets, password reset, notifications…) are built
+   from Bootstrap pieces. These rules give them the storefront look without
+   rewriting each template. */
+.rc-page-shell > .container { max-width: none; padding: 0; margin-top: 0 !important; }
+.rc-page-shell > .container.my-5 { margin-bottom: 2rem !important; }
+.rc-page-shell .text-gradient {
+  background: none !important; -webkit-text-fill-color: currentColor !important;
+  color: var(--sf-text) !important;
+}
+.rc-page-shell .card, .rc-page-shell .theme-card {
+  background: var(--sf-surface) !important; border: 1px solid var(--sf-border) !important;
+  border-radius: var(--sf-radius) !important; box-shadow: none !important; color: var(--sf-text);
+}
+.rc-page-shell .card.shadow-lg, .rc-page-shell .card.shadow-sm { box-shadow: var(--sf-shadow) !important; }
+.rc-page-shell .btn { border-radius: var(--sf-radius-sm) !important; font-weight: 600; box-shadow: none; }
+.rc-page-shell .btn-danger, .rc-page-shell .btn-primary {
+  background: var(--sf-brand) !important; border-color: var(--sf-brand) !important; color: #fff !important;
+}
+.rc-page-shell .btn-danger:hover, .rc-page-shell .btn-primary:hover { background: var(--sf-brand-hover) !important; border-color: var(--sf-brand-hover) !important; }
+.rc-page-shell .btn-outline-danger, .rc-page-shell .btn-outline-primary, .rc-page-shell .btn-outline-secondary {
+  background: var(--sf-surface) !important; border: 1px solid var(--sf-border) !important; color: var(--sf-text) !important;
+}
+.rc-page-shell .btn-outline-danger:hover, .rc-page-shell .btn-outline-primary:hover, .rc-page-shell .btn-outline-secondary:hover { border-color: var(--sf-text) !important; }
+.rc-page-shell .form-control, .rc-page-shell .form-select {
+  border-radius: var(--sf-radius-sm) !important; border: 1px solid var(--sf-border) !important;
+  background-color: var(--sf-surface) !important; color: var(--sf-text) !important; min-height: 46px; box-shadow: none !important;
+}
+.rc-page-shell .form-control:focus, .rc-page-shell .form-select:focus { border-color: var(--sf-brand) !important; outline: 2px solid var(--sf-brand-soft); }
+.rc-page-shell textarea.form-control { min-height: 120px; }
+.rc-page-shell .form-label { color: var(--sf-text-2); font-size: .875rem; }
+.rc-page-shell .text-muted { color: var(--sf-muted) !important; }
+.rc-page-shell .badge.bg-danger { background: var(--sf-brand-soft) !important; color: var(--sf-brand) !important; font-weight: 600; }
+.rc-page-shell .alert { border-radius: var(--sf-radius-sm); }
+.rc-page-shell .link-danger, .rc-page-shell .text-danger { color: var(--sf-brand) !important; }
+/* Django messages already appear as toasts; hide the duplicate inline copies old pages render. */
+.rc-page-shell .alert-dismissible { display: none; }
+
 /* Hide the old full-screen loader everywhere. */
 #loader { display: none !important; }

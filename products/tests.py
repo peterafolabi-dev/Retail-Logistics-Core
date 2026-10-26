@@ -785,3 +785,37 @@ class ContactPageTests(TestCase):
         response = self.client.get(reverse('products:contact'), {'topic': 'scam'})
         self.assertContains(response, 'value="scam" checked')
         self.assertContains(response, 'How can we help?')
+
+
+class PageHealthTests(TestCase):
+    """Pages that previously crashed or showed fake data."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='health', password='pass12345', first_name='Ada')
+        self.product = Product.objects.create(name='Widget', price=100.0, stock=5, image_url='http://a.png')
+
+    def test_reviews_page_uses_real_reviews_and_hides_flagged_ones(self):
+        Review.objects.create(user=self.user, product=self.product, rating=4, review_text='Solid product', moderation_status='approved')
+        other = User.objects.create_user(username='bot', password='x')
+        Review.objects.create(user=other, product=self.product, rating=1, review_text='SPAM SPAM', moderation_status='hidden')
+        response = self.client.get(reverse('products:reviews'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['total_reviews'], 1)
+        self.assertEqual(response.context['average_rating'], 4)
+        self.assertContains(response, 'Solid product')
+        self.assertNotContains(response, 'SPAM SPAM')
+
+    def test_reviews_page_empty_state(self):
+        self.assertContains(self.client.get(reverse('products:reviews')), 'No reviews yet')
+
+    def test_account_pages_render(self):
+        self.client.login(username='health', password='pass12345')
+        for name in ['payment-methods', 'profile', 'wallet', 'my-tickets', 'addresses', 'referrals', 'notification-center']:
+            with self.subTest(page=name):
+                self.assertEqual(self.client.get(reverse(f'products:{name}')).status_code, 200)
+
+    @override_settings(DEBUG=False)
+    def test_missing_page_uses_store_404(self):
+        response = self.client.get('/no-such-page/')
+        self.assertEqual(response.status_code, 404)
+        self.assertContains(response, "We couldn't find that page", status_code=404)

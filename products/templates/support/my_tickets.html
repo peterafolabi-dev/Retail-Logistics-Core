@@ -31,7 +31,7 @@
                 <td><strong>#{{ ticket.id }}</strong></td>
                 <td>{{ ticket.title }}</td>
                 <td>
-                  <span class="badge" style="background-color: {% if ticket.priority == 'urgent' %}#ff4747{% elif ticket.priority == 'high' %}#ff9900{% elif ticket.priority == 'medium' %}#f8c471{% else %}#6ab04c{% endif %}">
+                  <span class="badge" style="background-color: {% if ticket.priority == 'urgent' %}#ff4747{% elif ticket.priority == 'high' %}#d92d20{% elif ticket.priority == 'medium' %}#f8c471{% else %}#6ab04c{% endif %}">
                     {{ ticket.get_priority_display }}
                   </span>
                 </td>
@@ -62,7 +62,7 @@
 
 <style>
   .text-gradient {
-    background: linear-gradient(45deg, #ff6b6b, #ff9900);
+    background: linear-gradient(45deg, #d92d20, #d92d20);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }

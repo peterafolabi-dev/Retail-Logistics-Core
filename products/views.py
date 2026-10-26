@@ -1100,6 +1100,15 @@ def checkout(request):
         wallet_available = wallet_balance > 0
         addresses = UserAddress.objects.filter(user=request.user).order_by('-is_default', '-created_at')
 
+    # Preselect an address just added/edited from checkout (?address=<id>), else the default.
+    selected_address_id = None
+    requested = request.GET.get('address', '')
+    if requested.isdigit() and addresses.filter(pk=int(requested)).exists():
+        selected_address_id = int(requested)
+    else:
+        default = next((a for a in addresses if a.is_default), None)
+        selected_address_id = default.pk if default else None
+
     context = {
         'products': products,
         'total': total,
@@ -1117,6 +1126,7 @@ def checkout(request):
         'wallet_balance': wallet_balance,
         'wallet_available': wallet_available,
         'addresses': addresses,
+        'selected_address_id': selected_address_id,
     }
 
     return render(request, 'checkout.html', context)
@@ -1861,51 +1871,114 @@ def addresses(request):
     return render(request, 'account/addresses.html', {'addresses': addresses})
 
 
-@login_required(login_url='products:login')
-def add_address(request):
-    from .models import UserAddress
+NIGERIAN_STATES = [
+    'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River',
+    'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT (Abuja)', 'Gombe', 'Imo', 'Jigawa', 'Kaduna',
+    'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun',
+    'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara',
+]
+ADDRESS_FIELDS = ['full_name', 'phone', 'street_address', 'landmark', 'city', 'state', 'postal_code', 'address_type']
+
+
+def _validate_address_form(post):
+    """Return (cleaned values, {field: error}) for the add/edit address form."""
+    import re
+
+    values = {field: (post.get(field) or '').strip() for field in ADDRESS_FIELDS}
+    errors = {}
+    if len(values['full_name']) < 2:
+        errors['full_name'] = 'Enter the name of the person receiving the order.'
+    digits = re.sub(r'[\s\-().]', '', values['phone'])
+    if not re.fullmatch(r'\+?\d{10,15}', digits):
+        errors['phone'] = 'Enter a valid phone number, e.g. 0803 123 4567.'
+    if len(values['street_address']) < 5:
+        errors['street_address'] = 'Enter your house number and street.'
+    if not values['city']:
+        errors['city'] = 'Enter your city or town.'
+    if values['state'] not in NIGERIAN_STATES:
+        errors['state'] = 'Choose your state.'
+    if len(values['postal_code']) > 20:
+        errors['postal_code'] = 'Postal code is too long.'
+    if values['address_type'] not in dict(UserAddress.ADDRESS_TYPES):
+        values['address_type'] = 'home'
+    values['phone'] = digits if not errors.get('phone') else values['phone']
+    return values, errors
+
+
+def _save_address(user, address, values, make_default):
+    """Create or update an address and keep exactly one default per user."""
+    from django.db import transaction
+
+    street = values['street_address']
+    if values['landmark']:
+        street = f"{street} (near {values['landmark']})"
+    with transaction.atomic():
+        address = address or UserAddress(user=user)
+        address.full_name = values['full_name']
+        address.phone = values['phone']
+        address.street_address = street[:255]
+        address.city = values['city']
+        address.state = values['state']
+        address.postal_code = values['postal_code']
+        address.address_type = values['address_type']
+        has_other_default = UserAddress.objects.filter(user=user, is_default=True).exclude(pk=address.pk).exists()
+        address.is_default = make_default or not has_other_default
+        address.save()
+        if address.is_default:
+            UserAddress.objects.filter(user=user, is_default=True).exclude(pk=address.pk).update(is_default=False)
+    return address
+
+
+def _address_redirect(request, address):
+    """Go back to ?next= (e.g. checkout) with the address preselected, else to the address book."""
+    next_url = request.POST.get('next') or request.GET.get('next')
+    if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        separator = '&' if '?' in next_url else '?'
+        return redirect(f'{next_url}{separator}address={address.pk}')
+    return redirect('products:addresses')
+
+
+def _address_form_view(request, address=None):
+    next_url = request.POST.get('next') or request.GET.get('next') or ''
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        next_url = ''
+    is_first = not UserAddress.objects.filter(user=request.user).exists()
 
     if request.method == 'POST':
-        full_name = request.POST.get('full_name', '').strip()
-        phone = request.POST.get('phone', '').strip()
-        street_address = request.POST.get('street_address', '').strip()
-        city = request.POST.get('city', '').strip()
-        state = request.POST.get('state', '').strip()
-        postal_code = request.POST.get('postal_code', '').strip()
-        address_type = request.POST.get('address_type', 'home')
-        is_default = request.POST.get('is_default') == 'on'
-
-        if all([full_name, phone, street_address, city, state, postal_code]):
-            UserAddress.objects.create(
-                user=request.user, full_name=full_name, phone=phone,
-                street_address=street_address, city=city, state=state,
-                postal_code=postal_code, address_type=address_type, is_default=is_default
-            )
-            messages.success(request, "✅ Address added successfully!")
-            return redirect('products:addresses')
+        values, errors = _validate_address_form(request.POST)
+        if not errors:
+            saved = _save_address(request.user, address, values, request.POST.get('is_default') == 'on')
+            messages.success(request, 'Address updated.' if address else 'Address saved.')
+            return _address_redirect(request, saved)
+        form = values
+    else:
+        errors = {}
+        if address:
+            form = {f: getattr(address, f, '') for f in ADDRESS_FIELDS if f != 'landmark'}
         else:
-            messages.error(request, "❌ Please fill in all required fields.")
+            name = request.user.get_full_name()
+            form = {'full_name': name, 'address_type': 'home'}
 
-    return render(request, 'account/add_address.html')
+    return render(request, 'account/add_address.html', {
+        'address': address,
+        'form': form,
+        'errors': errors,
+        'states': NIGERIAN_STATES,
+        'next': next_url,
+        'from_checkout': next_url.startswith(reverse('products:checkout')),
+        'is_first': is_first,
+    })
+
+
+@login_required(login_url='products:login')
+def add_address(request):
+    return _address_form_view(request)
 
 
 @login_required(login_url='products:login')
 def edit_address(request, address_id):
     address = get_object_or_404(UserAddress, id=address_id, user=request.user)
-    if request.method == 'POST':
-        fields = ['full_name', 'phone', 'street_address', 'city', 'state', 'postal_code', 'address_type']
-        values = {field: request.POST.get(field, '').strip() for field in fields}
-        address_type = values['address_type'] if values['address_type'] in {'home', 'work', 'other'} else 'home'
-        if all(values[field] for field in fields[:-1]):
-            for field in fields[:-1]:
-                setattr(address, field, values[field])
-            address.address_type = address_type
-            address.is_default = request.POST.get('is_default') == 'on'
-            address.save()
-            messages.success(request, '✅ Address updated successfully!')
-            return redirect('products:addresses')
-        messages.error(request, '❌ Please fill in all required fields.')
-    return render(request, 'account/add_address.html', {'address': address})
+    return _address_form_view(request, address)
 
 
 @require_http_methods(['POST'])

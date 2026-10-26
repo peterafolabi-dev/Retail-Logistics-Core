@@ -27,6 +27,22 @@ services:
         sync: false
       - key: GROQ_MODEL
         value: "openai/gpt-oss-120b"
+      # Email: Render's free plan blocks SMTP, so mail goes through Brevo's API.
+      - key: BREVO_API_KEY
+        sync: false
+      - key: SUPPORT_EMAIL
+        value: "afolabiprosper329@gmail.com"
+      # Official social profiles / WhatsApp Business number (blank = hidden on the site).
+      - key: WHATSAPP_NUMBER
+        sync: false
+      - key: FACEBOOK_URL
+        sync: false
+      - key: INSTAGRAM_URL
+        sync: false
+      - key: TIKTOK_URL
+        sync: false
+      - key: X_URL
+        sync: false
       - key: DJANGO_SUPERUSER_USERNAME
         sync: false
       - key: DJANGO_SUPERUSER_EMAIL

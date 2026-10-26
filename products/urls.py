@@ -50,6 +50,7 @@ urlpatterns = [
     path('add-address/', views.add_address, name='add-address'),
     path('addresses/<int:address_id>/edit/', views.edit_address, name='edit-address'),
     path('addresses/<int:address_id>/delete/', views.delete_address, name='delete-address'),
+    path('addresses/<int:address_id>/default/', views.set_default_address, name='set-default-address'),
     path('payment-methods/', views.payment_methods, name='payment-methods'),
     path('wallet/', views.wallet, name='wallet'),
     path('referrals/', views.referral_program, name='referrals'),

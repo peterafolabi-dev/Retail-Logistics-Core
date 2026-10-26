@@ -1985,8 +1985,26 @@ def edit_address(request, address_id):
 @login_required(login_url='products:login')
 def delete_address(request, address_id):
     address = get_object_or_404(UserAddress, id=address_id, user=request.user)
+    was_default = address.is_default
     address.delete()
-    messages.success(request, '✅ Address deleted successfully!')
+    if was_default:
+        # Promote the most recent remaining address so checkout still has a default.
+        replacement = UserAddress.objects.filter(user=request.user).order_by('-created_at').first()
+        if replacement:
+            replacement.is_default = True
+            replacement.save(update_fields=['is_default'])
+    messages.success(request, 'Address deleted.')
+    return redirect('products:addresses')
+
+
+@require_http_methods(['POST'])
+@login_required(login_url='products:login')
+def set_default_address(request, address_id):
+    address = get_object_or_404(UserAddress, id=address_id, user=request.user)
+    UserAddress.objects.filter(user=request.user, is_default=True).exclude(pk=address.pk).update(is_default=False)
+    address.is_default = True
+    address.save(update_fields=['is_default'])
+    messages.success(request, 'Default address updated.')
     return redirect('products:addresses')
 
 

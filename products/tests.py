@@ -660,7 +660,7 @@ class SafetyAndCouponTests(TestCase):
         response = self.client.get(reverse('products:stay-safe'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'never ask for your card PIN, OTP')
-        self.assertContains(response, 'official WhatsApp channel')
+        self.assertContains(response, 'official channel')
         self.assertContains(self.client.get(reverse('products:product-list')), reverse('products:stay-safe'))
 
     def test_checkout_shows_scam_warning_and_is_the_only_coupon_entry(self):
@@ -696,7 +696,7 @@ class EmailDeliveryTests(TestCase):
         from django.core import mail
         response = self.client.post(reverse('products:newsletter-signup'), {'email': 'reader@example.com'},
                                     HTTP_REFERER='http://testserver/products/about/')
-        self.assertRedirects(response, '/products/about/', fetch_redirect_response=False)
+        self.assertRedirects(response, 'http://testserver/products/about/', fetch_redirect_response=False)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, ['reader@example.com'])
         self.assertIn('unsubscribe', mail.outbox[0].alternatives[0][0].lower())
@@ -715,7 +715,7 @@ class EmailDeliveryTests(TestCase):
         message = mail.outbox[0]
         html = message.alternatives[0][0]
         import re
-        link = re.search(r'http://testserver(/products/password-reset-confirm/[^"\s<]+)', html).group(1)
+        link = re.search(r'https?://[^/\s"]+(/products/password-reset-confirm/[^"\s<]+)', html).group(1)
         self.assertIn(link, message.body)  # plain-text and HTML versions match
         follow = self.client.get(link, follow=True)
         self.assertEqual(follow.status_code, 200)

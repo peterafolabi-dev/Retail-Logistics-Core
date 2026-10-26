@@ -2,7 +2,7 @@
 
 A full production e-commerce platform built solo with **Django**, featuring a Groq-powered AI shopping assistant, real payment processing, and fraud-aware review moderation.
 
-**Live at:** [retail-logistics-core.onrender.com](https://retail-logistics-core.onrender.com)
+**Live at:** [retail-logistics-core-t0xz.onrender.com](https://retail-logistics-core-t0xz.onrender.com)
 
 ---
 

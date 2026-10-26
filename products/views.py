@@ -750,9 +750,11 @@ from django.urls import reverse_lazy
 class CustomPasswordResetView(PasswordResetView):
     template_name = 'auth/password_reset.html'
     success_url = reverse_lazy('products:password-reset-done')
-    email_template_name = 'registration/password_reset_email.html'
+    # Unique paths: django.contrib.admin ships registration/password_reset_* templates that would
+    # otherwise win (admin is earlier in INSTALLED_APPS) and link to the admin-styled /auth/reset/ page.
+    email_template_name = 'auth/password_reset_email.txt'
     html_email_template_name = 'emails/password_reset.html'
-    subject_template_name = 'registration/password_reset_subject.txt'
+    subject_template_name = 'auth/password_reset_subject.txt'
     from_email = None  # settings.DEFAULT_FROM_EMAIL (the Brevo-verified sender)
     extra_email_context = {'site_name': 'RedCart'}
 

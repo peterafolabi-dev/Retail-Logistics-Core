@@ -1,74 +1,84 @@
 {% extends 'base.html' %}
-{% block title %}My Addresses - RedCart{% endblock %}
+{% block title %}My addresses | RedCart{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-  <div class="row">
-    <div class="col-md-10 mx-auto">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-gradient">🏠 Saved Addresses</h2>
-        <a href="{% url 'products:add-address' %}" class="btn btn-danger rounded-pill fw-bold">+ Add Address</a>
-      </div>
+<div class="sf-container sf-page">
+  <nav class="sf-breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'products:account-dashboard' %}">My account</a> <i class="bi bi-chevron-right"></i>
+    <span>Addresses</span>
+  </nav>
 
-      {% if messages %}
-        {% for message in messages %}
-          <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-3" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-
-      {% if addresses %}
-        <div class="row">
-          {% for address in addresses %}
-          <div class="col-md-6 mb-4">
-            <div class="card border-0 shadow-lg rounded-4 p-4 theme-card">
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                <h5 class="fw-bold">{{ address.get_address_type_display|upper }}</h5>
-                {% if address.is_default %}
-                <span class="badge bg-danger">Default</span>
-                {% endif %}
-              </div>
-
-              <p class="mb-2">
-                <strong>{{ address.full_name }}</strong><br>
-                {{ address.street_address }}<br>
-                {{ address.city }}, {{ address.state }} {{ address.postal_code }}<br>
-                {{ address.country }}
-              </p>
-
-              <p class="text-muted mb-3">
-                <i class="bi bi-telephone"></i> {{ address.phone }}
-              </p>
-
-              <div class="d-flex gap-2">
-                <a href="{% url 'products:edit-address' address.id %}" class="btn btn-sm btn-outline-danger rounded-pill">Edit</a>
-                <form method="post" action="{% url 'products:delete-address' address.id %}" class="d-inline">
-                  {% csrf_token %}
-                  <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill">Delete</button>
-                </form>
-              </div>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <div class="text-center py-5">
-          <i class="bi bi-pin-map" style="font-size: 3rem; color: #ccc;"></i>
-          <p class="text-muted mt-3">No saved addresses yet.</p>
-          <a href="{% url 'products:add-address' %}" class="btn btn-danger rounded-pill fw-bold">Add Your First Address</a>
-        </div>
-      {% endif %}
+  <div class="sf-toolbar">
+    <div>
+      <h1>Delivery addresses</h1>
+      <p>{{ addresses|length }} saved address{{ addresses|length|pluralize:"es" }}</p>
     </div>
+    {% if addresses %}<a href="{% url 'products:add-address' %}" class="sf-btn sf-btn-primary"><i class="bi bi-plus-lg"></i> Add address</a>{% endif %}
   </div>
+
+  {% if addresses %}
+    <div class="ab-grid">
+      {% for address in addresses %}
+        <article class="sf-panel ab-item{% if address.is_default %} is-default{% endif %}">
+          <div class="ab-head">
+            <span class="ab-type"><i class="bi {% if address.address_type == 'work' %}bi-briefcase{% elif address.address_type == 'other' %}bi-geo-alt{% else %}bi-house{% endif %}"></i> {{ address.get_address_type_display }}</span>
+            {% if address.is_default %}<span class="sf-pill sf-pill-success"><i class="bi bi-check2"></i> Default</span>{% endif %}
+          </div>
+          <address>
+            <strong>{{ address.full_name }}</strong>
+            {{ address.street_address }}<br>
+            {{ address.city }}, {{ address.state }}{% if address.postal_code %} {{ address.postal_code }}{% endif %}<br>
+            {{ address.country }}
+          </address>
+          <p class="ab-phone"><i class="bi bi-telephone"></i> {{ address.phone }}</p>
+          <div class="ab-actions">
+            <a href="{% url 'products:edit-address' address.id %}" class="sf-btn sf-btn-outline sf-btn-sm"><i class="bi bi-pencil"></i> Edit</a>
+            {% if not address.is_default %}
+              <form method="post" action="{% url 'products:set-default-address' address.id %}">
+                {% csrf_token %}
+                <button type="submit" class="sf-btn sf-btn-outline sf-btn-sm">Set as default</button>
+              </form>
+            {% endif %}
+            <form method="post" action="{% url 'products:delete-address' address.id %}" onsubmit="return confirm('Delete this address?');">
+              {% csrf_token %}
+              <button type="submit" class="sf-btn sf-btn-sm ab-delete" aria-label="Delete address"><i class="bi bi-trash"></i> Delete</button>
+            </form>
+          </div>
+        </article>
+      {% endfor %}
+      <a href="{% url 'products:add-address' %}" class="ab-add">
+        <i class="bi bi-plus-circle"></i>
+        <span>Add a new address</span>
+      </a>
+    </div>
+  {% else %}
+    <div class="sf-panel sf-empty">
+      <i class="bi bi-geo-alt"></i>
+      <h2>No saved addresses yet</h2>
+      <p>Save a delivery address to check out faster.</p>
+      <a href="{% url 'products:add-address' %}" class="sf-btn sf-btn-primary">Add your first address</a>
+    </div>
+  {% endif %}
 </div>
 
 <style>
-  .text-gradient {
-    background: linear-gradient(45deg, #ff6b6b, #ff9900);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
+  .ab-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .ab-item { display: flex; flex-direction: column; padding: 1.25rem; }
+  .ab-item.is-default { border-color: var(--sf-success); }
+  .ab-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; }
+  .ab-type { display: inline-flex; gap: .4rem; align-items: center; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--sf-muted) !important; }
+  .ab-type i { color: inherit !important; }
+  .ab-item address { font-style: normal; line-height: 1.6; margin: 0 0 .5rem; color: var(--sf-text-2) !important; }
+  .ab-item address strong { display: block; color: var(--sf-text) !important; }
+  .ab-phone { font-size: .9rem; color: var(--sf-muted) !important; margin: 0 0 1rem; }
+  .ab-phone i { color: inherit !important; }
+  .ab-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: auto; padding-top: .75rem; border-top: 1px solid var(--sf-border); }
+  .ab-actions form { margin: 0; }
+  .ab-delete { background: transparent; color: var(--sf-brand) !important; border-color: transparent; }
+  .ab-delete:hover { background: var(--sf-brand-soft); }
+  .ab-delete i { color: inherit !important; }
+  .ab-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; min-height: 200px; border: 2px dashed var(--sf-border); border-radius: var(--sf-radius); color: var(--sf-muted) !important; text-decoration: none; font-weight: 600; }
+  .ab-add i { font-size: 1.75rem; color: inherit !important; }
+  .ab-add:hover { border-color: var(--sf-brand); color: var(--sf-brand) !important; }
 </style>
 {% endblock %}

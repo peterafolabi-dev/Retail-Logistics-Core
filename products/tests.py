@@ -587,3 +587,61 @@ class ReferralProgramTests(TestCase):
         self.client.get(reverse('products:add-to-cart', args=[product.id]))
         response = self.client.get(reverse('products:view-cart'))
         self.assertContains(response, self.referrals.referral_code_for(self.referrer))
+
+
+class AddressFlowTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='addr', password='pass12345', first_name='Tolu', last_name='Ade')
+        self.client.login(username='addr', password='pass12345')
+        self.valid = {
+            'full_name': 'Tolu Ade', 'phone': '0803 123 4567', 'street_address': '12 Admiralty Way',
+            'landmark': 'opposite Shoprite', 'city': 'Lekki', 'state': 'Lagos', 'postal_code': '',
+            'address_type': 'home',
+        }
+
+    def test_adding_from_checkout_returns_to_checkout_with_address_selected(self):
+        checkout = reverse('products:checkout')
+        response = self.client.post(f"{reverse('products:add-address')}?next={checkout}", self.valid)
+        address = UserAddress.objects.get(user=self.user)
+        self.assertRedirects(response, f'{checkout}?address={address.pk}', fetch_redirect_response=False)
+        self.assertTrue(address.is_default)  # first address becomes default
+        self.assertEqual(address.phone, '08031234567')
+        self.assertIn('near opposite Shoprite', address.street_address)
+
+        session = self.client.session
+        session['cart'] = {str(Product.objects.create(name='W', price=5.0, stock=3, image_url='http://a.png').pk): 1}
+        session.save()
+        page = self.client.get(f'{checkout}?address={address.pk}')
+        self.assertEqual(page.context['selected_address_id'], address.pk)
+
+    def test_without_next_returns_to_address_book_and_ignores_offsite_next(self):
+        response = self.client.post(reverse('products:add-address'), self.valid)
+        self.assertRedirects(response, reverse('products:addresses'), fetch_redirect_response=False)
+        response = self.client.post(f"{reverse('products:add-address')}?next=https://evil.example.com/", self.valid)
+        self.assertRedirects(response, reverse('products:addresses'), fetch_redirect_response=False)
+
+    def test_invalid_form_keeps_values_and_shows_field_errors(self):
+        data = dict(self.valid, phone='abc', state='Atlantis')
+        response = self.client.post(reverse('products:add-address'), data)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('phone', response.context['errors'])
+        self.assertIn('state', response.context['errors'])
+        self.assertContains(response, 'value="12 Admiralty Way"')
+        self.assertFalse(UserAddress.objects.exists())
+
+    def test_only_one_default_and_deleting_default_promotes_another(self):
+        self.client.post(reverse('products:add-address'), self.valid)
+        self.client.post(reverse('products:add-address'), dict(self.valid, street_address='5 Allen Avenue', is_default='on'))
+        first, second = UserAddress.objects.order_by('created_at', 'id')
+        self.assertFalse(first.is_default)
+        self.assertTrue(UserAddress.objects.get(pk=second.pk).is_default)
+
+        self.client.post(reverse('products:delete-address', args=[second.pk]))
+        self.assertTrue(UserAddress.objects.get(pk=first.pk).is_default)
+
+    def test_set_default_switches_default(self):
+        self.client.post(reverse('products:add-address'), self.valid)
+        self.client.post(reverse('products:add-address'), dict(self.valid, street_address='5 Allen Avenue'))
+        first, second = UserAddress.objects.order_by('created_at', 'id')
+        self.client.post(reverse('products:set-default-address', args=[second.pk]))
+        self.assertEqual(list(UserAddress.objects.filter(is_default=True).values_list('pk', flat=True)), [second.pk])

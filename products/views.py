@@ -1867,7 +1867,7 @@ def ticket_detail(request, ticket_id):
 @login_required(login_url='products:login')
 def addresses(request):
     from .models import UserAddress
-    addresses = UserAddress.objects.filter(user=request.user)
+    addresses = UserAddress.objects.filter(user=request.user).order_by("-is_default", "-created_at")
     return render(request, 'account/addresses.html', {'addresses': addresses})
 
 

@@ -751,8 +751,18 @@ class CustomPasswordResetView(PasswordResetView):
     template_name = 'auth/password_reset.html'
     success_url = reverse_lazy('products:password-reset-done')
     email_template_name = 'registration/password_reset_email.html'
+    html_email_template_name = 'emails/password_reset.html'
     subject_template_name = 'registration/password_reset_subject.txt'
-    from_email = 'afolabiprosper329@gmail.com'
+    from_email = None  # settings.DEFAULT_FROM_EMAIL (the Brevo-verified sender)
+    extra_email_context = {'site_name': 'RedCart'}
+
+    def form_valid(self, form):
+        from .utils import email_is_configured
+        if not email_is_configured():
+            logger.error('Password reset requested but no email provider is configured.')
+            messages.error(self.request, "Sorry, we can't send emails right now. Please try again later or contact support.")
+            return self.form_invalid(form)
+        return super().form_valid(form)
 
 
 class CustomPasswordResetDoneView(PasswordResetDoneView):
@@ -2131,12 +2141,18 @@ def newsletter_signup(request):
             messages.error(request, "❌ Please provide a valid email address.")
             return redirect('products:product-list')
         
-        # Check if email provider is configured (Gmail SMTP credentials)
-        email_host_user = config('EMAIL_HOST_USER', default='')
-        email_host_password = config('EMAIL_HOST_PASSWORD', default='')
-        if not email_host_user or not email_host_password:
-            messages.error(request, "❌ Email provider is not configured on this site. Please contact the site administrator.")
-            return redirect('products:product-list')
+        from django.core.validators import validate_email
+        from django.core.exceptions import ValidationError
+        from .utils import email_is_configured
+        try:
+            validate_email(email)
+        except ValidationError:
+            messages.error(request, "Please enter a valid email address.")
+            return _redirect_back(request, 'products:product-list')
+        if not email_is_configured():
+            logger.error('Newsletter signup attempted but no email provider is configured.')
+            messages.error(request, "Sorry, we can't send emails right now. Please try again later.")
+            return _redirect_back(request, 'products:product-list')
 
         try:
             newsletter, created = Newsletter.objects.get_or_create(email=email)
@@ -2152,9 +2168,9 @@ def newsletter_signup(request):
                         messages.success(request, "✅ Successfully subscribed! Check your email for confirmation.")
                     else:
                         messages.warning(request, "⚠️ Subscribed, but could not send confirmation email right now.")
-                except Exception as e:
-                    print(f'Newsletter email error: {str(e)}')
-                    messages.warning(request, f"⚠️ Subscribed, but email failed: {str(e)[:100]}")
+                except Exception:
+                    logger.exception('Newsletter confirmation email failed for %s', email)
+                    messages.warning(request, "You're subscribed, but we couldn't send the confirmation email just now.")
             else:
                 try:
                     email_sent = send_newsletter_confirmation_email(email)
@@ -2162,15 +2178,15 @@ def newsletter_signup(request):
                         messages.success(request, "✅ You're already subscribed. A confirmation email has been resent.")
                     else:
                         messages.warning(request, "⚠️ You're already subscribed, but we could not resend the confirmation email right now.")
-                except Exception as e:
-                    print(f'Newsletter resend error: {str(e)}')
-                    messages.warning(request, f"⚠️ You're already subscribed, but resend failed: {str(e)[:100]}")
-        except Exception as e:
-            messages.error(request, f"❌ Error: {str(e)}")
-        
-        return redirect('products:product-list')
-    
-    messages.error(request, "❌ Invalid request method.")
+                except Exception:
+                    logger.exception('Newsletter confirmation resend failed for %s', email)
+                    messages.warning(request, "You're already subscribed. We couldn't resend the confirmation email just now.")
+        except Exception:
+            logger.exception('Newsletter signup failed for %s', email)
+            messages.error(request, "Something went wrong while subscribing. Please try again.")
+
+        return _redirect_back(request, 'products:product-list')
+
     return redirect('products:product-list')
 
 
@@ -2536,7 +2552,7 @@ WHATSAPP_CHANNEL_URL = getattr(settings, 'WHATSAPP_CHANNEL_URL', '')
 
 def stay_safe(request):
     return render(request, 'legal/stay_safe.html', {
-        'support_email': getattr(settings, 'DEFAULT_FROM_EMAIL', ''),
+        'support_email': getattr(settings, 'SUPPORT_EMAIL', ''),
         'whatsapp_channel_url': WHATSAPP_CHANNEL_URL,
     })
 

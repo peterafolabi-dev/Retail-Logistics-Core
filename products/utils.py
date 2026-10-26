@@ -30,6 +30,16 @@ CATALOG_CACHE_TTL = 300  # 5 minutes
 
 # ============ EMAIL UTILITIES ============
 
+def email_is_configured():
+    """True when the active email backend has the credentials it needs to deliver mail."""
+    backend = getattr(settings, 'EMAIL_BACKEND', '')
+    if backend.startswith('anymail.backends.brevo'):
+        return bool(getattr(settings, 'BREVO_API_KEY', ''))
+    if backend.endswith('smtp.EmailBackend'):
+        return bool(getattr(settings, 'EMAIL_HOST_USER', '') and getattr(settings, 'EMAIL_HOST_PASSWORD', ''))
+    return True  # console / locmem / file backends used in development and tests
+
+
 def send_email(user, email_type, context=None, recipient_email=None):
     """
     Send email using templates
@@ -55,7 +65,7 @@ def send_email(user, email_type, context=None, recipient_email=None):
         context['site_name'] = 'RedCart'
         # Links in emails must point at our real domain, never a placeholder.
         context.setdefault('site_url', (getattr(settings, 'SITE_URL', '') or '').rstrip('/'))
-        context.setdefault('support_email', getattr(settings, 'DEFAULT_FROM_EMAIL', ''))
+        context.setdefault('support_email', getattr(settings, 'SUPPORT_EMAIL', ''))
 
         html_message = render_to_string(f'emails/{email_type}.html', context)
         plain_message = strip_tags(html_message)

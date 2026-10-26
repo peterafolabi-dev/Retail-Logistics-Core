@@ -111,6 +111,8 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # reset links expire after 24 hours, as the email says
+
 LOGIN_REDIRECT_URL = '/products/'
 LOGOUT_REDIRECT_URL = '/products/'
 
@@ -148,9 +150,17 @@ SOCIALACCOUNT_PROVIDERS = {
 
 FIREBASE_PROJECT_ID = os.environ.get('FIREBASE_PROJECT_ID', '')
 
-# ============ EMAIL (Gmail SMTP) ============
+# ============ EMAIL ============
+# Render's free plan blocks outgoing SMTP, so production sends through Brevo's HTTPS API
+# whenever BREVO_API_KEY is set. Without it we fall back to Gmail SMTP (fine locally).
+SUPPORT_EMAIL = config('SUPPORT_EMAIL', default='afolabiprosper329@gmail.com')
+BREVO_API_KEY = config('BREVO_API_KEY', default='')
+EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', cast=int, default=15)  # never hang a request on a dead mail server
 if IS_TESTING:
     EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+elif BREVO_API_KEY:
+    EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
+    ANYMAIL = {'BREVO_API_KEY': BREVO_API_KEY, 'REQUESTS_TIMEOUT': EMAIL_TIMEOUT}
 else:
     EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
     EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
@@ -159,7 +169,8 @@ else:
     EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
     EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool, default=True)
     EMAIL_USE_SSL = config('EMAIL_USE_SSL', cast=bool, default=False)
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='')
+# The sender address must be the Gmail address verified in Brevo (or the SMTP login).
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=f'RedCart <{SUPPORT_EMAIL}>')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 SITE_URL = config('SITE_URL', default='https://retail-logistics-core-t0xz.onrender.com')
 
@@ -202,6 +213,18 @@ REAL_TIME_NOTIFICATIONS_ENABLED = True
 # RedCart's only official WhatsApp presence (a broadcast channel). Shown in the footer and on
 # the Stay Safe page so customers can tell it apart from impersonators. Blank hides it.
 WHATSAPP_CHANNEL_URL = config('WHATSAPP_CHANNEL_URL', default='https://whatsapp.com/channel/0029Vb8ou1k0wajuuzWo5d1Y')
+
+# Official social profiles. Each one is only shown once its URL is set (Render → Environment).
+SOCIAL_LINKS = {
+    'facebook': config('FACEBOOK_URL', default=''),
+    'instagram': config('INSTAGRAM_URL', default=''),
+    'tiktok': config('TIKTOK_URL', default=''),
+    'x': config('X_URL', default=''),
+    'youtube': config('YOUTUBE_URL', default=''),
+    'linkedin': config('LINKEDIN_URL', default=''),
+}
+# WhatsApp Business number for customer chat, in international format, e.g. 2348031234567.
+WHATSAPP_NUMBER = config('WHATSAPP_NUMBER', default='')
 
 # Wallet credit (₦) paid to a referrer when their invited friend's first order is paid.
 REFERRAL_REWARD_AMOUNT = config('REFERRAL_REWARD_AMOUNT', cast=float, default=1000)

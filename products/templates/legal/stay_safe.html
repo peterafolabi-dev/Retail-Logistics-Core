@@ -34,7 +34,7 @@
     <h2>Common scams to watch for</h2>
     <table class="sf-specs" style="max-width:none">
       <tr><th scope="row">Fake delivery agent</th><td>A caller says your parcel is held and asks for a "release fee" or your OTP. Your order status is always on <a href="{% url 'products:profile' %}">your account page</a>.</td></tr>
-      <tr><th scope="row">Fake WhatsApp "support"</th><td>Someone messages you on WhatsApp using our name or logo and asks for payment or codes. RedCart does not sell, take payments or handle refunds over WhatsApp.</td></tr>
+      <tr><th scope="row">Fake WhatsApp "support"</th><td>Someone messages you on WhatsApp using our name or logo and asks for payment or codes. RedCart never takes payments or handles refunds over WhatsApp{% if whatsapp_number_display %}, and our only number is {{ whatsapp_number_display }}{% endif %}.</td></tr>
       <tr><th scope="row">Too-good-to-be-true deals</th><td>Ads or social posts with huge discounts that send you to another website or a bank transfer. Real RedCart deals are on our site.</td></tr>
       <tr><th scope="row">Refund or overpayment calls</th><td>A caller says you were overpaid and asks you to send money back. We only refund through the original payment method or your RedCart wallet.</td></tr>
       <tr><th scope="row">Phishing links</th><td>Emails or texts with a link to "verify your account". Sign in by typing our address yourself instead of clicking the link.</td></tr>
@@ -46,10 +46,18 @@
     <ul class="sf-description">
       <li><strong>Website:</strong> this site — orders, payments, refunds and order tracking only happen here.</li>
       <li><strong>Support:</strong> the <a href="{% url 'products:contact' %}">Contact us</a> page{% if user.is_authenticated %} or your <a href="{% url 'products:my-tickets' %}">support tickets</a>{% endif %}{% if support_email %}, or email <a href="mailto:{{ support_email }}">{{ support_email }}</a>{% endif %}.</li>
-      {% if whatsapp_channel_url %}
-        <li><strong>WhatsApp:</strong> our <a href="{{ whatsapp_channel_url }}" target="_blank" rel="noopener noreferrer">official WhatsApp channel</a> only posts news and deals. It cannot message you privately, and we never ask for payments or codes on WhatsApp.</li>
+      {% if whatsapp_chat_url %}
+        <li><strong>WhatsApp support:</strong> our only WhatsApp number is <a href="{{ whatsapp_chat_url }}" target="_blank" rel="noopener noreferrer">{{ whatsapp_number_display }}</a>. Any other number using our name is fake. Even on this number, we never ask for payments, card details or codes.</li>
       {% else %}
-        <li><strong>WhatsApp:</strong> RedCart does not provide customer service on WhatsApp. Any WhatsApp account claiming to be RedCart support is fake.</li>
+        <li><strong>WhatsApp support:</strong> RedCart does not offer customer service by WhatsApp chat. Any WhatsApp number claiming to be RedCart support is fake.</li>
+      {% endif %}
+      {% if whatsapp_channel_url %}
+        <li><strong>WhatsApp channel:</strong> our <a href="{{ whatsapp_channel_url }}" target="_blank" rel="noopener noreferrer">official channel</a> only posts news and deals. Channels can't message you privately.</li>
+      {% endif %}
+      {% if social_links %}
+        <li><strong>Social media:</strong> our only official accounts are
+          {% for s in social_links %}<a href="{{ s.url }}" target="_blank" rel="noopener noreferrer">{{ s.label }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}.
+          We never ask for payment through social media messages.</li>
       {% endif %}
     </ul>
   </section>

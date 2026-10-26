@@ -2547,14 +2547,9 @@ def buyer_protection(request):
     return render(request, 'legal/buyer_protection.html')
 
 
-WHATSAPP_CHANNEL_URL = getattr(settings, 'WHATSAPP_CHANNEL_URL', '')
-
-
 def stay_safe(request):
-    return render(request, 'legal/stay_safe.html', {
-        'support_email': getattr(settings, 'SUPPORT_EMAIL', ''),
-        'whatsapp_channel_url': WHATSAPP_CHANNEL_URL,
-    })
+    # Contact channels come from the cart_context processor.
+    return render(request, 'legal/stay_safe.html')
 
 
 def category_page(request, category_slug):

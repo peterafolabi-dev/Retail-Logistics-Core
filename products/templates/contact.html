@@ -81,6 +81,7 @@
           <div class="col-md-4 mb-3">
             <h5 class="fw-bold">💬 Live chat</h5>
             <p class="text-muted">Use the chat button at the bottom right — available 24/7.</p>
+            {% if whatsapp_chat_url %}<p class="text-muted"><a href="{{ whatsapp_chat_url }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-whatsapp"></i> WhatsApp {{ whatsapp_number_display }}</a></p>{% endif %}
           </div>
           <div class="col-md-4 mb-3">
             <h5 class="fw-bold">📧 Email</h5>

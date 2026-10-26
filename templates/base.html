@@ -909,11 +909,28 @@
         <div class="sf-footer-brand">
           <span class="sf-logo"><span class="sf-logo-mark"><i class="bi bi-bag-fill"></i></span><span class="sf-logo-text">Red<b>Cart</b></span></span>
           <p>Phones, laptops, fashion and home essentials, priced in naira and delivered across Nigeria.</p>
-          {% if whatsapp_channel_url %}
-          <a class="sf-wa-link" href="{{ whatsapp_channel_url }}" target="_blank" rel="noopener noreferrer">
-            <i class="bi bi-whatsapp"></i> Official WhatsApp channel <span>(news &amp; deals only)</span>
-          </a>
+          {% if social_links %}
+          <div class="sf-social" aria-label="Follow RedCart">
+            {% for s in social_links %}
+              <a href="{{ s.url }}" target="_blank" rel="noopener noreferrer" aria-label="RedCart on {{ s.label }}" title="{{ s.label }}"><i class="bi {{ s.icon }}"></i></a>
+            {% endfor %}
+          </div>
           {% endif %}
+          <div class="sf-contact-links">
+            {% if whatsapp_chat_url %}
+              <a class="sf-wa-link" href="{{ whatsapp_chat_url }}" target="_blank" rel="noopener noreferrer">
+                <i class="bi bi-whatsapp"></i> Chat on WhatsApp <span>{{ whatsapp_number_display }}</span>
+              </a>
+            {% endif %}
+            {% if whatsapp_channel_url %}
+              <a class="sf-wa-link" href="{{ whatsapp_channel_url }}" target="_blank" rel="noopener noreferrer">
+                <i class="bi bi-megaphone"></i> WhatsApp channel <span>(news &amp; deals)</span>
+              </a>
+            {% endif %}
+            {% if support_email %}
+              <a class="sf-wa-link" href="mailto:{{ support_email }}"><i class="bi bi-envelope"></i> {{ support_email }}</a>
+            {% endif %}
+          </div>
           <p class="sf-footer-safe"><i class="bi bi-shield-check"></i> We never ask for your PIN, OTP or password. <a href="{% url 'products:stay-safe' %}">Stay safe</a></p>
         </div>
         <div>

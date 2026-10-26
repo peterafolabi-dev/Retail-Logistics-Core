@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from . import utils
@@ -687,3 +687,53 @@ class SafetyAndCouponTests(TestCase):
         self.assertIn('https://shop.example.ng/products/profile/', html)
         self.assertIn('https://shop.example.ng/products/stay-safe/', html)
         self.assertNotIn('redcart.com', html)
+
+
+class EmailDeliveryTests(TestCase):
+    """Newsletter + password reset must actually hand a message to the mail backend."""
+
+    def test_newsletter_signup_sends_confirmation(self):
+        from django.core import mail
+        response = self.client.post(reverse('products:newsletter-signup'), {'email': 'reader@example.com'},
+                                    HTTP_REFERER='http://testserver/products/about/')
+        self.assertRedirects(response, '/products/about/', fetch_redirect_response=False)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ['reader@example.com'])
+        self.assertIn('unsubscribe', mail.outbox[0].alternatives[0][0].lower())
+
+    def test_newsletter_rejects_invalid_email(self):
+        from django.core import mail
+        self.client.post(reverse('products:newsletter-signup'), {'email': 'not-an-email'})
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_password_reset_email_has_working_link(self):
+        from django.core import mail
+        User.objects.create_user(username='forgetful', email='forgetful@example.com', password='old-pass-123')
+        response = self.client.post(reverse('products:password-reset'), {'email': 'forgetful@example.com'})
+        self.assertRedirects(response, reverse('products:password-reset-done'), fetch_redirect_response=False)
+        self.assertEqual(len(mail.outbox), 1)
+        message = mail.outbox[0]
+        html = message.alternatives[0][0]
+        import re
+        link = re.search(r'http://testserver(/products/password-reset-confirm/[^"\s<]+)', html).group(1)
+        self.assertIn(link, message.body)  # plain-text and HTML versions match
+        follow = self.client.get(link, follow=True)
+        self.assertEqual(follow.status_code, 200)
+        self.assertContains(follow, 'new_password1')
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend', EMAIL_HOST_USER='', EMAIL_HOST_PASSWORD='')
+    def test_unconfigured_provider_shows_friendly_error_instead_of_hanging(self):
+        User.objects.create_user(username='u2', email='u2@example.com', password='x-pass-123')
+        response = self.client.post(reverse('products:password-reset'), {'email': 'u2@example.com'})
+        self.assertEqual(response.status_code, 200)
+        from django.contrib.messages import get_messages
+        texts = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertTrue(any("can't send emails right now" in t for t in texts), texts)
+
+    @override_settings(SOCIAL_LINKS={'facebook': 'https://facebook.com/redcart.ng', 'instagram': ''}, WHATSAPP_NUMBER='0803 123 4567')
+    def test_footer_shows_only_configured_social_links_and_whatsapp_chat(self):
+        page = self.client.get(reverse('products:about'))
+        self.assertContains(page, 'https://facebook.com/redcart.ng')
+        self.assertNotContains(page, 'bi-instagram')
+        self.assertContains(page, 'https://wa.me/2348031234567')
+        self.assertContains(page, '+234 803 123 4567')

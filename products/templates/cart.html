@@ -940,22 +940,6 @@
     });
   }
 
-  var wheelBtn = document.getElementById('rc-wheel');
-  if (wheelBtn) {
-    wheelBtn.addEventListener('click', function () {
-      if (wheelBtn.disabled) return;
-      wheelBtn.disabled = true;
-      wheelBtn.querySelector('span').innerHTML = '<strong>Spinning&hellip;</strong><br>Finding your discount';
-      setTimeout(function () {
-        wheelBtn.querySelector('span').innerHTML = '<strong>Discount unlocked!</strong><br>Applying your 10% reward';
-        var couponInput = document.getElementById('coupon-code');
-        if (couponInput) couponInput.value = 'SPIN10';
-        promptMsg('Applying your 10% wheel discount…', true);
-        if (applyBtn) applyBtn.click();
-      }, 700);
-    });
-  }
-
   // ── Boot ───────────────────────────────────────
   itemsRoot.querySelectorAll('.rc-item').forEach(function (row) {
     var qty = parseInt(row.querySelector('.rc-qty-input').value, 10) || 1;

@@ -1,38 +1,84 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% block title %}Order confirmed | RedCart{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-lg-7">
-      <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5 theme-card text-center">
-        <div class="mb-4" style="font-size: 4rem;">✅</div>
-        <h1 class="fw-bold mb-3">Order placed successfully!</h1>
-        <p class="text-muted mb-4">
-          Your order <strong>#{{ order.id }}</strong> has been received and is now being processed.
-        </p>
+<div class="sf-container sf-page">
+  <div class="os-wrap">
+    <section class="sf-panel os-hero">
+      <span class="os-check"><i class="bi bi-check-lg"></i></span>
+      <h1>Thank you, {{ user.first_name|default:user.username }}!</h1>
+      <p>Your order <strong>#{{ order.id }}</strong> has been placed. We've sent a confirmation to <strong>{{ user.email }}</strong>.</p>
 
-        <div class="row text-start g-3 mb-4">
-          <div class="col-md-6">
-            <div class="card border-0 bg-light rounded-4 p-3 h-100">
-              <div class="small text-muted mb-1">Payment</div>
-              <div class="fw-semibold">{{ payment_label }}</div>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="card border-0 bg-light rounded-4 p-3 h-100">
-              <div class="small text-muted mb-1">Order Total</div>
-              <div class="fw-semibold">₦{{ order_total|floatformat:2|intcomma }}</div>
-            </div>
-          </div>
-        </div>
+      <dl class="os-facts">
+        <div><dt>Order number</dt><dd>#{{ order.id }}</dd></div>
+        <div><dt>Total</dt><dd>₦{{ order_total|floatformat:0|intcomma }}</dd></div>
+        <div><dt>Payment</dt><dd>{{ payment_label }}</dd></div>
+        <div><dt>Estimated delivery</dt><dd>{{ order.estimated_delivery_date|date:"D, j M" }}</dd></div>
+      </dl>
 
-        <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
-          <a href="{% url 'products:profile' %}" class="btn btn-danger rounded-pill fw-semibold">View My Profile</a>
-          <a href="{% url 'products:product-list' %}" class="btn btn-outline-danger rounded-pill fw-semibold">Continue Shopping</a>
-        </div>
+      <div class="os-actions">
+        <a href="{% url 'products:order-track' order.id %}" class="sf-btn sf-btn-primary"><i class="bi bi-truck"></i> Track your order</a>
+        <a href="{% url 'products:product-list' %}" class="sf-btn sf-btn-outline">Continue shopping</a>
       </div>
-    </div>
+    </section>
+
+    {% if items %}
+    <section class="sf-panel sf-detail">
+      <h2>What you ordered</h2>
+      <ul class="os-items">
+        {% for item in items %}
+          <li>
+            <img src="{{ item.product.image_src }}" alt="" loading="lazy">
+            <div><strong>{{ item.product.name }}</strong><small>Qty {{ item.quantity }}</small></div>
+            <span>₦{{ item.total_price|floatformat:0|intcomma }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    <section class="sf-panel sf-detail os-next">
+      <h2>What happens next</h2>
+      <ol>
+        <li><strong>We pack your order</strong><span>You'll see it move to "Processing" in your account.</span></li>
+        <li><strong>It ships</strong><span>We email you a tracking number. Delivery takes 2–5 business days.</span></li>
+        <li><strong>You receive it</strong><span>Confirm delivery in your account to release payment from buyer protection.</span></li>
+      </ol>
+      <div class="rc-safety-note" role="note" style="margin-bottom:0">
+        <i class="bi bi-shield-exclamation" aria-hidden="true"></i>
+        <div><strong>Never pay extra on delivery.</strong> {% if order.is_paid %}Your order is fully paid — riders must not ask for any "delivery" or "release" fee.{% else %}Pay the rider only ₦{{ order_total|floatformat:0|intcomma }}, the amount shown here.{% endif %} <a href="{% url 'products:stay-safe' %}">Stay safe</a></div>
+      </div>
+    </section>
   </div>
 </div>
+
+<style>
+  .os-wrap { max-width: 760px; margin: 0 auto; }
+  .os-hero { padding: 2rem 1.5rem; text-align: center; }
+  @media (min-width: 640px) { .os-hero { padding: 2.5rem; } }
+  .os-check { width: 64px; height: 64px; margin: 0 auto 1rem; border-radius: 50%; display: grid; place-items: center; background: var(--sf-success-soft); }
+  .os-check i { font-size: 2rem; color: var(--sf-success) !important; }
+  .os-hero h1 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; margin: 0 0 .5rem; color: var(--sf-text) !important; }
+  .os-hero > p { margin: 0 auto 1.5rem; max-width: 48ch; color: var(--sf-text-2) !important; }
+  .os-facts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; margin: 0 0 1.5rem; border: 1px solid var(--sf-border); border-radius: var(--sf-radius); overflow: hidden; background: var(--sf-border); text-align: left; }
+  @media (min-width: 640px) { .os-facts { grid-template-columns: repeat(4, 1fr); } }
+  .os-facts div { padding: .85rem 1rem; background: var(--sf-surface); }
+  .os-facts dt { font-size: .75rem; font-weight: 500; color: var(--sf-muted) !important; }
+  .os-facts dd { margin: .15rem 0 0; font-weight: 700; color: var(--sf-text) !important; }
+  .os-actions { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; }
+  .os-items { list-style: none; margin: 0; padding: 0; }
+  .os-items li { display: flex; gap: .85rem; align-items: center; padding: .75rem 0; border-top: 1px solid var(--sf-border); }
+  .os-items li:first-child { border-top: 0; padding-top: 0; }
+  .os-items img { width: 56px; height: 56px; object-fit: cover; border-radius: var(--sf-radius-sm); border: 1px solid var(--sf-border); }
+  .os-items div { flex: 1; }
+  .os-items strong { display: block; color: var(--sf-text) !important; font-weight: 600; }
+  .os-items small { color: var(--sf-muted) !important; }
+  .os-items span { font-weight: 700; color: var(--sf-text) !important; }
+  .os-next ol { list-style: none; margin: 0 0 1rem; padding: 0; counter-reset: step; }
+  .os-next li { counter-increment: step; position: relative; padding: 0 0 1rem 2.75rem; }
+  .os-next li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--sf-brand-soft); color: var(--sf-brand); font-weight: 700; font-size: .85rem; }
+  .os-next li strong { display: block; color: var(--sf-text) !important; }
+  .os-next li span { font-size: .88rem; color: var(--sf-muted) !important; }
+</style>
 {% endblock %}

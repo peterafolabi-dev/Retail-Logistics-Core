@@ -987,7 +987,8 @@
 
     <script>
       // ============ TOAST SYSTEM ============
-      const TOAST_ICONS = { success:'✅', error:'❌', warning:'⚠️', info:'ℹ️', danger:'❌' };
+      const TOAST_ICONS = { success:'bi-check-circle-fill', error:'bi-x-circle-fill', warning:'bi-exclamation-triangle-fill', info:'bi-info-circle-fill' };
+      const TOAST_TITLES = { success:'Done', error:'Something went wrong', warning:'Heads up', info:'Note' };
 
       function escapeHtml(text) {
         const div = document.createElement('div');
@@ -999,16 +1000,18 @@
         const stack = document.getElementById('toast-stack');
         const typeMap = { success:'success', error:'error', danger:'error', warning:'warning', info:'info', debug:'info' };
         const resolvedType = typeMap[type] || 'info';
-        const icon = TOAST_ICONS[resolvedType] || 'ℹ️';
+        // Server messages often start with an emoji; the icon replaces it.
+        const text = String(message).replace(/^[^\p{L}\p{N}"'(₦#]+/u, '').trim();
         const toast = document.createElement('div');
         toast.className = `redcart-toast ${resolvedType}`;
+        toast.setAttribute('role', resolvedType === 'error' ? 'alert' : 'status');
         toast.innerHTML = `
-          <span class="toast-icon">${icon}</span>
-          <span class="toast-msg">${escapeHtml(message)}</span>
-          <button class="toast-close" onclick="dismissToast(this.closest('.redcart-toast'))">
+          <i class="toast-icon bi ${TOAST_ICONS[resolvedType]}" aria-hidden="true"></i>
+          <div class="toast-msg"><strong>${TOAST_TITLES[resolvedType]}</strong><span>${escapeHtml(text)}</span></div>
+          <button type="button" class="toast-close" aria-label="Dismiss" onclick="dismissToast(this.closest('.redcart-toast'))">
             <i class="bi bi-x-lg"></i>
           </button>
-          <div class="toast-progress"></div>
+          <div class="toast-progress" style="animation-duration:${duration}ms"></div>
         `;
         stack.appendChild(toast);
         setTimeout(() => dismissToast(toast), duration);

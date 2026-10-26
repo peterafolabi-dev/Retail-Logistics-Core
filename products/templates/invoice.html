@@ -1,99 +1,114 @@
-{% load humanize %}
-<!DOCTYPE html>
+{% load humanize %}<!doctype html>
+{# Standalone, print-friendly invoice (no site header/footer). #}
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Invoice #{{ order.id }}</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Invoice #{{ order.id }} | RedCart</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f6fb; color: #222; }
-    .invoice-shell { max-width: 900px; margin: 36px auto; background: #fff; padding: 24px; border-radius: 18px; box-shadow: 0 18px 60px rgba(0,0,0,.08); }
-    .invoice-header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 28px; }
-    .invoice-header h1 { margin: 0; font-size: 2rem; }
-    .invoice-meta { text-align: right; }
-    .invoice-meta p { margin: 4px 0; font-size: 0.95rem; }
-    .invoice-section { margin-top: 24px; }
-    .invoice-table { width: 100%; border-collapse: collapse; margin-top: 18px; }
-    .invoice-table th, .invoice-table td { padding: 14px 16px; border-bottom: 1px solid #e9edf3; }
-    .invoice-table th { background: #f7f9fc; text-align: left; font-weight: 700; }
-    .invoice-total { display: flex; justify-content: space-between; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e9edf3; font-weight: 700; }
-    .invoice-actions { margin-top: 24px; display: flex; gap: 12px; }
-    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 18px; border-radius: 999px; text-decoration: none; color: #fff; background: #4d79ff; }
-    .btn-secondary { background: #6c757d; }
-    .small-text { color: #5c5f66; font-size: 0.95rem; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px 16px; background: #f5f5f6; color: #111827; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; font-size: 14px; }
+    .toolbar { max-width: 800px; margin: 0 auto 16px; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 6px; border: 1px solid #e5e7eb; background: #fff; color: #111827; text-decoration: none; font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit; }
+    .btn-primary { background: #d92d20; border-color: #d92d20; color: #fff; }
+    .sheet { max-width: 800px; margin: 0 auto; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 40px; }
+    .top { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb; }
+    .logo { font-size: 26px; font-weight: 800; }
+    .logo b { color: #d92d20; }
+    .muted { color: #6b7280; }
+    .doc { text-align: right; }
+    .doc h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: .04em; }
+    .status { display: inline-block; margin-top: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .paid { background: #ecfdf3; color: #067647; }
+    .unpaid { background: #fffaeb; color: #b54708; }
+    .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 24px 0; }
+    .parties h2 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #6b7280; }
+    .parties p { margin: 0; line-height: 1.6; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; padding: 10px 8px; border-bottom: 2px solid #111827; }
+    td { padding: 12px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+    .num { text-align: right; white-space: nowrap; }
+    .totals { margin-left: auto; width: 100%; max-width: 320px; margin-top: 16px; }
+    .totals div { display: flex; justify-content: space-between; padding: 6px 8px; }
+    .totals .grand { margin-top: 6px; padding-top: 12px; border-top: 2px solid #111827; font-size: 18px; font-weight: 800; }
+    .green { color: #067647; }
+    .foot { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 12px; line-height: 1.6; color: #6b7280; }
+    @media (max-width: 600px) { .sheet { padding: 24px 18px; } .parties { grid-template-columns: 1fr; } .doc { text-align: left; } }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .toolbar { display: none; }
+      .sheet { border: 0; border-radius: 0; padding: 0; max-width: none; }
+    }
   </style>
 </head>
 <body>
-  <div class="invoice-shell">
-    <div class="invoice-header">
-      <div>
-        <h1>Invoice</h1>
-        <p class="small-text">Order #{{ order.id }}</p>
-      </div>
-      <div class="invoice-meta">
-        <p><strong>Date:</strong> {{ order.created_at|date:"M d, Y" }}</p>
-        <p><strong>Customer:</strong> {{ user.get_full_name|default:user.username }}</p>
-        <p><strong>Email:</strong> {{ user.email }}</p>
-      </div>
-    </div>
-
-    <div class="invoice-section">
-      <h3>Order items</h3>
-      <table class="invoice-table">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Qty</th>
-            <th>Unit Price</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in items %}
-          <tr>
-            <td>{{ item.product.name }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>₦{{ item.price|floatformat:2|intcomma }}</td>
-            <td>₦{{ item.total_price|floatformat:2|intcomma }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="invoice-section">
-      <div class="invoice-total">
-        <span>Subtotal</span>
-        <span>₦{{ order.subtotal|floatformat:2|intcomma }}</span>
-      </div>
-      <div class="invoice-total">
-        <span>Discount</span>
-        <span>-₦{{ order.discount|floatformat:2|intcomma }}</span>
-      </div>
-      <div class="invoice-total">
-        <span>Shipping</span>
-        <span>₦{{ order.shipping_cost|floatformat:2|intcomma }}</span>
-      </div>
-      <div class="invoice-total">
-        <span>Tax</span>
-        <span>₦{{ order.tax|floatformat:2|intcomma }}</span>
-      </div>
-      {% if order.insurance_opted and order.insurance_cost > 0 %}
-      <div class="invoice-total">
-        <span>Insurance</span>
-        <span>₦{{ order.insurance_cost|floatformat:2|intcomma }}</span>
-      </div>
-      {% endif %}
-      <div class="invoice-total" style="font-size:1.1rem;">
-        <span>Total</span>
-        <span>₦{{ order.total|floatformat:2|intcomma }}</span>
-      </div>
-    </div>
-
-    <div class="invoice-actions">
-      <a href="{{ request.path }}?format=pdf" class="btn">Download as PDF</a>
-      <a href="{% url 'products:profile' %}" class="btn btn-secondary">Back to Profile</a>
-    </div>
+  <div class="toolbar">
+    <a href="{% url 'products:order-track' order.id %}" class="btn">← Back to order</a>
+    <a href="{{ request.path }}?format=pdf" class="btn">Download PDF</a>
+    <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
   </div>
+
+  <main class="sheet">
+    <div class="top">
+      <div>
+        <div class="logo">Red<b>Cart</b></div>
+        <p class="muted" style="margin:6px 0 0">Online store · Delivering across Nigeria{% if support_email %}<br>{{ support_email }}{% endif %}</p>
+      </div>
+      <div class="doc">
+        <h1>INVOICE</h1>
+        <div class="muted">No. RC-{{ order.id|stringformat:"05d" }}</div>
+        <div class="muted">Issued {{ order.created_at|date:"j F Y" }}</div>
+        <span class="status {% if order.is_paid %}paid{% else %}unpaid{% endif %}">{% if order.is_paid %}PAID{% else %}PAYMENT DUE ON DELIVERY{% endif %}</span>
+      </div>
+    </div>
+
+    <div class="parties">
+      <div>
+        <h2>Billed to</h2>
+        <p><strong>{{ user.get_full_name|default:user.username }}</strong><br>{{ user.email }}</p>
+      </div>
+      <div>
+        <h2>Deliver to</h2>
+        {% if order.shipping_address %}
+          <p><strong>{{ order.shipping_address.full_name }}</strong><br>
+          {{ order.shipping_address.street_address }}<br>
+          {{ order.shipping_address.city }}, {{ order.shipping_address.state }}{% if order.shipping_address.postal_code %} {{ order.shipping_address.postal_code }}{% endif %}<br>
+          {{ order.shipping_address.phone }}</p>
+        {% else %}
+          <p class="muted">No delivery address recorded.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Item</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Amount</th></tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+          <tr>
+            <td><strong>{{ item.product.name }}</strong><br><span class="muted">SKU RC-{{ item.product_id }}</span></td>
+            <td class="num">{{ item.quantity }}</td>
+            <td class="num">₦{{ item.price|floatformat:2|intcomma }}</td>
+            <td class="num">₦{{ item.total_price|floatformat:2|intcomma }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div><span class="muted">Subtotal</span><span>₦{{ subtotal|floatformat:2|intcomma }}</span></div>
+      {% if order.discount %}<div><span class="muted">Discount</span><span class="green">−₦{{ order.discount|floatformat:2|intcomma }}</span></div>{% endif %}
+      <div><span class="muted">Delivery</span><span>{% if order.shipping_cost %}₦{{ order.shipping_cost|floatformat:2|intcomma }}{% else %}<span class="green">Free</span>{% endif %}</span></div>
+      {% if order.tax %}<div><span class="muted">Tax</span><span>₦{{ order.tax|floatformat:2|intcomma }}</span></div>{% endif %}
+      {% if order.insurance_opted and order.insurance_cost > 0 %}<div><span class="muted">Delivery insurance</span><span>₦{{ order.insurance_cost|floatformat:2|intcomma }}</span></div>{% endif %}
+      <div class="grand"><span>Total</span><span>₦{{ order.total|floatformat:2|intcomma }}</span></div>
+    </div>
+
+    <div class="foot">
+      Thank you for shopping with RedCart. Questions about this invoice? Contact us{% if support_email %} at {{ support_email }}{% endif %} and quote order #{{ order.id }}.<br>
+      RedCart will never ask you to pay into a personal bank account.
+    </div>
+  </main>
 </body>
 </html>

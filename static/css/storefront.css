@@ -490,5 +490,27 @@ body {
 /* Django messages already appear as toasts; hide the duplicate inline copies old pages render. */
 .rc-page-shell .alert-dismissible { display: none; }
 
+/* ── Toast notifications ─────────────────────────────────────────────── */
+.toast-stack { top: 120px !important; right: 16px !important; left: auto; max-width: min(380px, calc(100vw - 32px)) !important; gap: 10px !important; }
+.redcart-toast {
+  align-items: flex-start !important; gap: 12px !important; padding: 14px 14px 16px 16px !important;
+  background: var(--sf-surface) !important; color: var(--sf-text) !important;
+  border: 1px solid var(--sf-border); border-left: 4px solid var(--toast-accent, var(--sf-brand));
+  border-radius: var(--sf-radius) !important; box-shadow: var(--sf-shadow-lg) !important; font-weight: 400 !important;
+}
+.redcart-toast.success { --toast-accent: #12b76a; }
+.redcart-toast.error   { --toast-accent: var(--sf-brand); }
+.redcart-toast.warning { --toast-accent: #f79009; }
+.redcart-toast.info    { --toast-accent: #2e90fa; }
+.redcart-toast .toast-icon { font-size: 1.25rem !important; color: var(--toast-accent) !important; margin-top: 1px; }
+.redcart-toast .toast-msg { display: flex; flex-direction: column; gap: 2px; font-size: .9rem; line-height: 1.45; }
+.redcart-toast .toast-msg strong { font-size: .9rem; color: var(--sf-text) !important; }
+.redcart-toast .toast-msg span { color: var(--sf-text-2) !important; }
+.redcart-toast .toast-close { color: var(--sf-muted) !important; font-size: .9rem !important; padding: 2px !important; }
+.redcart-toast .toast-close:hover { color: var(--sf-text) !important; }
+.redcart-toast .toast-close i { color: inherit !important; }
+.redcart-toast .toast-progress { height: 3px !important; background: var(--toast-accent) !important; opacity: .35; }
+@media (max-width: 640px) { .toast-stack { top: auto !important; bottom: 16px; right: 16px !important; left: 16px !important; max-width: none !important; } }
+
 /* Hide the old full-screen loader everywhere. */
 #loader { display: none !important; }

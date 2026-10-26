@@ -886,32 +886,30 @@ def order_track(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
 
     status_steps = [
-        {'label': 'Placed', 'key': 'placed'},
-        {'label': 'Processing', 'key': 'processing'},
-        {'label': 'Shipped', 'key': 'shipped'},
-        {'label': 'Delivered', 'key': 'delivered'},
+        {'label': 'Order placed', 'key': 'placed', 'icon': 'bi-receipt', 'date': order.created_at,
+         'detail': 'We received your order.'},
+        {'label': 'Processing', 'key': 'processing', 'icon': 'bi-box-seam', 'date': None,
+         'detail': 'Your items are being packed.'},
+        {'label': 'Shipped', 'key': 'shipped', 'icon': 'bi-truck', 'date': order.shipped_date,
+         'detail': 'On the way with our delivery partner.'},
+        {'label': 'Delivered', 'key': 'delivered', 'icon': 'bi-house-check', 'date': order.delivered_date,
+         'detail': 'Handed over at your address.'},
     ]
+    progress_key = {
+        'pending': 'placed', 'confirmed': 'placed', 'processing': 'processing',
+        'shipped': 'shipped', 'delivered': 'delivered',
+    }.get(order.status)
+    is_stopped = order.status in {'cancelled', 'refunded'}
 
-    current_key = 'placed'
-    if order.status in {'pending', 'confirmed'}:
-        current_key = 'placed'
-    elif order.status == 'processing':
-        current_key = 'processing'
-    elif order.status == 'shipped':
-        current_key = 'shipped'
-    elif order.status == 'delivered':
-        current_key = 'delivered'
-
-    step_index = status_steps.index(next(step for step in status_steps if step['key'] == current_key))
-
+    step_index = next((i for i, step in enumerate(status_steps) if step['key'] == progress_key), 0)
     for index, step in enumerate(status_steps):
-        step['complete'] = index < step_index
-        step['active'] = index == step_index
+        step['complete'] = not is_stopped and (index < step_index or (index == step_index and progress_key == 'delivered'))
+        step['active'] = not is_stopped and index == step_index and progress_key != 'delivered'
 
     context = {
         'order': order,
         'steps': status_steps,
-        'current_step': next(step for step in status_steps if step['key'] == current_key),
+        'is_stopped': is_stopped,
         'items': order.items.select_related('product').all(),
     }
 
@@ -1242,6 +1240,9 @@ def order_invoice(request, order_id):
         'order': order,
         'items': items,
         'user': request.user,
+        # Older orders never stored a subtotal; fall back to the line items.
+        'subtotal': order.subtotal or sum(item.total_price for item in items),
+        'support_email': settings.SUPPORT_EMAIL,
     }
 
     if request.GET.get('format') == 'pdf':
@@ -1482,10 +1483,16 @@ def confirm_payment(request):
 @login_required(login_url='products:login')
 def order_success(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
+    if order.is_paid:
+        method = order.payment_method.get_payment_type_display() if order.payment_method else ''
+        payment_label = f'Paid{" by " + method if method else ""}'
+    else:
+        payment_label = 'Pay on delivery'
     return render(request, 'order_success.html', {
         'order': order,
         'order_total': order.total,
-        'payment_label': 'Paid with Wallet' if order.is_paid else 'Cash on Delivery',
+        'payment_label': payment_label,
+        'items': order.items.select_related('product').all(),
     })
 
 

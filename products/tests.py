@@ -680,11 +680,12 @@ class SafetyAndCouponTests(TestCase):
 
     def test_order_email_links_to_real_site_and_warns_about_scams(self):
         from django.template.loader import render_to_string
+        buyer = User.objects.create_user(username='buyer-email', password='x')
+        order = Order.objects.create(user=buyer, is_paid=True, payment_status='paid')
         html = render_to_string('emails/order_confirmation.html', {
-            'order': Order(id=1), 'items': [], 'total': 0, 'site_url': 'https://shop.example.ng',
-            'user': User(username='x'),
+            'order': order, 'items': [], 'total': 0, 'site_url': 'https://shop.example.ng', 'user': buyer,
         })
-        self.assertIn('https://shop.example.ng/products/profile/', html)
+        self.assertIn(f'https://shop.example.ng/products/orders/{order.id}/track/', html)
         self.assertIn('https://shop.example.ng/products/stay-safe/', html)
         self.assertNotIn('redcart.com', html)
 

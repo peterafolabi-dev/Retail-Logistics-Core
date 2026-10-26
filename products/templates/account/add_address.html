@@ -1,137 +1,164 @@
 {% extends 'base.html' %}
-{% block title %}Add Address - RedCart{% endblock %}
+{% block title %}{% if address %}Edit address{% else %}Add a delivery address{% endif %} | RedCart{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-  <div class="row">
-    <div class="col-md-8 mx-auto">
-      <div class="card border-0 shadow-lg rounded-4 p-5 theme-card">
-        <h2 class="fw-bold mb-1 text-center text-gradient">{% if address %}Edit Address{% else %}➕ Add New Address{% endif %}</h2>
-        <p class="text-center text-muted mb-4">Save an address for faster checkout</p>
+<div class="sf-container sf-page">
+  {% if from_checkout %}
+    <ol class="addr-steps" aria-label="Checkout progress">
+      <li class="is-done"><i class="bi bi-check-circle-fill"></i> Cart</li>
+      <li class="is-current" aria-current="step"><i class="bi bi-geo-alt-fill"></i> Delivery address</li>
+      <li><i class="bi bi-credit-card"></i> Payment</li>
+    </ol>
+  {% else %}
+    <nav class="sf-breadcrumb" aria-label="Breadcrumb">
+      <a href="{% url 'products:account-dashboard' %}">My account</a> <i class="bi bi-chevron-right"></i>
+      <a href="{% url 'products:addresses' %}">Addresses</a> <i class="bi bi-chevron-right"></i>
+      <span>{% if address %}Edit{% else %}New address{% endif %}</span>
+    </nav>
+  {% endif %}
 
-        {% if messages %}
-          {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-3" role="alert">
-              {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-          {% endfor %}
-        {% endif %}
+  <div class="addr-layout">
+    <form method="post" class="sf-panel addr-form" novalidate>
+      {% csrf_token %}
+      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
-        <form method="post" novalidate>
-          {% csrf_token %}
+      <h1>{% if address %}Edit address{% else %}Where should we deliver?{% endif %}</h1>
+      <p class="addr-sub">{% if from_checkout %}Add your address and we'll take you straight back to checkout.{% else %}Saved addresses make checkout faster.{% endif %}</p>
 
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Full Name</label>
-              <input 
-                type="text" 
-                name="full_name" 
-                class="form-control form-control-lg rounded-pill px-4"
-                value="{{ address.full_name|default:'' }}"
-                placeholder="John Doe"
-                required
-              >
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Phone Number</label>
-              <input 
-                type="tel" 
-                name="phone" 
-                class="form-control form-control-lg rounded-pill px-4"
-                value="{{ address.phone|default:'' }}"
-                placeholder="+234 (0) 123 456 7890"
-                required
-              >
-            </div>
+      {% if errors %}
+        <div class="addr-alert" role="alert"><i class="bi bi-exclamation-circle"></i> Please fix the highlighted fields below.</div>
+      {% endif %}
+
+      <fieldset>
+        <legend>Contact</legend>
+        <div class="addr-grid">
+          <div class="addr-field{% if errors.full_name %} has-error{% endif %}">
+            <label for="full_name">Full name</label>
+            <input class="sf-input" id="full_name" name="full_name" autocomplete="name" value="{{ form.full_name|default:'' }}" required {% if errors.full_name %}aria-invalid="true" aria-describedby="full_name-err"{% endif %}>
+            {% if errors.full_name %}<p class="addr-err" id="full_name-err">{{ errors.full_name }}</p>{% endif %}
           </div>
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Street Address</label>
-            <input 
-              type="text" 
-              name="street_address" 
-              class="form-control form-control-lg rounded-pill px-4"
-              value="{{ address.street_address|default:'' }}"
-              placeholder="123 Main Street"
-              required
-            >
+          <div class="addr-field{% if errors.phone %} has-error{% endif %}">
+            <label for="phone">Phone number</label>
+            <input class="sf-input" id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0803 123 4567" value="{{ form.phone|default:'' }}" required {% if errors.phone %}aria-invalid="true" aria-describedby="phone-err"{% endif %}>
+            {% if errors.phone %}<p class="addr-err" id="phone-err">{{ errors.phone }}</p>{% else %}<p class="addr-hint">The rider will call this number on delivery.</p>{% endif %}
           </div>
-
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">City</label>
-              <input 
-                type="text" 
-                name="city" 
-                class="form-control form-control-lg rounded-pill px-4"
-                value="{{ address.city|default:'' }}"
-                placeholder="Lagos"
-                required
-              >
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">State</label>
-              <input 
-                type="text" 
-                name="state" 
-                class="form-control form-control-lg rounded-pill px-4"
-                value="{{ address.state|default:'' }}"
-                placeholder="Lagos State"
-                required
-              >
-            </div>
-          </div>
-
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Postal Code</label>
-              <input 
-                type="text" 
-                name="postal_code" 
-                class="form-control form-control-lg rounded-pill px-4"
-                value="{{ address.postal_code|default:'' }}"
-                placeholder="100001"
-                required
-              >
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Address Type</label>
-              <select name="address_type" class="form-select form-select-lg rounded-pill px-4">
-                <option value="home" {% if address.address_type == 'home' %}selected{% endif %}>Home</option>
-                <option value="work" {% if address.address_type == 'work' %}selected{% endif %}>Work</option>
-                <option value="other" {% if address.address_type == 'other' %}selected{% endif %}>Other</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="mb-4">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" name="is_default" id="is_default" {% if address.is_default %}checked{% endif %}>
-              <label class="form-check-label" for="is_default">
-                Set as default address
-              </label>
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-danger btn-lg w-100 rounded-pill fw-bold py-3">
-            {% if address %}Update Address{% else %}💾 Save Address{% endif %}
-          </button>
-        </form>
-
-        <div class="text-center mt-4">
-          <a href="{% url 'products:addresses' %}" class="link-danger">Back to addresses</a>
         </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Address</legend>
+        <div class="addr-field{% if errors.street_address %} has-error{% endif %}">
+          <label for="street_address">Street address</label>
+          <input class="sf-input" id="street_address" name="street_address" autocomplete="street-address" placeholder="House number and street, e.g. 12 Admiralty Way, Lekki Phase 1" value="{{ form.street_address|default:'' }}" required {% if errors.street_address %}aria-invalid="true" aria-describedby="street-err"{% endif %}>
+          {% if errors.street_address %}<p class="addr-err" id="street-err">{{ errors.street_address }}</p>{% endif %}
+        </div>
+        {% if not address %}
+        <div class="addr-field">
+          <label for="landmark">Nearest landmark <span class="addr-opt">(optional)</span></label>
+          <input class="sf-input" id="landmark" name="landmark" placeholder="e.g. opposite Shoprite, beside the church" value="{{ form.landmark|default:'' }}">
+        </div>
+        {% endif %}
+        <div class="addr-grid addr-grid-3">
+          <div class="addr-field{% if errors.city %} has-error{% endif %}">
+            <label for="city">City / town</label>
+            <input class="sf-input" id="city" name="city" autocomplete="address-level2" placeholder="e.g. Ikeja" value="{{ form.city|default:'' }}" required {% if errors.city %}aria-invalid="true" aria-describedby="city-err"{% endif %}>
+            {% if errors.city %}<p class="addr-err" id="city-err">{{ errors.city }}</p>{% endif %}
+          </div>
+          <div class="addr-field{% if errors.state %} has-error{% endif %}">
+            <label for="state">State</label>
+            <select class="sf-select" id="state" name="state" autocomplete="address-level1" required {% if errors.state %}aria-invalid="true" aria-describedby="state-err"{% endif %}>
+              <option value="">Select state</option>
+              {% for s in states %}<option value="{{ s }}"{% if form.state == s %} selected{% endif %}>{{ s }}</option>{% endfor %}
+            </select>
+            {% if errors.state %}<p class="addr-err" id="state-err">{{ errors.state }}</p>{% endif %}
+          </div>
+          <div class="addr-field{% if errors.postal_code %} has-error{% endif %}">
+            <label for="postal_code">Postal code <span class="addr-opt">(optional)</span></label>
+            <input class="sf-input" id="postal_code" name="postal_code" inputmode="numeric" autocomplete="postal-code" placeholder="e.g. 100001" value="{{ form.postal_code|default:'' }}">
+            {% if errors.postal_code %}<p class="addr-err">{{ errors.postal_code }}</p>{% endif %}
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Address label</legend>
+        <div class="addr-types" role="radiogroup">
+          <label class="addr-type"><input type="radio" name="address_type" value="home" {% if form.address_type == 'home' or not form.address_type %}checked{% endif %}><span><i class="bi bi-house"></i> Home</span></label>
+          <label class="addr-type"><input type="radio" name="address_type" value="work" {% if form.address_type == 'work' %}checked{% endif %}><span><i class="bi bi-briefcase"></i> Work</span></label>
+          <label class="addr-type"><input type="radio" name="address_type" value="other" {% if form.address_type == 'other' %}checked{% endif %}><span><i class="bi bi-geo-alt"></i> Other</span></label>
+        </div>
+        {% if is_first %}
+          <p class="addr-hint" style="margin-top:.75rem"><i class="bi bi-star"></i> This will be your default delivery address.</p>
+        {% else %}
+          <label class="addr-check"><input type="checkbox" name="is_default" {% if address.is_default %}checked{% endif %}> Use as my default delivery address</label>
+        {% endif %}
+      </fieldset>
+
+      <div class="addr-actions">
+        <button type="submit" class="sf-btn sf-btn-primary">{% if from_checkout %}Save and continue to payment <i class="bi bi-arrow-right"></i>{% elif address %}Save changes{% else %}Save address{% endif %}</button>
+        <a href="{% if next %}{{ next }}{% else %}{% url 'products:addresses' %}{% endif %}" class="sf-btn sf-btn-outline">Cancel</a>
       </div>
-    </div>
+    </form>
+
+    <aside class="addr-aside">
+      <div class="sf-panel addr-note">
+        <h2><i class="bi bi-truck"></i> Delivery info</h2>
+        <ul>
+          <li>Free delivery across Nigeria in 2–5 business days.</li>
+          <li>Lagos orders may arrive in 24–48 hours.</li>
+          <li>Adding a landmark helps riders find you faster.</li>
+        </ul>
+      </div>
+      <div class="sf-panel addr-note">
+        <h2><i class="bi bi-shield-lock"></i> Your privacy</h2>
+        <p>We only share your address and phone number with the courier delivering your order.</p>
+      </div>
+    </aside>
   </div>
 </div>
 
 <style>
-  .text-gradient {
-    background: linear-gradient(45deg, #ff6b6b, #ff9900);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
+  .addr-layout { display: grid; gap: 24px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 992px) { .addr-layout { grid-template-columns: minmax(0, 1fr) 320px; } }
+  .addr-form { padding: 1.5rem; }
+  @media (min-width: 768px) { .addr-form { padding: 2rem; } }
+  .addr-form h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 .25rem; color: var(--sf-text) !important; }
+  .addr-sub { color: var(--sf-muted) !important; margin: 0 0 1.25rem; }
+  .addr-form fieldset { border: 0; padding: 0; margin: 0 0 1.5rem; min-width: 0; }
+  .addr-form legend { float: none; width: auto; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--sf-muted) !important; margin-bottom: .75rem; padding: 0; }
+  .addr-grid { display: grid; gap: 0 1rem; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .addr-grid { grid-template-columns: 1fr 1fr; } .addr-grid-3 { grid-template-columns: 1fr 1fr 1fr; } }
+  .addr-field { margin-bottom: 1rem; }
+  .addr-field label { display: block; font-size: .875rem; font-weight: 600; margin-bottom: .35rem; color: var(--sf-text-2) !important; }
+  .addr-field .sf-input, .addr-field .sf-select { min-height: 46px; }
+  .addr-opt { font-weight: 400; color: var(--sf-muted) !important; }
+  .addr-hint { font-size: .8rem; color: var(--sf-muted) !important; margin: .35rem 0 0; }
+  .addr-err { font-size: .8rem; color: var(--sf-brand) !important; margin: .35rem 0 0; }
+  .addr-field.has-error .sf-input, .addr-field.has-error .sf-select { border-color: var(--sf-brand) !important; }
+  .addr-alert { display: flex; gap: .5rem; align-items: center; padding: .75rem 1rem; margin-bottom: 1.25rem; border-radius: var(--sf-radius-sm); background: var(--sf-brand-soft); color: var(--sf-brand) !important; font-size: .9rem; }
+  .addr-alert i { color: inherit !important; }
+  .addr-types { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .addr-type input { position: absolute; opacity: 0; pointer-events: none; }
+  .addr-type span { display: inline-flex; align-items: center; gap: .4rem; padding: .55rem 1rem; border: 1px solid var(--sf-border); border-radius: 999px; cursor: pointer; font-size: .9rem; color: var(--sf-text-2) !important; background: var(--sf-surface); }
+  .addr-type span i { color: inherit !important; }
+  .addr-type input:checked + span { border-color: var(--sf-brand); background: var(--sf-brand-soft); color: var(--sf-brand) !important; font-weight: 600; }
+  .addr-type input:focus-visible + span { outline: 2px solid var(--sf-brand); outline-offset: 2px; }
+  .addr-check { display: flex; align-items: center; gap: .5rem; margin-top: .9rem; font-size: .9rem; color: var(--sf-text-2) !important; cursor: pointer; }
+  .addr-check input { width: 18px; height: 18px; accent-color: var(--sf-brand); }
+  .addr-actions { display: flex; flex-wrap: wrap; gap: .6rem; padding-top: 1.25rem; border-top: 1px solid var(--sf-border); }
+  .addr-actions .sf-btn { min-height: 48px; }
+  .addr-aside { display: grid; gap: 1rem; }
+  .addr-note { padding: 1.25rem; }
+  .addr-note h2 { font-size: .95rem; font-weight: 700; margin: 0 0 .6rem; color: var(--sf-text) !important; display: flex; gap: .5rem; align-items: center; }
+  .addr-note h2 i { color: var(--sf-brand) !important; }
+  .addr-note ul { margin: 0; padding-left: 1.1rem; list-style: disc; }
+  .addr-note li, .addr-note p { font-size: .875rem; color: var(--sf-text-2) !important; margin: 0 0 .35rem; }
+  .addr-steps { display: flex; gap: .5rem; list-style: none; padding: 0; margin: 0 0 1.25rem; flex-wrap: wrap; }
+  .addr-steps li { display: inline-flex; align-items: center; gap: .4rem; font-size: .875rem; color: var(--sf-muted) !important; }
+  .addr-steps li + li::before { content: ''; width: 24px; height: 1px; background: var(--sf-border); margin-right: .25rem; }
+  .addr-steps li i { color: inherit !important; }
+  .addr-steps .is-done { color: var(--sf-success) !important; }
+  .addr-steps .is-current { color: var(--sf-text) !important; font-weight: 600; }
+  .addr-steps .is-current i { color: var(--sf-brand) !important; }
 </style>
 {% endblock %}

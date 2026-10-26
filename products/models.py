@@ -1019,3 +1019,23 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"[{self.role}] {self.content[:50]}"
+
+
+class DailyVisitor(models.Model):
+    """One row per unique visitor per day, written by products.middleware.VisitorTrackingMiddleware.
+
+    visitor_key is "u:<user id>" for signed-in users (so several devices count once) or
+    "a:<random id>" from an anonymous first-party cookie for guests. No IPs or personal data stored.
+    """
+    date = models.DateField(db_index=True)
+    visitor_key = models.CharField(max_length=64)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='daily_visits')
+    first_path = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['date', 'visitor_key'], name='unique_daily_visitor')]
+        indexes = [models.Index(fields=['visitor_key', 'date'])]
+
+    def __str__(self):
+        return f'{self.date} {self.visitor_key}'

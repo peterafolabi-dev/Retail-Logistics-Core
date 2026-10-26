@@ -9,7 +9,8 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import timedelta
 from django.views.decorators.csrf import csrf_exempt
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMultiAlternatives
+from django.template.loader import render_to_string
 import json
 import traceback
 import urllib.request
@@ -1722,74 +1723,115 @@ def buy_now(request, product_id):
     return redirect('products:checkout')
 
 
+CONTACT_TOPICS = [
+    ('order', 'Order or delivery'),
+    ('returns', 'Returns & refunds'),
+    ('payment', 'Payment or wallet'),
+    ('product', 'Product question'),
+    ('account', 'My account'),
+    ('scam', 'Report a scam'),
+    ('business', 'Business & partnerships'),
+    ('other', 'Something else'),
+]
+CONTACT_RATE_LIMIT = 5  # submissions per IP per hour
+
+
+def _validate_contact_form(post):
+    from django.core.validators import validate_email
+    from django.core.exceptions import ValidationError
+
+    form = {k: (post.get(k) or '').strip() for k in ('name', 'email', 'topic', 'order_number', 'subject', 'message')}
+    errors = {}
+    if not 2 <= len(form['name']) <= 100:
+        errors['name'] = 'Please enter your name.'
+    try:
+        validate_email(form['email'])
+    except ValidationError:
+        errors['email'] = 'Please enter a valid email address so we can reply.'
+    if form['topic'] not in dict(CONTACT_TOPICS):
+        errors['topic'] = 'Please choose what your message is about.'
+    if len(form['order_number']) > 40:
+        errors['order_number'] = 'That order number looks too long.'
+    if not 3 <= len(form['subject']) <= 150:
+        errors['subject'] = 'Please add a short subject (3–150 characters).'
+    if not 10 <= len(form['message']) <= 5000:
+        errors['message'] = 'Please tell us a bit more (at least 10 characters).'
+    return form, errors
+
+
 def contact_us(request):
     from .models import ContactFormSubmission
+    from .utils import email_is_configured
+
     if request.method == 'POST':
-        name = request.POST.get('name', '').strip()
-        email = request.POST.get('email', '').strip()
-        subject = request.POST.get('subject', '').strip()
-        message = request.POST.get('message', '').strip()
+        # Honeypot: real people never see or fill the "website" field.
+        if request.POST.get('website'):
+            return redirect(f"{reverse('products:contact')}?sent=1")
 
-        if all([name, email, subject, message]):
-            # Save contact form submission
-            ContactFormSubmission.objects.create(name=name, email=email, subject=subject, message=message)
-            
-            # Send confirmation email to user
-            email_sent = False
+        ip = (request.META.get('HTTP_X_FORWARDED_FOR') or request.META.get('REMOTE_ADDR') or '').split(',')[0].strip()
+        rate_key = f'contact-rate:{ip}'
+        if cache.get(rate_key, 0) >= CONTACT_RATE_LIMIT:
+            messages.error(request, "You've sent several messages recently. Please wait a little before sending another.")
+            return redirect('products:contact')
+
+        form, errors = _validate_contact_form(request.POST)
+        if errors:
+            return render(request, 'contact.html', {'form': form, 'errors': errors, 'topics': CONTACT_TOPICS})
+
+        topic_label = dict(CONTACT_TOPICS)[form['topic']]
+        subject_line = f"[{topic_label}] {form['subject']}"
+        if form['order_number']:
+            subject_line = f"{subject_line} (Order {form['order_number']})"
+        submission = ContactFormSubmission.objects.create(
+            name=form['name'], email=form['email'], subject=subject_line[:255], message=form['message'],
+        )
+        cache.set(rate_key, cache.get(rate_key, 0) + 1, 60 * 60)
+
+        if email_is_configured():
+            context = {'submission': submission, 'topic': topic_label, 'site_url': (settings.SITE_URL or '').rstrip('/'),
+                       'support_email': settings.SUPPORT_EMAIL, 'order_number': form['order_number'], 'subject': form['subject']}
             try:
-                send_mail(
-                    subject=f'✅ We Received Your Message - {subject}',
-                    message=f'Hi {name},\n\nThank you for contacting RedCart! We have received your message:\n\n{message}\n\nWe will respond within 24 hours.\n\nBest regards,\nRedCart Team',
+                # Team notification; Reply-To lets you answer the customer straight from your inbox.
+                EmailMultiAlternatives(
+                    subject=f'New message: {subject_line}'[:200],
+                    body=render_to_string('emails/contact_team_notification.txt', context),
                     from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[email],
-                    html_message=f'''
-                    <h2>✅ We Received Your Message</h2>
-                    <p>Hi {name},</p>
-                    <p>Thank you for contacting <strong>RedCart</strong>! We have received your message:</p>
-                    <blockquote style="background: #f5f5f5; padding: 10px; border-left: 4px solid #007bff;">
-                        <strong>{subject}</strong><br>
-                        {message}
-                    </blockquote>
-                    <p>We will respond within 24 hours.</p>
-                    <p>Best regards,<br><strong>RedCart Team</strong></p>
-                    ''',
-                    fail_silently=False,
-                )
-                email_sent = True
-                messages.success(request, f"✅ Message received! Confirmation email sent to {email}")
-            except Exception as e:
-                error_msg = f'Error sending confirmation email: {str(e)}'
-                print(f'Contact Form Error: {error_msg}')
-                messages.warning(request, f"⚠️ Message saved, but email confirmation failed: {str(e)[:100]}")
-            
-            # Send admin notification email
+                    to=[settings.SUPPORT_EMAIL],
+                    reply_to=[submission.email],
+                ).send()
+            except Exception:
+                logger.exception('Contact form team notification failed for submission %s', submission.pk)
             try:
-                send_mail(
-                    subject=f'📧 New Contact Form Submission: {subject}',
-                    message=f'New contact form submission:\n\nName: {name}\nEmail: {email}\nSubject: {subject}\nMessage: {message}',
+                # Customer receipt. It never repeats the message body, so the form can't be used to
+                # send arbitrary content to arbitrary addresses.
+                receipt = EmailMultiAlternatives(
+                    subject='We received your message — RedCart',
+                    body=render_to_string('emails/contact_received.txt', context),
                     from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[settings.DEFAULT_FROM_EMAIL],
-                    html_message=f'''
-                    <h2>📧 New Contact Form Submission</h2>
-                    <p><strong>Name:</strong> {name}</p>
-                    <p><strong>Email:</strong> <a href="mailto:{email}">{email}</a></p>
-                    <p><strong>Subject:</strong> {subject}</p>
-                    <p><strong>Message:</strong></p>
-                    <blockquote style="background: #f5f5f5; padding: 10px; border-left: 4px solid #28a745;">
-                        {message}
-                    </blockquote>
-                    ''',
-                    fail_silently=False,
+                    to=[submission.email],
+                    reply_to=[settings.SUPPORT_EMAIL],
                 )
-            except Exception as e:
-                print(f'Contact Form Admin Notification Error: {str(e)}')
-            
-            if email_sent:
-                return redirect('products:contact')
+                receipt.attach_alternative(render_to_string('emails/contact_received.html', context), 'text/html')
+                receipt.send()
+            except Exception:
+                logger.exception('Contact form receipt email failed for submission %s', submission.pk)
         else:
-            messages.error(request, "❌ Please fill in all fields.")
+            logger.error('Contact form submission %s saved but no email provider is configured.', submission.pk)
 
-    return render(request, 'contact.html')
+        return redirect(f"{reverse('products:contact')}?sent=1")
+
+    initial = {'topic': request.GET.get('topic', '')}
+    if request.user.is_authenticated:
+        initial['name'] = request.user.get_full_name() or request.user.get_username()
+        initial['email'] = request.user.email
+    from .models import FAQ
+    return render(request, 'contact.html', {
+        'form': initial,
+        'errors': {},
+        'topics': CONTACT_TOPICS,
+        'sent': request.GET.get('sent') == '1',
+        'faqs': FAQ.objects.filter(is_active=True).order_by('order')[:4],
+    })
 
 
 def faq(request):

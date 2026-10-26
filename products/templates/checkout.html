@@ -213,6 +213,15 @@
                data-total="{{ total_after_coupon|default:total }}"
                data-total-kobo="{{ total_kobo }}"></div>
 
+          <div class="rc-safety-note" role="note">
+            <i class="bi bi-shield-exclamation" aria-hidden="true"></i>
+            <div>
+              <strong>Stay safe from scams.</strong>
+              RedCart will never ask for your card PIN, OTP or password by phone, SMS, WhatsApp or email. Only pay on this page — never transfer money to a personal account. For Cash on Delivery, pay only the amount shown on your order.
+              <a href="{% url 'products:stay-safe' %}" target="_blank" rel="noopener">How to spot a scam</a>
+            </div>
+          </div>
+
         <!-- Paystack Pay Button -->
           <button id="paystack-btn" type="button" class="btn btn-success w-100 py-3 fw-semibold rounded-pill shadow-sm btn-glow text-dark">
             <span class="rc-pay-icon" aria-hidden="true">💳</span> Pay ₦<span id="pay-btn-amount">{{ total_after_coupon|default:total|floatformat:2|intcomma }}</span>

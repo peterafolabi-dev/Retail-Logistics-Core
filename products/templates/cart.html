@@ -560,28 +560,17 @@
             <i class="bi bi-gift-fill" aria-hidden="true"></i>
             <span><strong>Invite a friend</strong><br>Earn ₦{{ referral_reward|floatformat:0 }} when they place their first order</span>
           </button>
-          <button type="button" class="rc-prompt rc-prompt-action" id="rc-wheel">
-            <i class="bi bi-disc-fill" aria-hidden="true"></i>
-            <span><strong>Spin the wheel</strong><br>Get a surprise discount</span>
-          </button>
           <div class="rc-msg rc-wheel-result" id="rc-prompt-message" role="status" aria-live="polite"></div>
         </div>
 
-        <!-- ══ Coupon ══ -->
+        <!-- Promo codes are entered once, at checkout. -->
         <div class="rc-coupon">
-          <label for="coupon-code" class="rc-coupon-label">Coupon code</label>
-          <div class="rc-coupon-row">
-            <input id="coupon-code" name="coupon_code" type="text" class="rc-coupon-input"
-                   placeholder="Enter a code" value="{{ coupon_code }}" autocomplete="off" spellcheck="false">
-            <button type="button" class="rc-coupon-btn" id="coupon-apply">Apply</button>
-          </div>
-          <div id="coupon-message" class="rc-msg" role="status" aria-live="polite"></div>
-
           {% if coupon_discount > 0 %}
-          <div class="rc-applied">
-            <span><strong>{{ coupon_code }}</strong> is applied — you save &#8358;{{ coupon_discount|floatformat:2|intcomma }}</span>
-            <button type="button" id="coupon-remove">Remove</button>
-          </div>
+            <div class="rc-applied">
+              <span><strong>{{ coupon_code }}</strong> is applied — you save &#8358;{{ coupon_discount|floatformat:2|intcomma }}</span>
+            </div>
+          {% else %}
+            <p class="rc-coupon-label" style="margin:0"><i class="bi bi-tag"></i> Have a promo code? You can add it at checkout.</p>
           {% endif %}
         </div>
 

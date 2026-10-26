@@ -414,6 +414,13 @@ body {
 .sf-footer a { color: #d1d5db !important; text-decoration: none; }
 .sf-footer a:hover { color: #fff !important; text-decoration: underline; }
 .sf-social { display: flex; gap: .5rem; }
+.sf-wa-link { display: inline-flex; align-items: center; gap: .45rem; padding: .45rem .8rem; border-radius: 999px; background: #1f2937; font-size: .85rem; }
+.sf-wa-link i { color: #25d366 !important; font-size: 1.05rem; }
+.sf-wa-link span { color: #9ca3af !important; }
+.sf-wa-link:hover { text-decoration: none !important; background: #374151; }
+.sf-footer-safe { margin: .9rem 0 0 !important; font-size: .8rem; color: #9ca3af !important; max-width: 32ch; }
+.sf-footer-safe i { color: #47cd89 !important; }
+.sf-footer-safe a { text-decoration: underline !important; }
 .sf-social a { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: #1f2937; }
 .sf-social a:hover { background: var(--sf-brand); text-decoration: none; }
 .sf-footer-bottom { border-top: 1px solid #1f2937; }

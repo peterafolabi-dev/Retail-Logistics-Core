@@ -909,9 +909,12 @@
         <div class="sf-footer-brand">
           <span class="sf-logo"><span class="sf-logo-mark"><i class="bi bi-bag-fill"></i></span><span class="sf-logo-text">Red<b>Cart</b></span></span>
           <p>Phones, laptops, fashion and home essentials, priced in naira and delivered across Nigeria.</p>
-          <div class="sf-social">
-            <a href="https://whatsapp.com/channel/0029Vb8ou1k0wajuuzWo5d1Y" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp channel"><i class="bi bi-whatsapp"></i></a>
-          </div>
+          {% if whatsapp_channel_url %}
+          <a class="sf-wa-link" href="{{ whatsapp_channel_url }}" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-whatsapp"></i> Official WhatsApp channel <span>(news &amp; deals only)</span>
+          </a>
+          {% endif %}
+          <p class="sf-footer-safe"><i class="bi bi-shield-check"></i> We never ask for your PIN, OTP or password. <a href="{% url 'products:stay-safe' %}">Stay safe</a></p>
         </div>
         <div>
           <h3>Shop</h3>
@@ -929,6 +932,7 @@
             <li><a href="{% url 'products:contact' %}">Contact us</a></li>
             <li><a href="{% url 'products:faq' %}">FAQs</a></li>
             <li><a href="{% url 'products:buyer-protection' %}">Buyer protection</a></li>
+            <li><a href="{% url 'products:stay-safe' %}">Stay safe from scams</a></li>
             {% if user.is_authenticated %}<li><a href="{% url 'products:my-tickets' %}">Support tickets</a></li>{% endif %}
           </ul>
         </div>

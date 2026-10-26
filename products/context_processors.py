@@ -14,6 +14,9 @@ def cart_context(request):
 
             total_quantity += max(0, int(quantity))
 
+    from django.conf import settings
+
     return {
         'cart_item_count': total_quantity,
+        'whatsapp_channel_url': getattr(settings, 'WHATSAPP_CHANNEL_URL', ''),
     }

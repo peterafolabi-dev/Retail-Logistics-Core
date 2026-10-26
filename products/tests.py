@@ -645,3 +645,45 @@ class AddressFlowTests(TestCase):
         first, second = UserAddress.objects.order_by('created_at', 'id')
         self.client.post(reverse('products:set-default-address', args=[second.pk]))
         self.assertEqual(list(UserAddress.objects.filter(is_default=True).values_list('pk', flat=True)), [second.pk])
+
+
+class SafetyAndCouponTests(TestCase):
+    def setUp(self):
+        User.objects.create_user(username='safe', password='pass12345')
+        self.client.login(username='safe', password='pass12345')
+        product = Product.objects.create(name='W', price=5000.0, stock=3, image_url='http://a.png')
+        session = self.client.session
+        session['cart'] = {str(product.pk): 1}
+        session.save()
+
+    def test_stay_safe_page_and_footer_link(self):
+        response = self.client.get(reverse('products:stay-safe'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'never ask for your card PIN, OTP')
+        self.assertContains(response, 'official WhatsApp channel')
+        self.assertContains(self.client.get(reverse('products:product-list')), reverse('products:stay-safe'))
+
+    def test_checkout_shows_scam_warning_and_is_the_only_coupon_entry(self):
+        checkout = self.client.get(reverse('products:checkout'))
+        self.assertContains(checkout, 'Stay safe from scams.')
+        self.assertContains(checkout, 'id="coupon-code"')
+        cart = self.client.get(reverse('products:view-cart'))
+        self.assertNotContains(cart, 'id="coupon-code"')
+        self.assertNotContains(cart, 'Spin the wheel')
+        self.assertContains(cart, 'add it at checkout')
+
+    def test_spin10_is_no_longer_created_on_demand(self):
+        from .models import Coupon
+        response = self.client.post(reverse('products:api-apply-coupon'), data='{"code": "SPIN10"}', content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Coupon.objects.filter(code__iexact='SPIN10', is_active=True).exists())
+
+    def test_order_email_links_to_real_site_and_warns_about_scams(self):
+        from django.template.loader import render_to_string
+        html = render_to_string('emails/order_confirmation.html', {
+            'order': Order(id=1), 'items': [], 'total': 0, 'site_url': 'https://shop.example.ng',
+            'user': User(username='x'),
+        })
+        self.assertIn('https://shop.example.ng/products/profile/', html)
+        self.assertIn('https://shop.example.ng/products/stay-safe/', html)
+        self.assertNotIn('redcart.com', html)

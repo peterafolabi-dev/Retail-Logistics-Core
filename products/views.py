@@ -2531,6 +2531,13 @@ def buyer_protection(request):
     return render(request, 'legal/buyer_protection.html')
 
 
+def stay_safe(request):
+    return render(request, 'legal/stay_safe.html', {
+        'support_email': getattr(settings, 'DEFAULT_FROM_EMAIL', ''),
+        'whatsapp_channel_url': WHATSAPP_CHANNEL_URL,
+    })
+
+
 def category_page(request, category_slug):
     category_mapping = {
         'electronics': 'Electronics',

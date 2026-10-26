@@ -430,5 +430,17 @@ body {
 }
 #scrollTopBtn i { color: var(--sf-text) !important; }
 
+/* Anti-scam notice (checkout, cart, emails mirror this copy) */
+.rc-safety-note {
+  display: flex; gap: .65rem; align-items: flex-start; margin: 1rem 0; padding: .85rem 1rem;
+  border: 1px solid #fedf89; border-radius: var(--sf-radius-sm); background: var(--sf-warning-soft);
+  font-size: .85rem; line-height: 1.5; color: var(--sf-text-2);
+}
+.rc-safety-note i { font-size: 1.2rem; color: var(--sf-warning) !important; flex-shrink: 0; margin-top: .05rem; }
+.rc-safety-note strong { color: var(--sf-text) !important; }
+.rc-safety-note div, .rc-safety-note div * { color: var(--sf-text-2); }
+.rc-safety-note a { color: var(--sf-brand) !important; font-weight: 600; white-space: nowrap; }
+[data-theme="dark"] .rc-safety-note { border-color: rgba(253, 176, 34, .35); }
+
 /* Hide the old full-screen loader everywhere. */
 #loader { display: none !important; }

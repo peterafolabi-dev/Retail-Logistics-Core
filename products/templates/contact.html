@@ -79,12 +79,12 @@
 
         <div class="row text-center">
           <div class="col-md-4 mb-3">
-            <h5 class="fw-bold">📞 Phone</h5>
-            <p class="text-muted">+234 (0) 123 456 7890</p>
+            <h5 class="fw-bold">💬 Live chat</h5>
+            <p class="text-muted">Use the chat button at the bottom right — available 24/7.</p>
           </div>
           <div class="col-md-4 mb-3">
             <h5 class="fw-bold">📧 Email</h5>
-            <p class="text-muted">support@redcart.com</p>
+            <p class="text-muted">{% if support_email %}<a href="mailto:{{ support_email }}">{{ support_email }}</a>{% else %}Use the form on this page.{% endif %}</p>
           </div>
           <div class="col-md-4 mb-3">
             <h5 class="fw-bold">🕒 Hours</h5>

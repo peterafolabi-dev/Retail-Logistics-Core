@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Stay safe from scams | RedCart{% endblock %}
+{% block meta_description %}How to recognise and report scams that impersonate RedCart.{% endblock %}
+
+{% block content %}
+<div class="sf-container sf-page">
+  <nav class="sf-breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'products:landing' %}">Home</a> <i class="bi bi-chevron-right"></i>
+    <span>Stay safe</span>
+  </nav>
+
+  <section class="sf-panel sf-detail" style="margin-top:0">
+    <h2 style="font-size:1.6rem"><i class="bi bi-shield-check" style="color:var(--sf-brand)"></i> Stay safe from scams</h2>
+    <p class="sf-summary" style="margin-top:0">Scammers sometimes pretend to be online stores. Here's how to tell a real RedCart message from a fake one.</p>
+
+    <div class="rc-safety-note" role="note">
+      <i class="bi bi-shield-exclamation" aria-hidden="true"></i>
+      <div><strong>RedCart will never ask for your card PIN, OTP, BVN or password</strong> — not by phone, SMS, WhatsApp, email or social media. Anyone who asks is a scammer. Hang up or don't reply.</div>
+    </div>
+  </section>
+
+  <section class="sf-panel sf-detail">
+    <h2>Golden rules</h2>
+    <ul class="sf-description">
+      <li><strong>Only pay on the RedCart checkout page.</strong> Payments go through Paystack on our website. We never ask you to transfer money to a personal bank account.</li>
+      <li><strong>Prepaid orders are fully paid.</strong> A rider must not ask you for extra cash, a "delivery fee" or a "customs fee" on a prepaid order.</li>
+      <li><strong>Cash on Delivery:</strong> pay only the exact amount shown in your order on the RedCart website.</li>
+      <li><strong>Check the website address.</strong> Before signing in or paying, make sure you're on our real site and the address bar shows a padlock.</li>
+      <li><strong>We don't send "you've won" prizes.</strong> Real promotions appear on our website. You never pay a fee to collect a prize.</li>
+    </ul>
+  </section>
+
+  <section class="sf-panel sf-detail">
+    <h2>Common scams to watch for</h2>
+    <table class="sf-specs" style="max-width:none">
+      <tr><th scope="row">Fake delivery agent</th><td>A caller says your parcel is held and asks for a "release fee" or your OTP. Your order status is always on <a href="{% url 'products:profile' %}">your account page</a>.</td></tr>
+      <tr><th scope="row">Fake WhatsApp "support"</th><td>Someone messages you on WhatsApp using our name or logo and asks for payment or codes. RedCart does not sell, take payments or handle refunds over WhatsApp.</td></tr>
+      <tr><th scope="row">Too-good-to-be-true deals</th><td>Ads or social posts with huge discounts that send you to another website or a bank transfer. Real RedCart deals are on our site.</td></tr>
+      <tr><th scope="row">Refund or overpayment calls</th><td>A caller says you were overpaid and asks you to send money back. We only refund through the original payment method or your RedCart wallet.</td></tr>
+      <tr><th scope="row">Phishing links</th><td>Emails or texts with a link to "verify your account". Sign in by typing our address yourself instead of clicking the link.</td></tr>
+    </table>
+  </section>
+
+  <section class="sf-panel sf-detail">
+    <h2>Our official channels</h2>
+    <ul class="sf-description">
+      <li><strong>Website:</strong> this site — orders, payments, refunds and order tracking only happen here.</li>
+      <li><strong>Support:</strong> the <a href="{% url 'products:contact' %}">Contact us</a> page{% if user.is_authenticated %} or your <a href="{% url 'products:my-tickets' %}">support tickets</a>{% endif %}{% if support_email %}, or email <a href="mailto:{{ support_email }}">{{ support_email }}</a>{% endif %}.</li>
+      {% if whatsapp_channel_url %}
+        <li><strong>WhatsApp:</strong> our <a href="{{ whatsapp_channel_url }}" target="_blank" rel="noopener noreferrer">official WhatsApp channel</a> only posts news and deals. It cannot message you privately, and we never ask for payments or codes on WhatsApp.</li>
+      {% else %}
+        <li><strong>WhatsApp:</strong> RedCart does not provide customer service on WhatsApp. Any WhatsApp account claiming to be RedCart support is fake.</li>
+      {% endif %}
+    </ul>
+  </section>
+
+  <section class="sf-panel sf-detail">
+    <h2>Think you've been targeted?</h2>
+    <ol class="sf-description" style="padding-left:1.2rem">
+      <li>Don't send money or share any codes.</li>
+      <li>If you shared card details, call your bank right away to block the card.</li>
+      <li>Report it to us through the <a href="{% url 'products:contact' %}">Contact us</a> page with screenshots, the phone number or link used, and your order number if you have one.</li>
+    </ol>
+    <a href="{% url 'products:contact' %}" class="sf-btn sf-btn-primary" style="margin-top:.5rem"><i class="bi bi-flag"></i> Report a scam</a>
+  </section>
+</div>
+{% endblock %}

@@ -199,6 +199,10 @@ EMAIL_NOTIFICATION_ENABLED = True
 EMAIL_NOTIFICATION_BATCH_SIZE = 50
 REAL_TIME_NOTIFICATIONS_ENABLED = True
 
+# RedCart's only official WhatsApp presence (a broadcast channel). Shown in the footer and on
+# the Stay Safe page so customers can tell it apart from impersonators. Blank hides it.
+WHATSAPP_CHANNEL_URL = config('WHATSAPP_CHANNEL_URL', default='https://whatsapp.com/channel/0029Vb8ou1k0wajuuzWo5d1Y')
+
 # Wallet credit (₦) paid to a referrer when their invited friend's first order is paid.
 REFERRAL_REWARD_AMOUNT = config('REFERRAL_REWARD_AMOUNT', cast=float, default=1000)
 

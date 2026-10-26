@@ -2531,6 +2531,9 @@ def buyer_protection(request):
     return render(request, 'legal/buyer_protection.html')
 
 
+WHATSAPP_CHANNEL_URL = getattr(settings, 'WHATSAPP_CHANNEL_URL', '')
+
+
 def stay_safe(request):
     return render(request, 'legal/stay_safe.html', {
         'support_email': getattr(settings, 'DEFAULT_FROM_EMAIL', ''),

@@ -867,7 +867,6 @@ def user_profile(request):
     loyalty_points = sum(int(order.total // 500) for order in orders if order.is_paid)
     referral_link = referrals.referral_url_for(request, user)
 
-    messages.info(request, f"Welcome to your profile! You have {orders.count()} orders.")
     return render(request, 'profile.html', {
         'user': user,
         'wallet': wallet,

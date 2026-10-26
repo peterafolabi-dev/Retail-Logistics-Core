@@ -1,0 +1,16 @@
+{# Account sidebar. Pass `active` = orders | account | wallet | addresses | referrals | notifications | support #}
+<nav class="sf-panel acc-nav" aria-label="My account">
+  <div class="acc-user">
+    <span class="acc-avatar">{{ user.first_name|default:user.username|first|upper }}</span>
+    <div><strong>{{ user.get_full_name|default:user.username }}</strong><small>{{ user.email }}</small></div>
+  </div>
+  <a href="{% url 'products:account-dashboard' %}" class="{% if active == 'account' %}is-active{% endif %}"><i class="bi bi-speedometer2"></i> Overview</a>
+  <a href="{% url 'products:profile' %}" class="{% if active == 'orders' %}is-active{% endif %}"><i class="bi bi-box-seam"></i> Orders</a>
+  <a href="{% url 'products:wallet' %}" class="{% if active == 'wallet' %}is-active{% endif %}"><i class="bi bi-wallet2"></i> Wallet</a>
+  <a href="{% url 'products:addresses' %}" class="{% if active == 'addresses' %}is-active{% endif %}"><i class="bi bi-geo-alt"></i> Addresses</a>
+  <a href="{% url 'products:wishlist' %}"><i class="bi bi-heart"></i> Wishlist</a>
+  <a href="{% url 'products:referrals' %}" class="{% if active == 'referrals' %}is-active{% endif %}"><i class="bi bi-gift"></i> Invite friends</a>
+  <a href="{% url 'products:notification-center' %}" class="{% if active == 'notifications' %}is-active{% endif %}"><i class="bi bi-bell"></i> Notifications</a>
+  <a href="{% url 'products:my-tickets' %}" class="{% if active == 'support' %}is-active{% endif %}"><i class="bi bi-life-preserver"></i> Support tickets</a>
+  <a href="{% url 'products:logout' %}" class="acc-signout"><i class="bi bi-box-arrow-right"></i> Sign out</a>
+</nav>

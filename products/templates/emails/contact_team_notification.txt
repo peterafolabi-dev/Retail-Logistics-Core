@@ -4,7 +4,7 @@ From:    {{ submission.name }} <{{ submission.email }}>
 Topic:   {{ topic }}{% if order_number %}
 Order:   {{ order_number }}{% endif %}
 Subject: {{ subject }}
-Sent:    {{ submission.created_at|date:"D j M Y, H:i" }} (UTC)
+Sent:    {{ submission.created_at|date:"D j M Y, H:i" }} (Lagos time)
 
 {{ submission.message }}
 

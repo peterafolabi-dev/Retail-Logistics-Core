@@ -1608,6 +1608,12 @@ def _redirect_back(request, fallback):
 
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+    if request.method == 'GET':
+        try:
+            from .utils import track_product_view
+            track_product_view(product, request.user if request.user.is_authenticated else None)
+        except Exception:
+            logger.exception('Could not record product view for %s', product.pk)
     product.description = (product.description or '').strip()
     failure_cache_key = f'groq_fail:{product.pk}'
     if not product.ai_description and not product.description and not cache.get(failure_cache_key):
@@ -2164,23 +2170,74 @@ def analytics_dashboard(request):
         messages.error(request, "❌ You don't have permission to access this page.")
         return redirect('products:product-list')
 
-    from .models import Order, Product, ProductView
-    from django.db.models import Count, Sum
+    from .models import DailyVisitor, Order, Product, ProductView
 
-    total_orders = Order.objects.count()
-    total_revenue = Order.objects.filter(is_paid=True).aggregate(Sum('subtotal'))['subtotal__sum'] or 0
-    total_products = Product.objects.count()
-    total_views = ProductView.objects.count()
-    trending = ProductView.objects.values('product__name').annotate(
-        view_count=Count('id')
-    ).order_by('-view_count')[:5]
+    today = timezone.localdate()
+    visits = DailyVisitor.objects
+
+    def unique_visitors(start, end):
+        return visits.filter(date__gte=start, date__lte=end).values('visitor_key').distinct().count()
+
+    def pct_change(current, previous):
+        return round((current - previous) * 100 / previous) if previous else None
+
+    dau = visits.filter(date=today).count()
+    dau_yesterday = visits.filter(date=today - timedelta(days=1)).count()
+    wau = unique_visitors(today - timedelta(days=6), today)
+    wau_prev = unique_visitors(today - timedelta(days=13), today - timedelta(days=7))
+    mau = unique_visitors(today - timedelta(days=29), today)
+    mau_prev = unique_visitors(today - timedelta(days=59), today - timedelta(days=30))
+    month_start = today - timedelta(days=29)
+    returning = (
+        visits.filter(date__gte=month_start).values('visitor_key')
+        .annotate(days=Count('date')).filter(days__gt=1).count()
+    )
+    signed_in_today = visits.filter(date=today, user__isnull=False).count()
+
+    # 30-day chart: visitors and sign-ups per day.
+    per_day = dict(visits.filter(date__gte=month_start).values_list('date').annotate(n=Count('id')))
+    signups = dict(
+        User.objects.filter(date_joined__date__gte=month_start)
+        .values_list('date_joined__date').annotate(n=Count('id'))
+    )
+    peak = max(per_day.values(), default=0) or 1
+    chart = []
+    for offset in range(29, -1, -1):
+        day = today - timedelta(days=offset)
+        count = per_day.get(day, 0)
+        chart.append({'date': day, 'visitors': count, 'signups': signups.get(day, 0), 'height': round(count * 100 / peak)})
+
+    paid_30d = list(
+        Order.objects.filter(is_paid=True, created_at__date__gte=month_start).prefetch_related('items')
+    )
 
     return render(request, 'admin/dashboard.html', {
-        'total_orders': total_orders,
-        'total_revenue': total_revenue,
-        'total_products': total_products,
-        'total_views': total_views,
-        'trending_products': trending,
+        'today': today,
+        'dau': dau, 'dau_change': pct_change(dau, dau_yesterday), 'dau_yesterday': dau_yesterday,
+        'wau': wau, 'wau_change': pct_change(wau, wau_prev),
+        'mau': mau, 'mau_change': pct_change(mau, mau_prev),
+        'all_time_visitors': visits.values('visitor_key').distinct().count(),
+        'avg_daily': round(sum(per_day.values()) / 30, 1),
+        'returning': returning,
+        'returning_pct': round(returning * 100 / mau) if mau else 0,
+        'signed_in_today': signed_in_today,
+        'guests_today': dau - signed_in_today,
+        'chart': chart,
+        'users_total': User.objects.count(),
+        'signups_today': signups.get(today, 0),
+        'signups_7d': User.objects.filter(date_joined__date__gte=today - timedelta(days=6)).count(),
+        'signups_30d': sum(signups.values()),
+        'orders_today': Order.objects.filter(created_at__date=today).count(),
+        'orders_30d': len(paid_30d),
+        'revenue_30d': sum(order.total for order in paid_30d),  # Order.total also covers orders without a stored subtotal
+        'conversion_pct': round(len(paid_30d) * 100 / mau, 1) if mau else 0,
+        'total_orders': Order.objects.count(),
+        'total_products': Product.objects.count(),
+        'top_pages': visits.filter(date__gte=month_start).values('first_path').annotate(n=Count('id')).order_by('-n')[:6],
+        'trending_products': (
+            ProductView.objects.filter(viewed_at__date__gte=month_start)
+            .values('product_id', 'product__name').annotate(view_count=Count('id')).order_by('-view_count')[:6]
+        ),
     })
 
 

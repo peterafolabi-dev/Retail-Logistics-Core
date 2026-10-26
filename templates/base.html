@@ -773,6 +773,7 @@
                 <i class="bi bi-person"></i><span class="sf-label">Hi, {{ user.first_name|default:user.username|truncatechars:14 }}</span>
               </button>
               <div class="sf-account-menu" role="menu">
+                {% if user.is_staff %}<a href="{% url 'products:dashboard' %}" role="menuitem"><i class="bi bi-graph-up-arrow"></i> Store analytics</a>{% endif %}
                 <a href="{% url 'products:account-dashboard' %}" role="menuitem"><i class="bi bi-speedometer2"></i> My account</a>
                 <a href="{% url 'products:profile' %}" role="menuitem"><i class="bi bi-box-seam"></i> Orders &amp; profile</a>
                 <a href="{% url 'products:wallet' %}" role="menuitem"><i class="bi bi-wallet2"></i> Wallet</a>

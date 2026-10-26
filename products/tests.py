@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.management import call_command
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 
 from . import utils
@@ -820,3 +820,56 @@ class PageHealthTests(TestCase):
         response = self.client.get('/no-such-page/')
         self.assertEqual(response.status_code, 404)
         self.assertContains(response, "We couldn't find that page", status_code=404)
+
+
+class VisitorAnalyticsTests(TestCase):
+    BROWSER = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130.0 Safari/537.36'
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+
+    def test_guest_counted_once_per_day_and_bots_ignored(self):
+        from .models import DailyVisitor
+        self.client.get(reverse('products:about'), HTTP_USER_AGENT=self.BROWSER)
+        self.client.get(reverse('products:faq'), HTTP_USER_AGENT=self.BROWSER)  # same cookie, same day
+        self.assertEqual(DailyVisitor.objects.count(), 1)
+        self.assertTrue(DailyVisitor.objects.get().visitor_key.startswith('a:'))
+
+        bot = Client()
+        bot.get(reverse('products:about'), HTTP_USER_AGENT='Googlebot/2.1')
+        bot.get('/healthz/', HTTP_USER_AGENT=self.BROWSER)
+        self.assertEqual(DailyVisitor.objects.count(), 1)
+
+    def test_signed_in_user_counted_by_account(self):
+        from .models import DailyVisitor
+        user = User.objects.create_user(username='visitor', password='pass12345')
+        self.client.login(username='visitor', password='pass12345')
+        self.client.get(reverse('products:about'), HTTP_USER_AGENT=self.BROWSER)
+        row = DailyVisitor.objects.get()
+        self.assertEqual(row.visitor_key, f'u:{user.pk}')
+        self.assertEqual(row.user, user)
+
+    def test_dashboard_is_staff_only_and_shows_counts(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from .models import DailyVisitor
+        today = timezone.localdate()
+        DailyVisitor.objects.create(date=today, visitor_key='a:1')
+        DailyVisitor.objects.create(date=today, visitor_key='a:2')
+        DailyVisitor.objects.create(date=today - timedelta(days=3), visitor_key='a:1')
+        DailyVisitor.objects.create(date=today - timedelta(days=20), visitor_key='a:3')
+
+        User.objects.create_user(username='shopper', password='pass12345')
+        self.client.login(username='shopper', password='pass12345')
+        self.assertRedirects(self.client.get(reverse('products:dashboard')), reverse('products:product-list'), fetch_redirect_response=False)
+
+        User.objects.create_user(username='boss', password='pass12345', is_staff=True)
+        self.client.login(username='boss', password='pass12345')
+        response = self.client.get(reverse('products:dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['dau'], 2)
+        self.assertEqual(response.context['wau'], 2)
+        self.assertEqual(response.context['mau'], 3)
+        self.assertEqual(response.context['returning'], 1)
+        self.assertEqual(len(response.context['chart']), 30)

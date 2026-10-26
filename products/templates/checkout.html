@@ -202,8 +202,7 @@
           {% if not wallet_available %}
             <div class="payment-method-option-note">
               Top up your RedCart wallet to enable this payment option.
-              <!-- NOTE: update this href to your actual wallet top-up URL name -->
-              <a href="/products/wallet/" class="payment-method-option-note-link">Top up now</a>
+              <a href="{% url 'products:wallet' %}" class="payment-method-option-note-link">Top up now</a>
             </div>
           {% endif %}
         </div>

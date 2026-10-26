@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Page not found | RedCart{% endblock %}
+
+{% block content %}
+<div class="sf-container sf-page">
+  <div class="sf-panel sf-empty" style="padding:4rem 1.5rem">
+    <i class="bi bi-signpost-split"></i>
+    <h2 style="font-size:1.6rem">We couldn't find that page</h2>
+    <p>The link may be broken, or the page may have moved. Try searching or browse our products.</p>
+    <form method="get" action="{% url 'products:product-list' %}" style="margin:0 auto 1.25rem;max-width:460px">
+      <div style="display:flex;border:2px solid var(--sf-brand);border-radius:var(--sf-radius-sm);overflow:hidden">
+        <input type="search" name="search" placeholder="Search products" aria-label="Search products" style="flex:1;border:0;padding:.6rem .9rem;background:transparent;color:var(--sf-text);outline:0">
+        <button type="submit" aria-label="Search" style="border:0;background:var(--sf-brand);color:#fff;padding:0 1rem"><i class="bi bi-search" style="color:#fff"></i></button>
+      </div>
+    </form>
+    <div style="display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap">
+      <a href="{% url 'products:landing' %}" class="sf-btn sf-btn-primary">Go to homepage</a>
+      <a href="{% url 'products:contact' %}" class="sf-btn sf-btn-outline">Contact support</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

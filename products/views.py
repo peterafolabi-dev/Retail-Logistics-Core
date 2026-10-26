@@ -2321,14 +2321,26 @@ def blog_page(request):
 
 
 def reviews_page(request):
-    products_with_reviews = Product.objects.filter(comment__isnull=False).distinct()[:8]
-    all_comments = Comment.objects.all().order_by('-created_at')[:20]
-    total_reviews = Comment.objects.count()
+    # Same visibility rule as product pages: fraud-hidden reviews are never shown.
+    visible = Review.objects.exclude(moderation_status='hidden')
+    stats = visible.aggregate(total=Count('id'), average=Avg('rating'))
+    breakdown = {row['rating']: row['n'] for row in visible.values('rating').annotate(n=Count('id'))}
+    total = stats['total'] or 0
+    top_products = (
+        Product.objects.annotate(
+            num_reviews=Count('reviews', filter=~Q(reviews__moderation_status='hidden')),
+            avg_rating=Avg('reviews__rating', filter=~Q(reviews__moderation_status='hidden')),
+        )
+        .filter(num_reviews__gt=0)
+        .order_by('-avg_rating', '-num_reviews')
+        .prefetch_related('reviews')[:5]
+    )
     return render(request, 'reviews.html', {
-        'products_with_reviews': products_with_reviews,
-        'recent_reviews': all_comments,
-        'total_reviews': total_reviews,
-        'average_rating': 4.5,
+        'recent_reviews': visible.select_related('user', 'product').order_by('-created_at')[:20],
+        'total_reviews': total,
+        'average_rating': stats['average'],
+        'breakdown': [(star, breakdown.get(star, 0), round(breakdown.get(star, 0) * 100 / total) if total else 0) for star in range(5, 0, -1)],
+        'top_products': top_products,
     })
 
 

@@ -173,7 +173,10 @@ else:
 # The sender address must be the Gmail address verified in Brevo (or the SMTP login).
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=f'RedCart <{SUPPORT_EMAIL}>')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
-SITE_URL = config('SITE_URL', default='https://retail-logistics-core-t0xz.onrender.com')
+SITE_URL = config(
+    'SITE_URL',
+    default=f'https://{RENDER_EXTERNAL_HOSTNAME}' if RENDER_EXTERNAL_HOSTNAME else 'https://retail-logistics-core-t0xz.onrender.com',
+)
 
 PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY', default='')
 PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY', default='')

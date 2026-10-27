@@ -29,17 +29,14 @@ else:
     print(f'Products already exist ({Product.objects.count()} found) - skipping loaddata')
 "
 
-# Fix site domain
+# Point the Sites framework (used in password-reset links) at this service's real address.
 python manage.py shell -c "
+from urllib.parse import urlparse
+from django.conf import settings
 from django.contrib.sites.models import Site
-Site.objects.update_or_create(
-    id=1,
-    defaults={
-        'domain': 'retail-logistics-core-t0xz.onrender.com',
-        'name': 'RedCart'
-    }
-)
-print('Site domain updated successfully')
+domain = urlparse(settings.SITE_URL).netloc or 'retail-logistics-core-t0xz.onrender.com'
+Site.objects.update_or_create(id=1, defaults={'domain': domain, 'name': 'RedCart'})
+print(f'Site domain set to {domain}')
 "
 
 python manage.py fill_descriptions

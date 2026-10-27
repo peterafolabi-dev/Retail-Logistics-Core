@@ -26,6 +26,13 @@ CSRF_TRUSTED_ORIGINS = config(
     default='https://retail-logistics-core.onrender.com,https://retail-logistics-core-t0xz.onrender.com,http://localhost:3000,http://localhost:8000'
 ).split(',')
 
+# Render sets this to the service's own address (e.g. my-store-ab12.onrender.com). Trusting it
+# automatically means a new or renamed service works without editing hosts by hand.
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    CSRF_TRUSTED_ORIGINS.append(f'https://{RENDER_EXTERNAL_HOSTNAME}')
+
 SECURE_SSL_REDIRECT = not DEBUG and not IS_TESTING
 SESSION_COOKIE_SECURE = not DEBUG and not IS_TESTING
 CSRF_COOKIE_SECURE = not DEBUG and not IS_TESTING

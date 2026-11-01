@@ -13,9 +13,9 @@ DEBUG = config('DEBUG', default='False').strip().lower() in {'1', 'true', 'yes',
 
 SECRET_KEY = os.environ.get('SECRET_KEY') or config('SECRET_KEY', default='')
 if not SECRET_KEY:
-    if os.environ.get('RENDER'):
+    if os.environ.get('RENDER') or os.environ.get('VERCEL'):
         from django.core.exceptions import ImproperlyConfigured
-        raise ImproperlyConfigured('SECRET_KEY must be set in the Render environment.')
+        raise ImproperlyConfigured('SECRET_KEY must be set in the hosting environment.')
     # Local development and the test runner only; deployments must set SECRET_KEY.
     SECRET_KEY = 'django-insecure-local-development-key'
 
@@ -32,6 +32,17 @@ RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
     CSRF_TRUSTED_ORIGINS.append(f'https://{RENDER_EXTERNAL_HOSTNAME}')
+
+# Vercel sets these to the deployment's own addresses. Trust them so every
+# production and preview deployment works without editing hosts by hand.
+VERCEL_HOSTNAMES = [h for h in (
+    os.environ.get('VERCEL_URL', ''),
+    os.environ.get('VERCEL_BRANCH_URL', ''),
+    os.environ.get('VERCEL_PROJECT_PRODUCTION_URL', ''),
+) if h]
+for _host in VERCEL_HOSTNAMES:
+    ALLOWED_HOSTS.append(_host)
+    CSRF_TRUSTED_ORIGINS.append(f'https://{_host}')
 
 # Origins allowed to read the public catalog API (products/api_v1.py) from the
 # browser, e.g. the Next.js storefront on Vercel. Comma-separated.
@@ -101,7 +112,8 @@ if 'DATABASE_URL' in os.environ:
     DATABASES = {
         'default': dj_database_url.config(
             default=os.environ.get('DATABASE_URL'),
-            conn_max_age=600,
+            # Serverless functions on Vercel shouldn't hold connections open.
+            conn_max_age=0 if os.environ.get('VERCEL') else 600,
             conn_health_checks=True,
         )
     }
@@ -188,7 +200,11 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=f'RedCart <{SUPPORT_EM
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 SITE_URL = config(
     'SITE_URL',
-    default=f'https://{RENDER_EXTERNAL_HOSTNAME}' if RENDER_EXTERNAL_HOSTNAME else 'https://retail-logistics-core-t0xz.onrender.com',
+    default=(
+        f'https://{RENDER_EXTERNAL_HOSTNAME}' if RENDER_EXTERNAL_HOSTNAME
+        else f"https://{os.environ['VERCEL_PROJECT_PRODUCTION_URL']}" if os.environ.get('VERCEL_PROJECT_PRODUCTION_URL')
+        else 'http://localhost:8000'
+    ),
 )
 
 PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY', default='')

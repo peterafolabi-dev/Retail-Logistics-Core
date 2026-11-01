@@ -700,14 +700,8 @@ SITE_KNOWLEDGE = {
     'support': "For anything not covered here, reach our support team via the Contact page.",
 }
 
-# TODO(order-lookup): "tracking" currently only gives the generic policy line
-# above. For a real per-order lookup ("where is my order #1234"), we need:
-#   1. Your Order model's field names (status, tracking_number, user FK, id/order_number)
-#   2. Confirmation that get_ai_chat_response() will be called with an
-#      authenticated request.user so lookups can be scoped to the right customer
-#      (never let one customer query another's order by guessing a number).
-# Once that's confirmed, add an 'order_lookup' intent branch here that queries
-# the Order model directly instead of using the AI at all for this case.
+# Per-order lookups ("where is my order #1234") are handled by the
+# order_lookup intent in _get_order_lookup_response, scoped to request.user.
 
 _KNOWLEDGE_KEYWORD_MAP = {
     'shipping': ['shipping', 'delivery', 'deliver', 'how long', 'when will'],

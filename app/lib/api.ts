@@ -1,7 +1,7 @@
 // Talks to the Django read-only catalog API (products/api_v1.py).
 // Cart, checkout, payments and accounts stay on Django: the storefront links there.
 
-export const STORE_URL = (process.env.REDCART_API_URL || "https://retail-logistics-core-t0xz.onrender.com").replace(/\/$/, "");
+export const STORE_URL = (process.env.REDCART_API_URL || "https://redcart-ten.vercel.app").replace(/\/$/, "");
 
 export type ProductSummary = {
   id: number;

@@ -2,7 +2,7 @@
 
 A full production e-commerce platform built solo with **Django**, featuring a Groq-powered AI shopping assistant, real payment processing, and fraud-aware review moderation.
 
-**Live at:** [retail-logistics-core-t0xz.onrender.com](https://retail-logistics-core-t0xz.onrender.com)
+**Live at:** [redcart-ten.vercel.app](https://redcart-ten.vercel.app) (Django store on Vercel, Neon Postgres)
 
 ---
 
@@ -141,5 +141,5 @@ REDCART_API_URL=http://127.0.0.1:8000 npm run dev
 ### Deploy
 
 1. Import the repo into Vercel (framework: Next.js, root directory: repo root).
-2. Set `REDCART_API_URL` to the Django service URL, e.g. `https://retail-logistics-core-t0xz.onrender.com`.
+2. Set `REDCART_API_URL` to the Django service URL, e.g. `https://redcart-ten.vercel.app`.
 3. On Render, set `STOREFRONT_ORIGINS` to the Vercel URL so browsers may call the API directly.

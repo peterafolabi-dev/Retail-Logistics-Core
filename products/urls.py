@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import api_v1, views
 
 app_name = 'products'
 
@@ -13,6 +13,10 @@ urlpatterns = [
     path('intelligence/', views.security_intelligence, name='security-intelligence'),
     path('api/shodan/intelligence/', views.shodan_intelligence_api, name='api-shodan-intelligence'),
     path('product/<int:product_id>/', views.product_detail, name='product-detail'),
+
+    # Read-only catalog API for the Next.js storefront
+    path('api/v1/products/', api_v1.product_list, name='api-v1-product-list'),
+    path('api/v1/products/<int:product_id>/', api_v1.product_detail, name='api-v1-product-detail'),
     path('product/<int:product_id>/review/', views.submit_review, name='submit-review'),
 
     # 🛒 Cart actions

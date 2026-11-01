@@ -33,6 +33,12 @@ if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
     CSRF_TRUSTED_ORIGINS.append(f'https://{RENDER_EXTERNAL_HOSTNAME}')
 
+# Origins allowed to read the public catalog API (products/api_v1.py) from the
+# browser, e.g. the Next.js storefront on Vercel. Comma-separated.
+STOREFRONT_ORIGINS = [o.strip() for o in config(
+    'STOREFRONT_ORIGINS', default='http://localhost:3000'
+).split(',') if o.strip()]
+
 SECURE_SSL_REDIRECT = not DEBUG and not IS_TESTING
 SESSION_COOKIE_SECURE = not DEBUG and not IS_TESTING
 CSRF_COOKIE_SECURE = not DEBUG and not IS_TESTING

@@ -1,78 +1,101 @@
-"use client";
+import { ArrowRight, Laptop, Smartphone, Watch, Gamepad2, Shirt, Footprints } from "lucide-react";
+import Link from "next/link";
+import Header from "./components/Header";
+import ProductCard from "./components/ProductCard";
+import { listProducts } from "./lib/api";
 
-import { motion } from "framer-motion";
-import { Activity, ArrowUpRight, Cpu, Radar, RefreshCw, Search, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
-import Navbar from "./components/Navbar";
+// Render on request so a sleeping API never breaks the build; fetches are still cached for 60s.
+export const dynamic = "force-dynamic";
 
-type IntelItem = { ip: string; port: number | null; transport: string; country: string; city: string; org: string; timestamp: string };
-type Product = { name: string; category: string; price: string; image: string; detail: string };
-
-const products: Product[] = [
-  { name: "Rolex Submariner", category: "Precision asset", price: "$14,250", detail: "Ceramic bezel // 300m depth", image: "https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&w=1200&q=85" },
-  { name: "MacBook Pro M4", category: "Command hardware", price: "$2,499", detail: "M4 Pro // 36GB unified memory", image: "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?auto=format&fit=crop&w=1200&q=85" },
+const FEATURED_CATEGORIES = [
+  { value: "Phones", label: "Phones", Icon: Smartphone },
+  { value: "Laptops", label: "Laptops", Icon: Laptop },
+  { value: "Gaming", label: "Gaming", Icon: Gamepad2 },
+  { value: "Watches", label: "Watches", Icon: Watch },
+  { value: "Sneakers", label: "Sneakers", Icon: Footprints },
+  { value: "Fashion", label: "Fashion", Icon: Shirt },
 ];
 
-function SpotlightCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <motion.article
-      className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[.035] p-6 backdrop-blur-xl ${className}`}
-      style={{ backgroundImage: "radial-gradient(420px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(34,211,238,.13), transparent 48%)" }}
-      whileHover={{ scale: 1.018, y: -4 }}
-      transition={{ type: "spring", stiffness: 260, damping: 22 }}
-      onMouseMove={(event) => {
-        const rect = event.currentTarget.getBoundingClientRect();
-        event.currentTarget.style.setProperty("--mouse-x", `${event.clientX - rect.left}px`);
-        event.currentTarget.style.setProperty("--mouse-y", `${event.clientY - rect.top}px`);
-      }}
-    >{children}</motion.article>
-  );
-}
-
-export default function HomePage() {
-  const [intel, setIntel] = useState<IntelItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [command, setCommand] = useState("");
-  const [updated, setUpdated] = useState("Awaiting telemetry");
-
-  async function loadIntel() {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/shodan", { cache: "no-store" });
-      const payload = (await response.json()) as { success?: boolean; items?: IntelItem[]; error?: string };
-      if (!response.ok || !payload.success) throw new Error(payload.error || "Feed unavailable");
-      setIntel(payload.items || []);
-      setUpdated(`Updated ${new Date().toLocaleTimeString()}`);
-    } catch (error) {
-      setUpdated(error instanceof Error ? error.message : "Feed unavailable");
-    } finally { setLoading(false); }
-  }
-
-  useEffect(() => { loadIntel(); }, []);
-
-  const terminalItems = intel.length ? intel : [{ ip: "masked.host", port: 443, transport: "tcp", country: "Awaiting", city: "signal", org: "SHODAN_NODE", timestamp: "--:--" }];
+export default async function HomePage() {
+  const [deals, newest] = await Promise.all([
+    listProducts({ on_sale: true, page_size: 4 }),
+    listProducts({ sort: "newest", page_size: 8 }),
+  ]);
+  const counts = Object.fromEntries(newest.categories.map((c) => [c.value, c.count]));
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <Navbar />
-      <div className="mx-auto max-w-7xl px-5 pb-16 pt-36 md:px-8">
-        <header className="mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
-          <div><p className="mb-3 flex items-center gap-2 font-mono text-xs uppercase tracking-[.25em] text-cyan-300"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_14px_#34d399]" /> RedCart / Command Center</p><h1 className="text-4xl font-bold tracking-tight md:text-7xl">Luxury commerce.<br /><span className="text-cyan-300 [text-shadow:0_0_22px_rgba(34,211,238,.35)]">Live intelligence.</span></h1></div>
-          <div className="flex items-center gap-3 rounded-xl border border-emerald-400/20 bg-emerald-400/5 px-4 py-3 font-mono text-xs text-emerald-300"><Activity className="h-4 w-4" /> SYSTEM OPERATIONAL</div>
-        </header>
-
-        <section className="grid grid-cols-1 gap-6 md:grid-cols-4">
-          <SpotlightCard className="md:col-span-2">
-            <div className="mb-8 flex items-center justify-between"><div className="flex items-center gap-3"><Cpu className="text-cyan-300" /><h2 className="font-mono text-sm uppercase tracking-widest">System Search Terminal</h2></div><span className="font-mono text-xs text-emerald-300">ONLINE</span></div>
-            <div className="crt-scanlines rounded-xl border border-cyan-400/20 bg-black/80 p-5 font-mono text-sm text-cyan-300"><p>$ initialize redcart_core</p><p className="mt-2 text-emerald-300">✓ premium vault mounted</p><p className="text-emerald-300">✓ network intelligence ready</p><p className="mt-2">$ {command || "awaiting operator command"}<span className="ml-1 animate-pulse">▌</span></p><div className="mt-5 flex gap-2"><input value={command} onChange={(event) => setCommand(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") setCommand(""); }} placeholder="type a command..." className="min-w-0 flex-1 bg-transparent text-white outline-none placeholder:text-slate-600" /><button onClick={() => setCommand("")} className="rounded-md border border-cyan-400/30 px-3 py-2 text-cyan-300 hover:bg-cyan-400/10"><Search className="h-4 w-4" /></button></div></div>
-          </SpotlightCard>
-
-          {products.map((product) => <SpotlightCard key={product.name} className="p-0"><div className="relative aspect-[4/5] overflow-hidden"><img src={product.image} alt={product.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" /><div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" /><div className="absolute bottom-0 p-5"><p className="font-mono text-xs uppercase tracking-widest text-cyan-300">{product.category}</p><h2 className="mt-2 text-xl font-semibold">{product.name}</h2><p className="mt-2 text-sm text-slate-400">{product.detail}</p><p className="mt-2 text-slate-200">{product.price}</p></div><ArrowUpRight className="absolute right-5 top-5 text-white/70" /></div></SpotlightCard>)}
-
-          <SpotlightCard className="md:col-span-3"><div className="mb-5 flex items-center justify-between"><div className="flex items-center gap-3"><Radar className="text-cyan-300" /><h2 className="font-mono text-sm uppercase tracking-widest">Live Shodan Threat Stream</h2></div><span className="flex items-center gap-2 font-mono text-xs text-red-400"><span className="h-2 w-2 animate-pulse rounded-full bg-red-500" /> LIVE</span></div><div className="max-h-72 space-y-3 overflow-auto rounded-xl border border-cyan-400/20 bg-black/80 p-4 font-mono text-xs">{loading && <p className="text-slate-500">connecting to intelligence relay...</p>}{terminalItems.map((item, index) => <motion.div key={`${item.ip}-${item.port}-${index}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="border-b border-white/5 pb-2 text-cyan-300"><span className="text-slate-600">{item.timestamp || "--:--"}</span> {item.ip}:{item.port ?? "—"}/{item.transport}<span className="ml-2 text-slate-500">{item.country} · {item.org}</span></motion.div>)}</div><div className="mt-4 flex items-center justify-between"><span className="font-mono text-xs text-slate-600">{updated}</span><button onClick={loadIntel} disabled={loading} className="flex items-center gap-2 rounded-md border border-cyan-400/30 px-3 py-2 font-mono text-xs text-cyan-300 hover:bg-cyan-400/10 disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button></div></SpotlightCard>
-          <SpotlightCard><div className="flex items-center gap-3"><ShieldCheck className="text-cyan-300" /><h2 className="font-mono text-sm uppercase tracking-widest">Signal posture</h2></div><div className="mx-auto my-10 grid h-36 w-36 place-items-center rounded-full border border-cyan-300/30 text-cyan-300 shadow-[0_0_0_16px_rgba(34,211,238,.04),0_0_60px_rgba(34,211,238,.16)]"><span className="font-mono text-xs tracking-[.25em]">SECURE</span></div><p className="text-sm leading-6 text-slate-400">Server-side API boundaries, masked hosts, and bounded responses keep the intelligence surface focused.</p></SpotlightCard>
+    <>
+      <Header />
+      <main className="mx-auto max-w-7xl px-4">
+        <section className="mt-6 grid overflow-hidden rounded-2xl bg-ink text-white md:grid-cols-[1.2fr_1fr]">
+          <div className="p-8 md:p-12">
+            <p className="text-sm font-semibold uppercase tracking-widest text-brand-500">Delivered across Nigeria</p>
+            <h1 className="mt-3 text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">
+              The gadgets and gear you want, <span className="text-brand-500">paid for safely.</span>
+            </h1>
+            <p className="mt-4 max-w-md text-slate-300">
+              {newest.count} products from phones to sneakers. Pay by card, transfer or USSD; your money is held until your order arrives.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link href="/shop" className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-3 font-semibold hover:bg-brand-700">
+                Shop all products <ArrowRight className="h-4 w-4" />
+              </Link>
+              {deals.count > 0 && (
+                <Link href="#deals" className="rounded-lg border border-white/25 px-5 py-3 font-semibold hover:bg-white/10">
+                  See today&apos;s deals
+                </Link>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 p-2 md:p-3">
+            {newest.results.slice(0, 4).map((p) => (
+              <Link key={p.id} href={`/shop/${p.id}`} className="relative aspect-square overflow-hidden rounded-xl bg-white/5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.image} alt={p.name} className="h-full w-full object-cover opacity-90 transition hover:opacity-100" />
+              </Link>
+            ))}
+          </div>
         </section>
-      </div>
-    </main>
+
+        <section className="mt-10" aria-labelledby="categories-heading">
+          <h2 id="categories-heading" className="text-xl font-bold">Shop by category</h2>
+          <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-6">
+            {FEATURED_CATEGORIES.map(({ value, label, Icon }) => (
+              <Link
+                key={value}
+                href={`/shop?category=${encodeURIComponent(value)}`}
+                className="flex flex-col items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-5 text-center transition hover:border-brand-600 hover:text-brand-600"
+              >
+                <Icon className="h-7 w-7" strokeWidth={1.6} />
+                <span className="text-sm font-semibold">{label}</span>
+                {counts[value] ? <span className="text-xs text-ink-mute">{counts[value]} items</span> : null}
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {deals.count > 0 && (
+          <section id="deals" className="mt-10 scroll-mt-40" aria-labelledby="deals-heading">
+            <div className="flex items-end justify-between">
+              <h2 id="deals-heading" className="text-xl font-bold">Flash deals</h2>
+              <Link href="/shop?deals=1" className="text-sm font-semibold text-brand-600 hover:underline">View all</Link>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+              {deals.results.map((p) => <ProductCard key={p.id} product={p} />)}
+            </div>
+          </section>
+        )}
+
+        <section className="mt-10" aria-labelledby="new-heading">
+          <div className="flex items-end justify-between">
+            <h2 id="new-heading" className="text-xl font-bold">New arrivals</h2>
+            <Link href="/shop" className="text-sm font-semibold text-brand-600 hover:underline">View all</Link>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+            {newest.results.map((p) => <ProductCard key={p.id} product={p} />)}
+          </div>
+        </section>
+      </main>
+    </>
   );
 }

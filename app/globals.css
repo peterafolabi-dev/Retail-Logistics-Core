@@ -2,13 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: dark; }
-* { box-sizing: border-box; }
-html { background: #000; }
-body { margin: 0; background: #000; color: #f8fafc; }
+:root { color-scheme: light; }
+html { background: #f4f4f5; }
+body { margin: 0; background: #f4f4f5; color: #0f172a; -webkit-font-smoothing: antialiased; }
 button, a { -webkit-tap-highlight-color: transparent; }
 
 @layer utilities {
-  .text-glow { text-shadow: 0 0 18px rgba(34, 211, 238, .42); }
-  .glass-edge { box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 24px 70px rgba(0,0,0,.45); }
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
 }

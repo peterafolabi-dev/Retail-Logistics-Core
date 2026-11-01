@@ -1,44 +1,21 @@
 import type { Config } from "tailwindcss";
-import plugin from "tailwindcss/plugin";
 
 const config: Config = {
-  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  content: ["./app/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      colors: {
+        brand: { 50: "#fef2f2", 100: "#fee2e2", 500: "#ef4444", 600: "#dc2626", 700: "#b91c1c" },
+        ink: { DEFAULT: "#0f172a", soft: "#334155", mute: "#64748b" },
+        surface: "#f4f4f5",
+      },
       fontFamily: {
-        sans: ["ui-sans-serif", "system-ui", "sans-serif"],
-        mono: ["ui-monospace", "SFMono-Regular", "Consolas", "monospace"],
+        sans: ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
       },
-      keyframes: {
-        neonBreathe: {
-          "0%, 100%": { boxShadow: "0 0 18px rgba(34, 211, 238, .08)" },
-          "50%": { boxShadow: "0 0 28px rgba(34, 211, 238, .28), 0 0 60px rgba(168, 85, 247, .12)" },
-        },
-        scanline: {
-          "0%": { transform: "translateY(-100%)" },
-          "100%": { transform: "translateY(100%)" },
-        },
-        ticker: {
-          from: { transform: "translateY(0)" },
-          to: { transform: "translateY(-50%)" },
-        },
-      },
-      animation: {
-        "neon-breathe": "neonBreathe 3s ease-in-out infinite",
-        scanline: "scanline 5s linear infinite",
-        ticker: "ticker 18s linear infinite",
-      },
+      boxShadow: { card: "0 1px 2px rgba(15,23,42,.06), 0 8px 24px -12px rgba(15,23,42,.18)" },
     },
   },
-  plugins: [
-    plugin(({ addUtilities }) => {
-      addUtilities({
-        ".crt-scanlines": {
-          backgroundImage: "repeating-linear-gradient(to bottom, transparent 0, transparent 3px, rgba(255,255,255,.025) 4px)",
-        },
-      });
-    }),
-  ],
+  plugins: [],
 };
 
 export default config;

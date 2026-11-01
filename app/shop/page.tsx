@@ -1,11 +1,135 @@
-"use client";
-
-import { motion } from "framer-motion";
-import { Activity, ArrowUpRight, Database, ScanLine } from "lucide-react";
+import { ChevronLeft, ChevronRight, SearchX } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
-import Navbar from "../components/Navbar";
-import { catalog, money } from "../lib/catalog";
+import Header from "../components/Header";
+import ProductCard from "../components/ProductCard";
+import { listProducts, shopHref, SORT_OPTIONS, type ListParams } from "../lib/api";
 
-export default function ShopPage() {
-  return <main className="min-h-screen bg-black px-5 pb-20 pt-36 text-white md:px-10"><Navbar /><div className="mx-auto max-w-7xl"><header className="mb-12 flex flex-col justify-between gap-6 border-b border-white/10 pb-8 md:flex-row md:items-end"><div><p className="font-mono text-xs uppercase tracking-[.3em] text-cyan-300">02 / Metadata Shop</p><h1 className="mt-3 text-5xl font-semibold tracking-tight md:text-7xl">Asset index<span className="text-cyan-300">.</span></h1></div><div className="flex items-center gap-3 font-mono text-xs text-emerald-300"><Activity className="h-4 w-4" /> INVENTORY LINK: LIVE</div></header><div className="border-t border-white/10">{catalog.map((product, index) => <motion.article key={product.id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * .08 }} className="group relative flex flex-col justify-between gap-4 border-b border-white/5 py-4 transition hover:border-cyan-300/50 hover:bg-cyan-950/10 md:flex-row md:items-center"><div className="flex min-w-0 items-center gap-4 md:w-[42%]"><span className="font-mono text-xs text-slate-600">0{index + 1}</span><div className="relative h-16 w-20 shrink-0 overflow-hidden border border-white/10"><img src={product.image} alt={product.name} className="h-full w-full object-cover grayscale transition duration-500 group-hover:scale-110 group-hover:grayscale-0" /><ScanLine className="absolute right-1 top-1 h-3 w-3 text-cyan-300" /></div><div className="min-w-0"><p className="truncate font-mono text-[10px] uppercase tracking-widest text-cyan-300">{product.category}</p><h2 className="truncate text-lg font-semibold">{product.name}</h2></div></div><div className="flex flex-wrap items-center gap-5 font-mono text-xs md:w-[38%] md:justify-end"><span className="text-slate-500">SKU_{product.id.toUpperCase()}</span><span className="flex items-center gap-2 text-emerald-300"><Database className="h-3 w-3" /> {product.inventory} units</span><span className="text-slate-300">{money(product.price)}</span></div><Link href={`/shop/${product.id}`} className="flex shrink-0 items-center gap-2 border border-white/10 px-3 py-2 font-mono text-xs text-cyan-300 transition hover:border-cyan-300/60 hover:bg-cyan-300/10">Inspect <ArrowUpRight className="h-4 w-4" /></Link><div className="pointer-events-none absolute left-24 top-full z-10 hidden w-72 border border-cyan-300/30 bg-black/95 p-4 shadow-[0_0_30px_rgba(6,182,212,.12)] group-hover:block"><p className="font-mono text-[10px] text-cyan-300">TECHNICAL SPECIFICATION MATRIX</p>{product.specs.map((spec) => <p key={spec} className="mt-2 font-mono text-xs text-slate-400">// {spec}</p>)}</div></motion.article>)}</div></div></main>;
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+const one = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? "";
+
+async function readParams(searchParams: SearchParams): Promise<ListParams> {
+  const sp = await searchParams;
+  return {
+    q: one(sp.q).trim().slice(0, 100),
+    category: one(sp.category),
+    sort: one(sp.sort) || "newest",
+    page: Math.max(1, Number.parseInt(one(sp.page), 10) || 1),
+    on_sale: one(sp.deals) === "1",
+  };
+}
+
+export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
+  const params = await readParams(searchParams);
+  if (params.q) return { title: `Results for “${params.q}”` };
+  if (params.on_sale) return { title: "Flash deals" };
+  return { title: params.category || "Shop all products" };
+}
+
+export default async function ShopPage({ searchParams }: { searchParams: SearchParams }) {
+  const params = await readParams(searchParams);
+  const data = await listProducts({ ...params, page_size: 24 });
+  const activeLabel = data.categories.find((c) => c.value === params.category)?.label;
+  const heading = params.q ? `Results for “${params.q}”` : params.on_sale ? "Flash deals" : activeLabel || "All products";
+
+  return (
+    <>
+      <Header query={params.q} activeCategory={params.category} />
+      <main className="mx-auto max-w-7xl px-4">
+        <nav className="py-4 text-sm text-ink-mute" aria-label="Breadcrumb">
+          <Link href="/" className="hover:text-ink">Home</Link> <span className="mx-1">/</span>
+          <span className="text-ink">Shop</span>
+        </nav>
+
+        <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
+          <aside className="h-fit rounded-xl border border-zinc-200 bg-white p-4 lg:sticky lg:top-48">
+            <p className="px-2 text-xs font-bold uppercase tracking-widest text-ink-mute">Category</p>
+            <ul className="mt-2 flex gap-1 overflow-x-auto lg:flex-col">
+              <li>
+                <Link
+                  href={shopHref(params, { category: "", page: 1 })}
+                  className={`flex justify-between whitespace-nowrap rounded-lg px-3 py-2 text-[15px] ${!params.category ? "bg-brand-50 font-semibold text-brand-600" : "hover:bg-surface"}`}
+                >
+                  All categories
+                </Link>
+              </li>
+              {data.categories.map((c) => (
+                <li key={c.value}>
+                  <Link
+                    href={shopHref(params, { category: c.value, page: 1 })}
+                    className={`flex justify-between gap-4 whitespace-nowrap rounded-lg px-3 py-2 text-[15px] ${params.category === c.value ? "bg-brand-50 font-semibold text-brand-600" : "hover:bg-surface"}`}
+                  >
+                    {c.label} <span className="text-ink-mute">{c.count}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </aside>
+
+          <section aria-labelledby="results-heading">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h1 id="results-heading" className="text-2xl font-bold tracking-tight">{heading}</h1>
+                <p className="mt-1 text-sm text-ink-mute">
+                  {data.count} item{data.count === 1 ? "" : "s"}
+                  {data.pages > 1 && ` · Page ${data.page} of ${data.pages}`}
+                </p>
+              </div>
+              <form action="/shop" method="get" className="flex items-center gap-2 text-sm">
+                {params.q && <input type="hidden" name="q" value={params.q} />}
+                {params.category && <input type="hidden" name="category" value={params.category} />}
+                {params.on_sale && <input type="hidden" name="deals" value="1" />}
+                <label htmlFor="sort" className="text-ink-mute">Sort by</label>
+                <select id="sort" name="sort" defaultValue={params.sort} className="rounded-lg border border-zinc-300 bg-white px-3 py-2">
+                  {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <button className="rounded-lg bg-ink px-3 py-2 font-semibold text-white">Apply</button>
+              </form>
+            </div>
+
+            {data.results.length === 0 ? (
+              <div className="mt-6 flex flex-col items-center rounded-xl border border-dashed border-zinc-300 bg-white px-6 py-16 text-center">
+                <SearchX className="h-10 w-10 text-ink-mute" />
+                <p className="mt-3 text-lg font-semibold">No products match that search</p>
+                <p className="mt-1 text-ink-mute">Try a shorter search, or browse a category.</p>
+                <Link href="/shop" className="mt-5 rounded-lg bg-brand-600 px-5 py-2.5 font-semibold text-white hover:bg-brand-700">
+                  Browse all products
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
+                {data.results.map((p) => <ProductCard key={p.id} product={p} />)}
+              </div>
+            )}
+
+            {data.pages > 1 && (
+              <nav className="mt-8 flex items-center justify-center gap-2" aria-label="Pagination">
+                {data.page > 1 ? (
+                  <Link href={shopHref(params, { page: data.page - 1 })} className="flex items-center gap-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold hover:border-ink">
+                    <ChevronLeft className="h-4 w-4" /> Previous
+                  </Link>
+                ) : null}
+                {Array.from({ length: data.pages }, (_, i) => i + 1).map((n) => (
+                  <Link
+                    key={n}
+                    href={shopHref(params, { page: n })}
+                    aria-current={n === data.page ? "page" : undefined}
+                    className={`grid h-9 min-w-9 place-items-center rounded-lg px-2 text-sm font-semibold ${n === data.page ? "bg-brand-600 text-white" : "border border-zinc-300 bg-white hover:border-ink"}`}
+                  >
+                    {n}
+                  </Link>
+                ))}
+                {data.page < data.pages ? (
+                  <Link href={shopHref(params, { page: data.page + 1 })} className="flex items-center gap-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold hover:border-ink">
+                    Next <ChevronRight className="h-4 w-4" />
+                  </Link>
+                ) : null}
+              </nav>
+            )}
+          </section>
+        </div>
+      </main>
+    </>
+  );
 }

@@ -116,3 +116,30 @@ Deployed on Render, using:
 
 Afolabi Peter(Kasperky)
 Computer engineering student, FUT Minna — building RedCart solo while learning Django along the way.
+---
+
+## Next.js storefront (`app/`)
+
+A fast, server-rendered storefront built with Next.js 15, React 19 and Tailwind. It reads the live catalog from Django's read-only API and hands off to Django for cart, checkout, Paystack payments and accounts, so there is one source of truth for orders and money.
+
+| Endpoint | What it returns |
+|---|---|
+| `GET /products/api/v1/products/` | Paginated products. Query params: `q`, `category`, `sort` (`newest`, `price_asc`, `price_desc`, `name`), `on_sale=1`, `page`, `page_size` (max 48) |
+| `GET /products/api/v1/products/<id>/` | One product with images, stock, published reviews and related items |
+
+Pages: home (hero, categories, flash deals, new arrivals), `/shop` (search, category filter, sort, pagination, deals), `/shop/<id>` (gallery, sale price and countdown date, stock, reviews, related products).
+
+### Run it locally
+
+```bash
+# terminal 1: Django on :8000
+python manage.py runserver
+# terminal 2: storefront on :3000
+REDCART_API_URL=http://127.0.0.1:8000 npm run dev
+```
+
+### Deploy
+
+1. Import the repo into Vercel (framework: Next.js, root directory: repo root).
+2. Set `REDCART_API_URL` to the Django service URL, e.g. `https://retail-logistics-core-t0xz.onrender.com`.
+3. On Render, set `STOREFRONT_ORIGINS` to the Vercel URL so browsers may call the API directly.

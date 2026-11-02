@@ -514,3 +514,52 @@ body {
 
 /* Hide the old full-screen loader everywhere. */
 #loader { display: none !important; }
+
+/* ===== Auth pages (sign up / sign in) in light mode =====
+   The auth card was designed dark-first: its text is forced white, but in light
+   mode the shared card rule turns its background white, so labels and headings
+   vanished. These rules give the auth pages a real light theme. */
+html[data-theme="light"] .auth-page-shell,
+html[data-theme="light"] .auth-video-bg { background: #f5f5f6 !important; }
+html[data-theme="light"] .auth-video-overlay { background: transparent !important; }
+html[data-theme="light"] .rc-page-shell .rc-auth-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.1) !important;
+  color: #0f172a !important;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12) !important;
+  backdrop-filter: none;
+}
+html[data-theme="light"] .rc-page-shell .rc-auth-card h1,
+html[data-theme="light"] .rc-page-shell .rc-auth-card h2,
+html[data-theme="light"] .rc-page-shell .rc-auth-card .auth-heading,
+html[data-theme="light"] .rc-page-shell .rc-auth-card label,
+html[data-theme="light"] .rc-page-shell .rc-auth-card .form-label,
+html[data-theme="light"] .rc-page-shell .rc-auth-card .form-check-label { color: #0f172a !important; }
+html[data-theme="light"] .rc-page-shell .rc-auth-card p,
+html[data-theme="light"] .rc-page-shell .rc-auth-card small,
+html[data-theme="light"] .rc-page-shell .rc-auth-card .text-muted { color: #5b6675 !important; }
+html[data-theme="light"] .rc-page-shell .rc-auth-card a { color: #1d4ed8 !important; }
+html[data-theme="light"] .rc-page-shell .rc-auth-card .rc-auth-link-strong { color: #c2410c !important; }
+html[data-theme="light"] .rc-page-shell .rc-auth-card hr { border-color: rgba(15, 23, 42, 0.12) !important; }
+html[data-theme="light"] .rc-page-shell .rc-auth-control {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+html[data-theme="light"] .rc-page-shell .rc-auth-control::placeholder { color: #94a3b8 !important; }
+html[data-theme="light"] .rc-page-shell .rc-auth-control:focus { background: #ffffff !important; color: #0f172a !important; }
+html[data-theme="light"] .rc-page-shell .rc-auth-secondary {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+html[data-theme="light"] .rc-page-shell .rc-auth-secondary:hover { background: #f1f5f9 !important; color: #0f172a !important; }
+html[data-theme="light"] .auth-ticker { background: #ffffff !important; border-top-color: rgba(15, 23, 42, 0.1) !important; }
+html[data-theme="light"] .auth-ticker::before { background: linear-gradient(to right, #ffffff 0%, rgba(255, 255, 255, 0) 100%) !important; }
+html[data-theme="light"] .auth-ticker::after { background: linear-gradient(to left, #ffffff 0%, rgba(255, 255, 255, 0) 100%) !important; }
+html[data-theme="light"] .auth-ticker-item { color: #475569 !important; }
+html[data-theme="light"] .auth-ticker-item strong { color: #0f172a !important; }
+.rc-auth-card .d-flex { display: flex; }
+.rc-auth-card .justify-content-between { justify-content: space-between; }
+.rc-auth-card .align-items-center { align-items: center; }
+.rc-auth-card .form-check { display: flex; align-items: center; gap: 8px; }

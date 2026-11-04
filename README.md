@@ -1,14 +1,32 @@
 # 🛒 RedCart — Retail-Logistics-Core
 
-A full production e-commerce platform built solo with **Django**, featuring a Groq-powered AI shopping assistant, real payment processing, and fraud-aware review moderation.
+[![CI](https://github.com/peterafolabi-dev/Retail-Logistics-Core/actions/workflows/ci.yml/badge.svg)](https://github.com/peterafolabi-dev/Retail-Logistics-Core/actions/workflows/ci.yml)
+![Django tests](https://img.shields.io/badge/django%20tests-83%20passing-1F8A4C)
+![Python](https://img.shields.io/badge/python-3.12-3776AB)
+![Next.js](https://img.shields.io/badge/Next.js-15-000000)
 
-**Live at:** [redcart-ten.vercel.app](https://redcart-ten.vercel.app) (Django store on Vercel, Neon Postgres)
+An e-commerce platform built solo with **Django + PostgreSQL**, with a **Next.js + TypeScript** storefront, a Groq-powered AI shopping assistant, a Paystack checkout and fraud-aware review moderation.
+
+| | Link |
+|---|---|
+| Django store | [redcart-ten.vercel.app](https://redcart-ten.vercel.app) (Vercel + Neon Postgres) |
+| Next.js storefront | [redcart-storefront.vercel.app](https://redcart-storefront.vercel.app) |
+| Payments | Paystack in **test mode**: use Paystack's public test card, no real money moves |
+
+![RedCart storefront](docs/portfolio/redcart.jpg)
 
 ---
 
-## Overview
+## Engineering decisions
 
-RedCart is a complete online store — not a demo. It handles real product inventory, real checkout and payments, real customer accounts, and a real AI assistant that customers actually talk to while shopping. Built from the ground up while learning Django, with each feature shipped, tested, and debugged against live traffic.
+The choices I'd want a reviewer to see, and why I made them:
+
+- **One source of truth for money.** The Next.js storefront only *reads* the catalog through a versioned, read-only API (`/products/api/v1/`). Cart, checkout, payments and accounts stay in Django, so there is exactly one place where orders and balances can change.
+- **Never trust the browser about payments.** After checkout, the server calls Paystack's `transaction/verify` endpoint with the reference before an order is marked paid. A redirect back to the site proves nothing on its own.
+- **No double credits.** Referral rewards are paid into wallets inside a database transaction with `select_for_update()`, so two requests arriving at the same time can't credit the same reward twice. Re-opening a payment link is also safe: a Paystack reference that was already processed is not turned into a second order.
+- **The AI is not allowed to guess.** Order status and stock come straight from the database. The model only phrases answers. Policy answers come from a small retrieval layer over real policy documents (`products/rag.py`), and a regression script (`scripts/evaluate.py`) checks the guardrails after changes.
+- **Fraud scoring that fails safe.** Only high-confidence fraud is auto-hidden. Borderline reviews stay public and are flagged for staff, so a false positive never silently buries a real customer.
+- **CI on every push.** GitHub Actions runs `manage.py check`, a missing-migrations check, the 83 Django tests and a TypeScript check of the storefront.
 
 ---
 
@@ -40,7 +58,7 @@ A tiered fraud-scoring system runs on every review and comment:
 ## 🔑 Core Platform Features
 
 - **Authentication** — email/password plus Google OAuth (via django-allauth)
-- **Payments** — Paystack integration for card, bank transfer, and wallet payments; escrow-style buyer protection on orders
+- **Payments** — Paystack checkout (test mode) for card and bank transfer, verified server-side before an order is marked paid, plus an internal wallet
 - **Order management** — full order lifecycle (pending → confirmed → shipped → delivered), tracking numbers, PDF invoices
 - **Product catalog** — categories, flash sales with live countdown timers, price history tracking, stock/variant management
 - **Wishlist, reviews & ratings, product recommendations** (AI-assisted, using the same Groq integration as the chatbot)
@@ -94,6 +112,14 @@ manage.py
    python manage.py runserver
    ```
 
+### Running the tests
+```bash
+python manage.py test        # 83 Django tests
+npx tsc --noEmit             # storefront typecheck
+```
+
+Older build notes and guides live in [`docs/notes/`](docs/notes/).
+
 ### Running the chatbot test suite
 ```bash
 python scripts/evaluate.py
@@ -104,7 +130,7 @@ Checks intent classification, guardrails, rate limiting, and RAG retrieval. Live
 
 ## 🚀 Deployment
 
-Deployed on Render, using:
+The Django store runs on Vercel with a Neon Postgres database (`render.yaml` is kept for a Render deployment). It uses:
 - PostgreSQL for production data (SQLite for local development)
 - Gunicorn as the WSGI server
 - WhiteNoise for static file serving
@@ -114,8 +140,9 @@ Deployed on Render, using:
 
 ## 👤 Author
 
-Afolabi Peter(Kasperky)
+Afolabi Peter · [LinkedIn](https://www.linkedin.com/in/afolabipeter-dev)
 Computer engineering student, FUT Minna — building RedCart solo while learning Django along the way.
+
 ---
 
 ## Next.js storefront (`app/`)

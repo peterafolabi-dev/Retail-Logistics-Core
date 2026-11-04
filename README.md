@@ -15,6 +15,8 @@ An e-commerce platform built solo with **Django + PostgreSQL**, with a **Next.js
 
 ![RedCart storefront](docs/portfolio/redcart.jpg)
 
+**📖 Read the [case study](docs/CASE_STUDY.md)**: the problem, architecture diagrams, how the AI assistant avoids making things up, and the hard parts.
+
 ---
 
 ## Engineering decisions

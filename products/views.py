@@ -2238,6 +2238,32 @@ def analytics_dashboard(request):
             ProductView.objects.filter(viewed_at__date__gte=month_start)
             .values('product_id', 'product__name').annotate(view_count=Count('id')).order_by('-view_count')[:6]
         ),
+        'newest_users': User.objects.order_by('-date_joined')[:8],
+    })
+
+
+def customers_dashboard(request):
+    """Staff-only list of everyone who signed up, with email, how they joined and what they bought."""
+    if not request.user.is_staff:
+        messages.error(request, "❌ You don't have permission to access this page.")
+        return redirect('products:product-list')
+    from .customers import customer_queryset, customers_csv, spend_by_user
+
+    qs = customer_queryset(request.GET)
+    if request.GET.get('export') == 'csv':
+        return customers_csv(qs)
+    page = Paginator(qs, 50).get_page(request.GET.get('page'))
+    spent = spend_by_user([u.id for u in page])
+    for u in page:
+        u.spent = spent.get(u.id, 0)
+    params = request.GET.copy()
+    params.pop('page', None)
+    return render(request, 'admin/customers.html', {
+        'page': page,
+        'total': qs.count(),
+        'all_users': User.objects.count(),
+        'params': params.urlencode(),
+        'f': {k: request.GET.get(k, '') for k in ('q', 'period', 'method', 'newsletter', 'buyers')},
     })
 
 

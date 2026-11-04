@@ -9,7 +9,10 @@
       <h1>Store analytics</h1>
       <p>Unique visitors, sign-ups and sales · updated live · {{ today|date:"l j F Y" }}</p>
     </div>
-    <a href="{% url 'admin:index' %}" class="sf-btn sf-btn-outline sf-btn-sm"><i class="bi bi-gear"></i> Django admin</a>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'products:customers' %}" class="sf-btn sf-btn-primary sf-btn-sm"><i class="bi bi-people"></i> Customers</a>
+      <a href="{% url 'admin:index' %}" class="sf-btn sf-btn-outline sf-btn-sm"><i class="bi bi-gear"></i> Django admin</a>
+    </div>
   </div>
 
   <section class="an-kpis" aria-label="Active users">
@@ -72,6 +75,17 @@
         <dt>New in last 7 days</dt><dd>{{ signups_7d }}</dd>
         <dt>New in last 30 days</dt><dd>{{ signups_30d }}</dd>
       </dl>
+      <a href="{% url 'products:customers' %}" class="sf-btn sf-btn-outline sf-btn-sm mt-3"><i class="bi bi-people"></i> See everyone who signed up</a>
+    </section>
+
+    <section class="sf-panel an-box">
+      <h2>Newest sign-ups</h2>
+      {% if newest_users %}
+        <ol class="an-rank">
+          {% for u in newest_users %}<li><span><strong>{{ u.get_full_name|default:u.username }}</strong><br><small><a href="mailto:{{ u.email }}">{{ u.email|default:"no email" }}</a></small></span><span title="{{ u.date_joined|date:'D j M Y, g:i A' }}">{{ u.date_joined|timesince }} ago</span></li>{% endfor %}
+        </ol>
+        <a href="{% url 'products:customers' %}" class="an-more">All customers</a>
+      {% else %}<p class="an-empty">No sign-ups yet.</p>{% endif %}
     </section>
 
     <section class="sf-panel an-box">

@@ -950,3 +950,54 @@ class DailyNewsletterTests(TestCase):
         with patch('django.core.mail.EmailMultiAlternatives.send', flaky), self.assertLogs('products.newsletter', level='ERROR'):
             result = send_daily_newsletter()
         self.assertEqual((result['sent'], result['failed'], result['remaining']), (1, 1, 1))
+
+
+class CustomersDashboardTests(TestCase):
+    """Staff can see who signed up, with emails; customers can't."""
+
+    def setUp(self):
+        from .models import Newsletter
+        self.staff = User.objects.create_user('boss', email='boss@redcart.ng', password='x', is_staff=True)
+        self.ada = User.objects.create_user('ada', email='ada@example.com', password='x', first_name='Ada', last_name='Obi')
+        self.bayo = User.objects.create_user('bayo', email='bayo@example.com', password='x')
+        Newsletter.objects.create(email='ada@example.com')
+        Order.objects.create(user=self.ada, is_paid=True, payment_status='paid', subtotal=50000)
+
+    def test_customers_cannot_see_it(self):
+        self.client.login(username='ada', password='x')
+        response = self.client.get(reverse('products:customers'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_staff_see_everyone_with_email_orders_and_newsletter(self):
+        self.client.login(username='boss', password='x')
+        response = self.client.get(reverse('products:customers'))
+        self.assertContains(response, 'ada@example.com')
+        self.assertContains(response, 'bayo@example.com')
+        self.assertContains(response, 'Ada Obi')
+        self.assertContains(response, '₦50,000')
+        self.assertContains(response, '✓ Yes')
+
+    def test_search_and_filters(self):
+        self.client.login(username='boss', password='x')
+        r = self.client.get(reverse('products:customers'), {'q': 'bayo'})
+        self.assertContains(r, 'bayo@example.com')
+        self.assertNotContains(r, 'ada@example.com')
+        r = self.client.get(reverse('products:customers'), {'buyers': '1'})
+        self.assertContains(r, 'ada@example.com')
+        self.assertNotContains(r, 'bayo@example.com')
+        r = self.client.get(reverse('products:customers'), {'newsletter': '1', 'period': 'today'})
+        self.assertContains(r, 'ada@example.com')
+
+    def test_csv_export(self):
+        self.client.login(username='boss', password='x')
+        r = self.client.get(reverse('products:customers'), {'export': 'csv'})
+        self.assertEqual(r['Content-Type'], 'text/csv')
+        body = r.content.decode()
+        self.assertIn('ada@example.com', body)
+        self.assertIn('Email', body)
+
+    def test_analytics_dashboard_lists_newest_signups(self):
+        self.client.login(username='boss', password='x')
+        r = self.client.get(reverse('products:dashboard'))
+        self.assertContains(r, 'Newest sign-ups')
+        self.assertContains(r, 'bayo@example.com')

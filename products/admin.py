@@ -385,3 +385,34 @@ admin.site.register(PickupHub)
 admin.site.register(ReturnRequest)
 admin.site.register(ProductOffer)
 admin.site.register(OrderExtra)
+
+
+# ---- Users: show who signed up, with email and dates, newest first ----
+import csv as _csv
+from django.contrib.auth.admin import UserAdmin as _BaseUserAdmin
+from django.contrib.auth.models import User as _User
+from django.http import HttpResponse as _HttpResponse
+
+
+@admin.action(description='Download selected users as CSV')
+def _export_users_csv(modeladmin, request, queryset):
+    response = _HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="redcart-users.csv"'
+    writer = _csv.writer(response)
+    writer.writerow(['username', 'first_name', 'last_name', 'email', 'date_joined', 'last_login', 'is_staff'])
+    for u in queryset.order_by('-date_joined'):
+        writer.writerow([u.username, u.first_name, u.last_name, u.email, u.date_joined, u.last_login or '', u.is_staff])
+    return response
+
+
+class CustomerUserAdmin(_BaseUserAdmin):
+    list_display = ('username', 'email', 'first_name', 'last_name', 'date_joined', 'last_login', 'is_staff')
+    list_filter = ('is_staff', 'is_active', 'date_joined')
+    ordering = ('-date_joined',)
+    date_hierarchy = 'date_joined'
+    actions = [_export_users_csv]
+
+
+admin.site.unregister(_User)
+admin.site.register(_User, CustomerUserAdmin)
+

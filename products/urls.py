@@ -72,6 +72,7 @@ urlpatterns = [
     
     # 📊 Analytics
     path('dashboard/', views.analytics_dashboard, name='dashboard'),
+    path('dashboard/customers/', views.customers_dashboard, name='customers'),
     
     # 📱 Newsletter
     path('newsletter/signup/', views.newsletter_signup, name='newsletter-signup'),

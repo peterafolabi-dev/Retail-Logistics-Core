@@ -76,6 +76,8 @@ urlpatterns = [
     # 📱 Newsletter
     path('newsletter/signup/', views.newsletter_signup, name='newsletter-signup'),
     path('newsletter/unsubscribe/', views.newsletter_unsubscribe, name='newsletter-unsubscribe'),
+    path('newsletter/unsubscribe/<str:token>/', views.newsletter_unsubscribe_token, name='newsletter-unsubscribe-token'),
+    path('cron/daily-newsletter/', views.cron_daily_newsletter, name='cron-daily-newsletter'),
 
     # 📝 Blog & Content Pages
     path('blog/', views.blog_page, name='blog'),

@@ -9,9 +9,17 @@
     <div class="col-lg-6">
       <div class="card shadow-sm p-4 border-0 rounded-4">
         <h1 class="h3 mb-3">Unsubscribe from RedCart Newsletter</h1>
+        {% if one_click_token %}
+        <p class="text-muted mb-4">Stop the daily RedCart email to <strong>{{ email }}</strong>?</p>
+        <form method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger w-100">Yes, unsubscribe me</button>
+        </form>
+        {% else %}
+        {% if token_invalid %}<p class="text-danger mb-3">That unsubscribe link has expired or is wrong. Enter your email below instead.</p>{% endif %}
         <p class="text-muted mb-4">Enter the email you used to subscribe and we’ll stop sending newsletter offers.</p>
 
-        <form method="post">
+        <form method="post" action="{% url 'products:newsletter-unsubscribe' %}">
           {% csrf_token %}
           <div class="mb-3">
             <label for="email" class="form-label">Email address</label>
@@ -21,6 +29,7 @@
         </form>
 
         <p class="small text-muted mt-3">If we don't recognize your email, we will let you know on the next page.</p>
+        {% endif %}
       </div>
     </div>
   </div>

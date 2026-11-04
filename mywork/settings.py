@@ -198,6 +198,9 @@ else:
 # The sender address must be the Gmail address verified in Brevo (or the SMTP login).
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=f'RedCart <{SUPPORT_EMAIL}>')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
+# Shared secret for scheduled jobs (Vercel Cron sends it as a Bearer token).
+CRON_SECRET = config('CRON_SECRET', default='')
+
 SITE_URL = config(
     'SITE_URL',
     default=(

@@ -1,3 +1,4 @@
+from datetime import timedelta
 import json
 import os
 from io import StringIO
@@ -873,3 +874,79 @@ class VisitorAnalyticsTests(TestCase):
         self.assertEqual(response.context['mau'], 3)
         self.assertEqual(response.context['returning'], 1)
         self.assertEqual(len(response.context['chart']), 30)
+
+
+@override_settings(SITE_URL='https://shop.example.ng', CRON_SECRET='s3cret-cron')
+class DailyNewsletterTests(TestCase):
+    """The daily email: right people, once a day, working unsubscribe, protected trigger."""
+
+    def setUp(self):
+        from .models import Newsletter
+        self.p1 = Product.objects.create(name='Infinix Zero 30', price=470000, stock=5, category='Phones', image_url='https://img.example/1.jpg')
+        self.p2 = Product.objects.create(name='Dell XPS 15', price=3200000, stock=2, category='Laptops', image_url='https://img.example/2.jpg',
+                                         sale_price=2900000, sale_ends_at=timezone.now() + timedelta(hours=6))
+        Product.objects.create(name='Sold out thing', price=1000, stock=0, category='Other', image_url='x')
+        self.ada = Newsletter.objects.create(email='ada@example.com')
+        self.bob = Newsletter.objects.create(email='bob@example.com')
+        Newsletter.objects.create(email='gone@example.com', subscribed=False)
+
+    def test_sends_once_per_subscriber_per_day(self):
+        from django.core import mail
+        from .newsletter import send_daily_newsletter
+        result = send_daily_newsletter()
+        self.assertEqual(result['sent'], 2)
+        self.assertEqual(sorted(m.to[0] for m in mail.outbox), ['ada@example.com', 'bob@example.com'])
+        again = send_daily_newsletter()  # a second run the same day sends nothing
+        self.assertEqual(again['sent'], 0)
+        self.assertEqual(len(mail.outbox), 2)
+
+    def test_email_has_deal_flash_sale_and_one_click_unsubscribe(self):
+        from django.core import mail
+        from .newsletter import send_daily_newsletter
+        send_daily_newsletter()
+        msg = next(m for m in mail.outbox if m.to == ['ada@example.com'])
+        html = msg.alternatives[0][0]
+        self.assertIn('Deal of the day', html)
+        self.assertIn('Dell XPS 15', html)  # live flash sale
+        self.assertNotIn('Sold out thing', html)
+        self.ada.refresh_from_db()
+        url = f'https://shop.example.ng/products/newsletter/unsubscribe/{self.ada.token}/'
+        self.assertIn(url, html)
+        self.assertEqual(msg.extra_headers['List-Unsubscribe'], f'<{url}>')
+
+    def test_one_click_unsubscribe(self):
+        from .newsletter import send_daily_newsletter
+        send_daily_newsletter()
+        self.ada.refresh_from_db()
+        path = reverse('products:newsletter-unsubscribe-token', args=[self.ada.token])
+        self.assertContains(self.client.get(path), 'ada@example.com')
+        self.client.post(path)
+        self.ada.refresh_from_db()
+        self.assertFalse(self.ada.subscribed)
+        self.assertEqual(self.client.get(reverse('products:newsletter-unsubscribe-token', args=['wrong'])).status_code, 404)
+
+    def test_cron_endpoint_requires_the_secret(self):
+        from django.core import mail
+        url = reverse('products:cron-daily-newsletter')
+        self.assertEqual(self.client.get(url).status_code, 401)
+        self.assertEqual(self.client.get(url, HTTP_AUTHORIZATION='Bearer nope').status_code, 401)
+        self.assertEqual(len(mail.outbox), 0)
+        response = self.client.get(url, HTTP_AUTHORIZATION='Bearer s3cret-cron')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['sent'], 2)
+
+    @override_settings(CRON_SECRET='')
+    def test_cron_endpoint_is_off_without_a_secret(self):
+        self.assertEqual(self.client.get(reverse('products:cron-daily-newsletter')).status_code, 503)
+
+    def test_one_failure_does_not_stop_the_rest(self):
+        from unittest.mock import patch
+        from .newsletter import send_daily_newsletter
+        real_send = __import__('django.core.mail', fromlist=['EmailMultiAlternatives']).EmailMultiAlternatives.send
+        def flaky(msg, *a, **k):
+            if msg.to == ['ada@example.com']:
+                raise OSError('mailbox down')
+            return real_send(msg, *a, **k)
+        with patch('django.core.mail.EmailMultiAlternatives.send', flaky), self.assertLogs('products.newsletter', level='ERROR'):
+            result = send_daily_newsletter()
+        self.assertEqual((result['sent'], result['failed'], result['remaining']), (1, 1, 1))

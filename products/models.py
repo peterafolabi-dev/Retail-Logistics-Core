@@ -828,6 +828,17 @@ class Newsletter(models.Model):
     email = models.EmailField(unique=True)
     subscribed = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    # One-click unsubscribe link in every email (filled on first send).
+    token = models.CharField(max_length=40, blank=True, default='', db_index=True)
+    # When the daily email last went out, so a re-run never sends twice in a day.
+    last_sent_at = models.DateTimeField(null=True, blank=True)
+
+    def ensure_token(self):
+        if not self.token:
+            import secrets
+            self.token = secrets.token_urlsafe(24)
+            self.save(update_fields=['token'])
+        return self.token
     
     def __str__(self):
         return self.email

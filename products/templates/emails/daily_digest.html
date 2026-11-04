@@ -1,0 +1,50 @@
+{% extends 'emails/base_email.html' %}
+{% load humanize tz %}
+{% block title %}Today at RedCart{% endblock %}
+{% block preheader %}{% if deal %}Deal of the day: {{ deal.name }}{% if deal.has_active_sale %} at {{ deal.discount_percentage|floatformat:0 }}% off{% endif %}.{% endif %} Plus flash sales and new arrivals.{% endblock %}
+{% block heading %}Today at RedCart · {{ date|date:"l j M" }}{% endblock %}
+{% block content %}
+{% if deal %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border:1px solid #fde2dd;border-radius:12px;background:#fff7f5;">
+  <tr>
+    <td width="132" style="padding:14px;"><a href="{{ site_url }}/products/product/{{ deal.id }}/"><img src="{{ deal.email_img }}" width="110" height="110" alt="{{ deal.name }}" style="display:block;width:110px;height:110px;object-fit:cover;border-radius:10px;background:#f3f4f6;"></a></td>
+    <td style="padding:14px 14px 14px 0;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#d92d20;">Deal of the day</div>
+      <div style="font-size:17px;font-weight:700;color:#111827;margin:4px 0 6px;">{{ deal.name }}</div>
+      {% if deal.has_active_sale %}
+        <div style="font-size:18px;font-weight:700;color:#d92d20;">₦{{ deal.sale_price|floatformat:0|intcomma }} <span style="font-size:13px;color:#6b7280;text-decoration:line-through;font-weight:400;">₦{{ deal.price|floatformat:0|intcomma }}</span></div>
+      {% else %}
+        <div style="font-size:18px;font-weight:700;color:#111827;">₦{{ deal.price|floatformat:0|intcomma }}</div>
+      {% endif %}
+      <a href="{{ site_url }}/products/product/{{ deal.id }}/" style="display:inline-block;margin-top:10px;padding:9px 16px;border-radius:8px;background:#d92d20;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;">View deal</a>
+    </td>
+  </tr>
+</table>
+{% endif %}
+
+{% if flash_sales %}
+<p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#111827;">⚡ Flash sales ending soon</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
+  {% for p in flash_sales %}
+  <tr>
+    <td style="padding:8px 0;border-bottom:1px solid #f1f1f1;"><a href="{{ site_url }}/products/product/{{ p.id }}/" style="color:#111827;text-decoration:none;font-weight:600;">{{ p.name }}</a><br><span style="font-size:12px;color:#6b7280;">Ends {{ p.sale_ends_at|timezone:"Africa/Lagos"|date:"D j M, g:i A" }}</span></td>
+    <td align="right" style="padding:8px 0;border-bottom:1px solid #f1f1f1;white-space:nowrap;"><strong style="color:#d92d20;">₦{{ p.sale_price|floatformat:0|intcomma }}</strong><br><span style="font-size:12px;color:#6b7280;">{{ p.discount_percentage|floatformat:0 }}% off</span></td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% if new_arrivals %}
+<p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#111827;">🆕 New in store</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 6px;">
+  {% for p in new_arrivals %}
+  <tr>
+    <td style="padding:8px 0;border-bottom:1px solid #f1f1f1;"><a href="{{ site_url }}/products/product/{{ p.id }}/" style="color:#111827;text-decoration:none;font-weight:600;">{{ p.name }}</a><br><span style="font-size:12px;color:#6b7280;">{{ p.category }}</span></td>
+    <td align="right" style="padding:8px 0;border-bottom:1px solid #f1f1f1;white-space:nowrap;font-weight:700;color:#111827;">₦{% if p.has_active_sale %}{{ p.sale_price|floatformat:0|intcomma }}{% else %}{{ p.price|floatformat:0|intcomma }}{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% endblock %}
+{% block cta_row %}<tr><td style="padding:4px 28px 20px;"><a href="{{ site_url }}/products/shop/" style="display:inline-block;padding:13px 22px;border-radius:8px;background:#111827;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;">Browse the store</a></td></tr>{% endblock %}
+{% block footer_extra %}You get one email a day because you subscribed with {{ email }}. <a href="{{ unsubscribe_url }}" style="color:#6b7280;">Unsubscribe with one click</a>.<br>{% endblock %}

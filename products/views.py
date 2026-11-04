@@ -2323,6 +2323,36 @@ def newsletter_unsubscribe(request):
     return render(request, 'newsletter_unsubscribe.html', {'email': email})
 
 
+@csrf_exempt  # one-click unsubscribe from mail apps POSTs without a CSRF token
+def newsletter_unsubscribe_token(request, token):
+    """One-click unsubscribe link from the daily email. GET shows a confirm page; POST unsubscribes.
+    (Mail apps that support List-Unsubscribe-Post send the POST directly.)"""
+    from .models import Newsletter
+    sub = Newsletter.objects.filter(token=token).first() if token else None
+    if sub is None:
+        return render(request, 'newsletter_unsubscribe.html', {'email': '', 'token_invalid': True}, status=404)
+    if request.method == 'POST':
+        if sub.subscribed:
+            sub.subscribed = False
+            sub.save(update_fields=['subscribed'])
+        messages.success(request, "✅ You're unsubscribed. You won't get the daily RedCart email any more.")
+        return redirect('products:product-list')
+    return render(request, 'newsletter_unsubscribe.html', {'email': sub.email, 'one_click_token': token})
+
+
+def cron_daily_newsletter(request):
+    """Called once a day by Vercel Cron. Vercel sends `Authorization: Bearer <CRON_SECRET>`."""
+    import hmac
+    from .newsletter import send_daily_newsletter
+    secret = getattr(settings, 'CRON_SECRET', '')
+    if not secret:
+        return JsonResponse({'error': 'CRON_SECRET is not configured'}, status=503)
+    given = request.headers.get('Authorization', '')
+    if not hmac.compare_digest(given.encode(), f'Bearer {secret}'.encode()):
+        return JsonResponse({'error': 'unauthorized'}, status=401)
+    return JsonResponse(send_daily_newsletter())
+
+
 # ============ EMAIL PREVIEWS ============
 
 def preview_email_welcome(request):

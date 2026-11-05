@@ -94,7 +94,8 @@ async function loadNotifications() {
         console.error('Error loading notifications:', error);
     } finally {
         isLoading = false;
-        document.getElementById('loading').style.display = 'none';
+        const loading = document.getElementById('loading');  // gone once the list has rendered
+        if (loading) loading.style.display = 'none';
     }
 }
 
@@ -292,7 +293,8 @@ async function loadUnreadOnly() {
         console.error('Error loading unread:', error);
     } finally {
         isLoading = false;
-        document.getElementById('loading').style.display = 'none';
+        const loading = document.getElementById('loading');  // gone once the list has rendered
+        if (loading) loading.style.display = 'none';
     }
 }
 

@@ -230,7 +230,8 @@ body {
 .ptile .sf-btn { margin-top: .5rem; min-height: 38px; font-size: .875rem; }
 
 /* ── Shop layout ─────────────────────────────────────────────────────────── */
-.sf-shop { display: grid; gap: 24px; grid-template-columns: 1fr; }
+.sf-shop { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr); }
+.sf-shop > * { min-width: 0; } /* a long product name must not stretch the page sideways on phones */
 @media (min-width: 992px) { .sf-shop { grid-template-columns: 240px minmax(0, 1fr); } }
 .sf-filters { padding: 1rem; align-self: start; }
 @media (min-width: 992px) { .sf-filters { position: sticky; top: 130px; } }

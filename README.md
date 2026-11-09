@@ -1,7 +1,7 @@
 # 🛒 RedCart — Retail-Logistics-Core
 
 [![CI](https://github.com/peterafolabi-dev/Retail-Logistics-Core/actions/workflows/ci.yml/badge.svg)](https://github.com/peterafolabi-dev/Retail-Logistics-Core/actions/workflows/ci.yml)
-![Django tests](https://img.shields.io/badge/django%20tests-83%20passing-1F8A4C)
+![Django tests](https://img.shields.io/badge/django%20tests-98%20passing-1F8A4C)
 ![Python](https://img.shields.io/badge/python-3.12-3776AB)
 ![Next.js](https://img.shields.io/badge/Next.js-15-000000)
 
@@ -28,7 +28,7 @@ The choices I'd want a reviewer to see, and why I made them:
 - **No double credits.** Referral rewards are paid into wallets inside a database transaction with `select_for_update()`, so two requests arriving at the same time can't credit the same reward twice. Re-opening a payment link is also safe: a Paystack reference that was already processed is not turned into a second order.
 - **The AI is not allowed to guess.** Order status and stock come straight from the database. The model only phrases answers. Policy answers come from a small retrieval layer over real policy documents (`products/rag.py`), and a regression script (`scripts/evaluate.py`) checks the guardrails after changes.
 - **Fraud scoring that fails safe.** Only high-confidence fraud is auto-hidden. Borderline reviews stay public and are flagged for staff, so a false positive never silently buries a real customer.
-- **CI on every push.** GitHub Actions runs `manage.py check`, a missing-migrations check, the 83 Django tests and a TypeScript check of the storefront.
+- **CI on every push.** GitHub Actions runs `manage.py check`, a missing-migrations check, the 98 Django tests and a TypeScript check of the storefront.
 
 ---
 
@@ -116,7 +116,7 @@ manage.py
 
 ### Running the tests
 ```bash
-python manage.py test        # 83 Django tests
+python manage.py test        # 98 Django tests
 npx tsc --noEmit             # storefront typecheck
 ```
 

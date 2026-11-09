@@ -96,7 +96,7 @@ Referral rewards are paid into wallets inside a database transaction with `selec
 
 ## Results
 
-- **83 passing Django tests** (74 for the store, 9 for the API), plus a TypeScript check of the storefront, run by GitHub Actions on every push
+- **98 passing Django tests**, including payment-verification tests for amount mismatch and replayed references, plus a TypeScript check of the storefront, run by GitHub Actions on every push
 - Moved from Render to **Vercel + Neon Postgres**, and added the Next.js storefront on top of the existing API
 
 ## What I'd do next

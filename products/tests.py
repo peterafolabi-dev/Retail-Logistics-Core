@@ -1001,3 +1001,62 @@ class CustomersDashboardTests(TestCase):
         r = self.client.get(reverse('products:dashboard'))
         self.assertContains(r, 'Newest sign-ups')
         self.assertContains(r, 'bayo@example.com')
+
+
+@override_settings(PAYSTACK_SECRET_KEY='sk_test_not_real')
+class PaystackVerifyTests(TestCase):
+    """The server must verify the payment itself and never trust what the browser says was paid."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='payer', password='pass', email='payer@example.com')
+        self.client.login(username='payer', password='pass')
+        self.product = Product.objects.create(name='Phone', price=50000.0, stock=5, image_url='http://a.png')
+        self.address = UserAddress.objects.create(
+            user=self.user, full_name='Payer One', phone='08000000000',
+            street_address='1 Test Road', city='Minna', state='Niger', postal_code='920001',
+        )
+        session = self.client.session
+        session['cart'] = {str(self.product.id): 2}  # cart total 100000.00
+        session.save()
+
+    def _paystack_says(self, kobo, status='success'):
+        resp = Mock()
+        resp.json.return_value = {
+            'status': True,
+            'data': {
+                'status': status,
+                'amount': kobo,
+                'gateway_response': 'Successful',
+                'metadata': {'shipping_address_id': self.address.id},
+            },
+        }
+        return resp
+
+    def _verify(self, kobo, reference='ref-123', status='success'):
+        with patch('requests.get', return_value=self._paystack_says(kobo, status)):
+            return self.client.get(reverse('paystack-verify'), {'reference': reference}, follow=True)
+
+    def test_amount_mismatch_creates_no_order_and_keeps_the_cart(self):
+        response = self._verify(kobo=10000)  # customer paid 100.00, cart is worth 100000.00
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(self.client.session['cart'], {str(self.product.id): 2})
+        self.assertContains(response, 'Payment amount does not match the order total.')
+
+    def test_matching_amount_creates_exactly_one_order(self):
+        self._verify(kobo=10000000)
+        self.assertEqual(Order.objects.filter(user=self.user).count(), 1)
+        self.assertEqual(self.client.session['cart'], {})
+
+    def test_same_reference_cannot_create_a_second_order(self):
+        self._verify(kobo=10000000, reference='ref-dup')
+        # customer refills the cart and replays the same reference
+        session = self.client.session
+        session['cart'] = {str(self.product.id): 2}
+        session.save()
+        response = self._verify(kobo=10000000, reference='ref-dup')
+        self.assertEqual(Order.objects.filter(user=self.user).count(), 1)
+        self.assertContains(response, 'already been processed')
+
+    def test_unsuccessful_payment_creates_no_order(self):
+        self._verify(kobo=10000000, status='failed')
+        self.assertEqual(Order.objects.count(), 0)

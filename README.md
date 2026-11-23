@@ -171,4 +171,4 @@ REDCART_API_URL=http://127.0.0.1:8000 npm run dev
 
 1. Import the repo into Vercel (framework: Next.js, root directory: repo root).
 2. Set `REDCART_API_URL` to the Django service URL, e.g. `https://redcart-ten.vercel.app`.
-3. In your Vercel project settings, set `STOREFRONT_ORIGINS` to the Vercel URL so browsers may call the API directly.
+3. In the Vercel project for the Django store (not the Next.js storefront project), set STOREFRONT_ORIGINS to the storefront's Vercel URL so browsers may call the API directly.

@@ -1060,3 +1060,17 @@ class PaystackVerifyTests(TestCase):
     def test_unsuccessful_payment_creates_no_order(self):
         self._verify(kobo=10000000, status='failed')
         self.assertEqual(Order.objects.count(), 0)
+
+
+class LastUsedLoginBadgeTests(TestCase):
+    def test_login_page_marks_sign_in_methods(self):
+        r = self.client.get(reverse('products:login'))
+        self.assertContains(r, 'data-login-method="google"')
+        self.assertContains(r, 'data-login-method="password"')
+        self.assertContains(r, 'redcart_last_login')
+
+    def test_register_page_records_but_only_badges_google(self):
+        r = self.client.get(reverse('products:register'))
+        self.assertContains(r, 'data-login-method="google"')
+        self.assertContains(r, 'data-login-record="password"')
+        self.assertNotContains(r, 'data-login-method="password"')

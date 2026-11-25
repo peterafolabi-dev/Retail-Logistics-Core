@@ -1648,5 +1648,37 @@
       window.addEventListener('load', applyImageFallbacks);
       document.addEventListener('DOMContentLoaded', applyImageFallbacks);
     </script>
+    <style>
+      [data-login-method] { position: relative; }
+      .last-used-badge { position: absolute; top: -0.6rem; right: 1rem; padding: 1px 9px; border-radius: 999px; font-size: 0.65rem; font-weight: 700;
+        letter-spacing: 0.06em; text-transform: uppercase; background: rgba(255, 93, 103, 0.18); color: #ff8a8f; border: 1px solid rgba(255, 93, 103, 0.55); pointer-events: none; }
+    </style>
+    <script>
+      // "Last used" sign-in badge: a click/submit on a sign-in method is kept as pending, and becomes the last used
+      // method once the person is really signed in. Stored only in this browser.
+      (function () {
+        var LAST = 'redcart_last_login', PEND = 'redcart_pending_login';
+        function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+        function set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+        {% if user.is_authenticated %}
+        var pending = get(PEND);
+        if (pending) { set(LAST, pending); try { localStorage.removeItem(PEND); } catch (e) {} }
+        {% else %}
+        var last = get(LAST);
+        document.querySelectorAll('[data-login-method]').forEach(function (el) {
+          if (el.getAttribute('data-login-method') !== last) return;
+          var b = document.createElement('span'); b.className = 'last-used-badge'; b.textContent = 'Last used'; el.appendChild(b);
+        });
+        document.addEventListener('click', function (e) {
+          var el = e.target.closest && e.target.closest('[data-login-method]');
+          if (el) set(PEND, el.getAttribute('data-login-method'));
+        });
+        document.addEventListener('submit', function (e) {
+          var el = e.target.closest && e.target.closest('[data-login-record]');
+          if (el) set(PEND, el.getAttribute('data-login-record'));
+        });
+        {% endif %}
+      })();
+    </script>
   </body>
 </html>
